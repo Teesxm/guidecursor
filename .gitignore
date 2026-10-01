@@ -1,0 +1,4 @@
+.env.local
+public/version.json
+dist/
+node_modules/
