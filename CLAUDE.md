@@ -17,8 +17,8 @@ Tagline: “Use the same computer. Get the guidance you need.” Calm, precise, 
 - Terence emphasizes accessibility profiles, continuous cursor guidance, larger effective targets, optional magnetic assistance, and retaining normal app workflows.
 - Alberto emphasizes integrating existing macOS accessibility capabilities, such as Zoom, so users can invoke the right assistance naturally and in context.
 - The intended value is their combination: task/screen understanding + cursor guidance + appropriate accessibility tools within ordinary desktop apps.
-- Existing competitors include Clicky and Be My Eyes. Do not claim we invented captions, speech, magnification or cursor companions. Earlier platform/pricing/novelty claims in the chat were not independently verified in this work; verify them before using them as factual marketing claims.
-- The latest draft's Feasibility section narrows the first MVP to **users with visual impairments finding and interacting with controls in a limited set of selected macOS applications**.
+- Existing competitors include Clicky and Be My Eyes. Do not claim we invented captions, speech, magnification or cursor companions. Official competitor pages were reviewed on 2 October: HeyClicky describes screen awareness and screen annotations (https://www.heyclicky.com/about); Be My Eyes Desktop describes AI screen/image assistance on Mac and Windows (https://www.bemyeyes.com/be-my-eyes-for-desktop/). Their internal implementation was not audited. Do not infer product uniqueness or guaranteed coverage from marketing pages.
+- The latest draft narrows MVP validation to users with visual impairments and a few selected macOS workflows. Alberto subsequently clarified that the **architecture must serve many apps through shared macOS discovery and a visual fallback**. The selected apps are test cases, not separate hardcoded integrations; universal coverage is not established.
 - Low-vision proposals: visible pointer, target highlights, cursor-area magnification, contrast and spoken labels.
 - Blindness proposals: control descriptions, continuous directions and optional near-target snapping. Usability must be tested; do not claim clinical/accessibility effectiveness from a build or demo.
 - Motor assistance remains in the broader product: stabilization, enlarged effective targets, optional snapping. Dwell-to-click and double-click prevention were brainstormed, not mandatory initial requirements.
@@ -65,7 +65,7 @@ Root: Vite static HTML/CSS/JavaScript website, with retained React/TypeScript fi
 - `scripts/build.sh`: builds and bundles an ad-hoc signed `.app`.
 - `README.md`: native setup, limitations and test instructions.
 - `DEVELOPMENT-LOG.md`: working notes for the course log.
-- `.github/workflows/macos.yml`: PR-triggered macOS build/check job. Initial run found a compiler capture issue; a fix was pushed. Recheck current run.
+- `.github/workflows/macos.yml`: PR-triggered macOS build/check job. Both native and website CI passed for implementation commit `5e6bcd0`; see verification links below.
 
 ### Implemented baseline, not end-to-end verified
 
@@ -101,14 +101,24 @@ Native generated files: `macos/.build/`, `macos/build/`, `.swiftpm/` (ignored). 
 
 User-facing artifacts currently reside outside the repo at `/Users/alberto/Documents/Codex/2026-10-01/b/outputs/`: `GuideCursor-macOS-prototype.zip` and `GuideCursor-project-context.md`. Keep these synchronized or explicitly mark them stale. Do not commit binaries.
 
-## Next work, in order
+## Agreed five-step delivery plan
 
-1. Read current git diff and this file; preserve work left by the previous assistant. The macOS Zoom shortcut integration is implemented and compiles; test it after the user configures Zoom. Do not claim the shortcut succeeded without observing it.
-2. The user's first live Finder query for “downloads” returned “No match” although Downloads was visible. An app-independent tree indexing fix now handles row/cell labels stored in child static text, with synthetic checks and a full build. The installed app may still be the older version. Validate the updated build once, then investigate any remaining tree/foreground/overlay issues with evidence.
-3. Test a real local model on synthetic/public interfaces. Validate latency, ambiguous tasks, no-match behavior, invalid replies and unavailable model handling. Do not hardcode targets and describe that as AI.
-4. Deliver one coherent multi-step desktop journey. Keep each click user-controlled; re-observe after it. The early PDF's three examples (Gmail attachment, Finder folder, Chrome downloads) are proposals, not already built integrations or three mandatory requirements.
-5. Refine assistance settings and accessibility of GuideCursor itself. Current relative-window region descriptions help distinguish duplicates but still need validation with blind users. Do not grow profiles/features at the expense of the core journey.
-6. Document tests/limitations, prepare a focused reviewable PR when appropriate, and help with the course development log/demo. No need to rebuild the website.
+1. **Reliable foundation.** Read the existing code and preserve current changes. Validate the updated generic control discovery, target selection and continuous guidance. Add concise diagnostics that distinguish missing permission, missing window, no exposed controls, no matching label and a truncated scan, without collecting screen content by default. The first Finder “downloads” test failed on the old installed build; the generic fix has only synthetic validation so far. Prefer tests the coding agent can run; batch any unavoidable human verification into one short session.
+2. **Screen understanding fallback.** Design and implement screenshot/vision recognition for controls missing from AX. Keep it app-independent, scoped to the chosen app/window, permissioned and explicit about confidence. First inspect available model/runtime support and test synthetic or public images. Do not silently upload screens or treat model coordinates as verified controls. Local Ollama is preferred but not yet available/tested. Record model accuracy and latency before choosing a provider.
+3. **Tasks connected to guidance.** Interpret a goal, suggest an observed target, guide the user's movement, then reassess after the user's click. Handle changed windows and ambiguity; do not infer successful completion from a click alone. Deliver one coherent journey before expanding feature count.
+4. **Complete journeys across apps.** Use Finder, a browser and an email workflow to exercise the same discovery/guidance engine. Record observed failures and coverage. The PDF's example journeys are proposals, not three built integrations. Test foreground switching, scrolling, dialogs, duplicate labels and target disappearance.
+5. **Presentation MVP.** Refine speech, visible targets, magnification, accessible controls and reliable stopping. Keep the course development log current and provide accurate run instructions/demo evidence. Add motor precision features or other profiles only after the core journey works. Hearing remains TBD.
+
+## Claude implementation / Codex review workflow
+
+Alberto requested that Claude implement focused increments and Codex review the actual diff and evidence, then supply follow-up corrections. The first Claude assignment is environment verification and step 1, not all five steps at once. Do not assume that Claude shares Codex's connector authentication or computer-control permission.
+
+- Open this existing checkout, read `CLAUDE.md`, any applicable `AGENTS.md`, `macos/README.md` and `macos/DEVELOPMENT-LOG.md`. Check branch, status, diff and remotes before editing. Do not clone over this folder, reset it or overwrite uncommitted work.
+- Verify local file access and GitHub connectivity separately. `git ls-remote origin` shows read connectivity but a public-repository read does **not** prove authenticated identity or push permission. If a GitHub connector or `gh` is available, report authenticated account and repo permission without printing credentials. If unavailable, report identity/write access as unverified; prior successful Codex pushes do not prove Claude's access.
+- Continue local work when remote credentials or UI permissions are unavailable. Explain the exact missing capability rather than repeatedly asking Alberto to test. Do not bypass OS permission controls.
+- Make one bounded, reviewable increment at a time. Keep changes local for the first review; Codex will inspect the actual diff before the next push. No merging, deployment, force push or changes to teammates' work.
+- Finish each increment with a concise report: baseline commit, files changed and reasons, tests actually run/results, observed runtime behavior versus inference, blockers, and proposed next increment. Update this handoff and the development log to match. Do not claim a workflow works based solely on a passing compile or synthetic test.
+- Codex and Claude must not concurrently edit the same checkout. Alberto can paste Claude's report here; Codex can inspect local changes directly if Claude used this folder. If Claude runs elsewhere, provide a commit/branch or patch rather than claiming a shared filesystem.
 
 ## Source context / course
 
@@ -128,8 +138,12 @@ The user confirmed GuideCursor displays “Accessibility enabled,” and the pro
 
 ## Draft PR and CI status
 
-Draft PR: https://github.com/Teesxm/guidecursor/pull/1. Branch `alberto/mvp-development` was pushed; main remains unchanged. Initial macOS CI failed in `Model.swift` because the GitHub compiler rejected a weak timer capture in a concurrent Task. Adjusted capture to `[weak model = self]` and local release build/checks pass; verify the new GitHub CI run before claiming the issue resolved. The original website CI passed.
+Draft PR: https://github.com/Teesxm/guidecursor/pull/1. Branch `alberto/mvp-development` was pushed; main remains unchanged. Initial macOS CI failed in `Model.swift` because the GitHub compiler rejected a weak timer capture in a concurrent Task. Adjusted capture to `[weak model = self]`; the subsequent CI run passed. Both checks also passed for `5e6bcd0`: native https://github.com/Teesxm/guidecursor/actions/runs/36942347940 and website https://github.com/Teesxm/guidecursor/actions/runs/36942347938. This confirms build/check results, not permission-dependent desktop behavior.
 
 ## Cross-app discovery update
 
 The first failed Finder test exposed a general AX-tree issue: selectable rows can have their text in nested `AXStaticText` rather than in the row's own title. The scanner now traverses visible children and outline/table rows, then the pure indexer maps child text to the nearest interactive ancestor. It contains no Finder bundle-ID or hardcoded “Downloads” path. Synthetic tree checks cover an outline row, a labelled button in a different tree shape, and absence of editable text in candidate labels; nine checks/eighteen assertions plus a release build pass. Real cross-app behavior and the updated Finder case remain unverified until a new app build is run with permission. The broad design is AX first, with a permissioned screenshot/vision fallback later for apps that expose too little AX metadata; never promise universal coverage from AX alone.
+
+## Latest delivered state for the next agent
+
+Implementation baseline: `5e6bcd0` (generic nested accessibility labels); earlier `8c540a4` fixed the CI timer capture and `9786da0` added the native baseline. Both CI jobs passed. The refreshed output ZIP was signed in a temporary directory outside Documents to avoid file-provider metadata, then extracted and signature-verified. ZIP SHA-256: `99f8d497bb0e5226cea381ecbabf677c3e33356cc69dc18b6e8b522301982795`. It contains the new scanner. The running app at `/Users/alberto/Applications/GuideCursor.app` was still the old build at the last check; do not assume source, ZIP and installed process have the same version. Safely quit before replacing a running installation, and account for renewed Accessibility permission with ad-hoc signatures. No updated live Finder result has been observed.
