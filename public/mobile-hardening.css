@@ -1,0 +1,150 @@
+/* GuideCursor mobile hardening
+   Shared overrides for touch targets, safe areas, short viewports and mobile overlays. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+button,a{touch-action:manipulation}
+
+@supports(padding:max(0px)){
+  .nav-wrap,.legal-nav-wrap{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+  .nav-wrap,.legal-nav-wrap{top:max(12px,env(safe-area-inset-top))}
+  .gc-site-footer{padding-bottom:max(24px,calc(env(safe-area-inset-bottom) + 16px))}
+  .gc-consent-banner{bottom:max(10px,calc(env(safe-area-inset-bottom) + 8px))}
+  .gc-consent-modal,.gc-update-v2,.gc-mode-picker{padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}
+}
+
+@media(max-width:980px){
+  .nav-toggle{min-width:44px!important;min-height:44px!important;display:grid!important;place-items:center}
+  .nav-links{max-height:calc(100dvh - 100px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .nav-links a{min-height:44px;display:flex;align-items:center}
+}
+
+@media(max-width:760px){
+  /* Home interactive demo */
+  .gc-mode-picker{align-items:center;overflow-y:auto;overscroll-behavior:contain}
+  .gc-mode-card{max-height:calc(var(--gc-visual-height,100dvh) - 20px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .gc-mode-close{width:44px!important;height:44px!important}
+  .gc-mode-option{min-height:128px!important;padding:16px!important}
+  .gc-mode-option small{margin-top:12px!important}
+  .gc-mode-foot{align-items:flex-start!important;flex-wrap:wrap}
+  .gc-demo-panel{max-height:min(72dvh,620px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .gc-mode-switch,.gc-mini-btn{min-height:44px!important}
+  .gc-hearing-control{min-height:44px!important;padding:0 12px!important}
+  .gc-hearing-sound{max-width:55%;line-height:1.35}
+  .demo-stage .mail{width:470px!important;transform:translate(-50%,-50%) scale(.64)!important}
+  .demo-stage .guide{right:0!important}
+  .demo-stage .mail-actions button{min-height:44px}
+  .table-wrap{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x}
+  .comparison .table-wrap{position:relative}
+  .comparison table th:first-child,.comparison table td:first-child{position:sticky;left:0;z-index:2}
+  .comparison table thead th:first-child{z-index:4;background:#17171d}
+  .comparison table tbody td:first-child{background:#141419;box-shadow:8px 0 14px rgba(0,0,0,.08)}
+  .faq-item.open .faq-a{max-height:600px!important;padding-right:0!important}
+
+  /* Fit the macOS product mockup inside the phone instead of cropping a desktop-width scene. */
+  .desktop .perspective{width:100%!important;margin:0 auto!important;transform:none!important;margin-bottom:0!important}
+  .desktop .desktop-frame{border-radius:20px 20px 0 0}
+  .desktop .wallpaper{height:390px!important}
+  .desktop .finder{left:5%;top:9%;width:76%;height:62%}
+  .desktop .finder-body{grid-template-columns:72px 1fr}
+  .desktop .finder-body aside{padding:15px 7px;gap:7px;font-size:7px}
+  .desktop .finder-main{padding:22px 12px;gap:14px;flex-wrap:wrap}
+  .desktop .floating{right:5%;bottom:7%;width:min(210px,70%);padding:12px;border-radius:14px}
+  .desktop .floating p{margin:13px 0 9px;font-size:12px}
+  .desktop .floating-input{min-height:36px}
+  .desktop .menu div{gap:8px}
+
+  /* Full checkout */
+  .modal{padding:max(10px,env(safe-area-inset-top)) 10px 0!important;place-items:end center!important;overflow-y:auto;overscroll-behavior:contain}
+  .sheet{width:100%!important;max-height:calc(var(--gc-visual-height,100dvh) - 10px);overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:22px 22px 0 0!important}
+  .sheet-body{padding-bottom:max(22px,calc(env(safe-area-inset-bottom) + 14px))!important}
+  .sheet-close{width:44px!important;height:44px!important}
+  .paytab{min-height:44px!important}
+  .checkout-page .change,.coupon button{min-height:44px!important}
+  .billing-toggle{min-height:48px}
+  .billing-toggle input{width:20px;height:20px}
+  .checkout-page{padding-bottom:max(70px,calc(env(safe-area-inset-bottom) + 50px))}
+  .download-toast,.toast{bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px))}
+
+  /* Legal pages and tables */
+  .legal-table-wrap{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x}
+  .legal-toc a{min-height:44px;display:flex;align-items:center}
+  .legal-action{min-height:44px!important}
+}
+
+@media(max-width:620px){
+  /* Compact the checkout summary so payment controls are not pushed a full screen down. */
+  .checkout-page{gap:10px!important}
+  .checkout-page .summary{min-height:0!important;padding:18px 20px!important}
+  .checkout-page .summary h1,.checkout-page .summary>p,.checkout-page .summary-note{display:none!important}
+  .checkout-page .summary .demo-badge{margin:0 0 12px!important}
+  .checkout-page .plan-row{margin-top:0!important;padding:12px 13px!important}
+  .checkout-page .plan-row-top strong{font-size:15px!important}
+  .checkout-page .price-big{margin-top:10px!important}
+  .checkout-page .price-big strong{font-size:34px!important}
+  .checkout-page .summary-lines{margin-top:12px!important}
+  .checkout-page .summary-lines div{min-height:36px!important}
+  .checkout-page .checkout-card{padding-top:24px!important}
+  .checkout-page .topline{margin-bottom:20px!important}
+  .checkout-page .topline h2{font-size:29px!important}
+
+  /* Keep large marketing headings readable rather than forcing sideways overflow. */
+  .price-hero h1{font-size:clamp(48px,14vw,62px)!important}
+  .intro h1{font-size:clamp(48px,14vw,64px)!important}
+  .legal-hero h1{overflow-wrap:anywhere}
+  .legal-nav-links button{display:none!important}
+  .help a{min-height:44px;display:flex;align-items:center;justify-content:center}
+
+  /* Site-wide legal footer */
+  .gc-footer-col a,.gc-footer-col button{min-height:44px;display:flex;align-items:center;margin:0}
+  .gc-consent-btn{min-height:44px!important}
+  .gc-consent-banner{max-height:calc(var(--gc-visual-height,100dvh) - 20px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .gc-consent-card{max-height:calc(var(--gc-visual-height,100dvh) - 20px)!important}
+  .gc-consent-close{width:44px!important;height:44px!important}
+  .gc-switch{width:48px;height:28px}.gc-switch span:after{width:22px;height:22px}.gc-switch input:checked+span:after{transform:translateX(20px)}
+
+  /* Deployment update overlay must remain usable on short phones */
+  .gc-update-v2{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .gc-update-card{max-height:calc(var(--gc-visual-height,100dvh) - 24px);overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+  .gc-update-refresh{min-height:56px}
+}
+
+@media(max-width:420px){
+  .billing-wrap .billing-toggle{max-width:100%;flex-wrap:wrap;justify-content:center}
+  .billing-wrap .billing-toggle button{min-height:44px}
+  .billing-wrap .billing-toggle .save-pill{width:100%;margin:3px 0 0!important;text-align:center}
+  .gc-footer-links{grid-template-columns:1fr!important}
+  .gc-footer-top{gap:36px!important}
+  .gc-consent-message{gap:10px}.gc-consent-icon{width:36px;height:36px}
+  .gc-consent-actions{grid-template-columns:1fr!important}.gc-consent-actions .manage{grid-column:auto!important}
+  .gc-consent-head h2{font-size:29px!important}
+  .gc-consent-category{grid-template-columns:minmax(0,1fr) auto!important}
+  .gc-update-top{flex-direction:column;align-items:stretch!important}
+  .gc-update-count{width:100%;height:auto!important;min-height:54px;align-items:flex-start!important;flex-direction:row!important;justify-content:flex-start!important;gap:7px}
+  .gc-update-count strong{font-size:22px!important}
+  .gc-update-count span{align-self:center}
+  .gc-update-copy h2{font-size:34px!important}
+  .gc-update-card{padding:22px 17px!important}
+  .legal-nav-links .back{padding:10px!important}
+  .download-card{padding:24px!important}
+  .recommended-badge{max-width:135px;text-align:center;line-height:1.2}
+}
+
+@media(max-height:650px) and (max-width:760px){
+  .gc-mode-picker{place-items:start center!important}
+  .gc-mode-card{margin:auto 0;padding:22px 18px!important}
+  .gc-mode-card h2{font-size:34px!important;margin-top:12px!important}
+  .gc-mode-card>p{font-size:11px!important}
+  .gc-mode-options{margin-top:18px!important}
+  .gc-mode-option{min-height:112px!important}
+  .gc-demo-panel{max-height:64dvh}
+  .gc-update-card{max-height:calc(var(--gc-visual-height,100dvh) - 16px)}
+}
+
+@media(pointer:coarse){
+  .task,.mode-tab,.gc-hearing-control,.gc-mode-switch,.gc-mini-btn,.faq-q,.plan button,.download-btn,.legal-action{touch-action:manipulation}
+  .mode-tab{min-height:128px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .gc-consent-toast,.download-toast,.toast{transition:none!important}
+}
