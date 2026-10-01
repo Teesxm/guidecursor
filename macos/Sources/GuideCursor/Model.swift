@@ -1,0 +1,147 @@
+import AppKit
+import SwiftUI
+@preconcurrency import ApplicationServices
+import AVFoundation
+import GuideCursorCore
+
+@MainActor final class Model: ObservableObject {
+    @Published var trusted = AXIsProcessTrusted()
+    @Published var appName = "Choose an application"
+    @Published var request = ""
+    @Published var modelName = ""
+    @Published var useAI = false
+    @Published var speech = true
+    @Published var candidates: [Control] = []
+    @Published var status = "Choose an app, enter a control to find, then review the matches."
+    @Published var busy = false
+    @Published var guiding = false
+    @Published var zoomShortcutConfirmed = false
+    @Published var apps: [NSRunningApplication] = []
+    @Published var selectedPID: Int32 = 0
+    private let overlay = Overlay()
+    private let voice = AVSpeechSynthesizer()
+    private let reader = DispatchQueue(label: "guidecursor.accessibility")
+    private var target: Control?
+    private var window: AXUIElement?
+    private var generation = 0
+    private var checking = false
+    private var timer: Timer?
+    private var monitor: Any?
+    private var lastSpoken = ""
+    private var lastSpeechAt = Date.distantPast
+    private var pollNumber = 0
+
+    init() {
+        refreshApps()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.18, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
+        }
+        monitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.guiding, let target = self.target,
+                      NSWorkspace.shared.frontmostApplication?.processIdentifier == self.selectedPID,
+                      let primary = NSScreen.screens.first else { return }
+                let p = NSEvent.mouseLocation
+                if target.rect.contains(CGPoint(x: p.x, y: primary.frame.height - p.y)) {
+                    self.stop(message: "You clicked near the target. Check the result, then find the next control in the updated window.")
+                }
+            }
+        }
+    }
+    func toggleZoom() { status = Magnification.sendToggle(shortcutConfirmed: zoomShortcutConfirmed) }
+    func silence() { voice.stopSpeaking(at: .immediate); lastSpoken = "" }
+    func refreshApps() {
+        apps = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular && $0.processIdentifier != ProcessInfo.processInfo.processIdentifier && !$0.isTerminated }
+            .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+        if !apps.contains(where: { $0.processIdentifier == selectedPID }) { selectedPID = apps.first?.processIdentifier ?? 0 }
+    }
+    func permission() {
+        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        trusted = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
+    }
+    func stop(message: String = "Guidance stopped.") {
+        generation += 1; target = nil; window = nil; candidates = []; guiding = false; busy = false
+        overlay.hide(); voice.stopSpeaking(at: .immediate); lastSpoken = ""; status = message
+    }
+    func find() {
+        stop(); candidates = []
+        guard AXIsProcessTrusted() else { status = "Enable GuideCursor in System Settings → Privacy & Security → Accessibility, then retry."; return }
+        guard let app = apps.first(where: { $0.processIdentifier == selectedPID }) else { status = "Choose an open application."; return }
+        guard !request.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { status = "Enter the control or task you need help with."; return }
+        guard !useAI || !modelName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { status = "Enter the name of a downloaded local Ollama model."; return }
+        busy = true; appName = app.localizedName ?? "Application"; status = "Reading controls in \(appName)…"
+        let token = generation, pid = selectedPID, query = request, ai = useAI, model = modelName
+        reader.async {
+            let result = Accessibility.scan(pid: pid)
+            Task { @MainActor [weak self] in
+                guard let self, self.generation == token else { return }
+                self.window = result.window
+                if result.controls.isEmpty { self.busy = false; self.status = "No labelled controls found. Open a normal window in the selected app. Some apps do not expose their controls."; return }
+                if ai {
+                    self.status = "Asking your local model to suggest targets…"
+                    do {
+                        let ids = try await Ollama.select(request: query, controls: result.controls, model: model)
+                        guard self.generation == token else { return }
+                        self.candidates = ids.compactMap { id in result.controls.first { $0.id == id } }
+                    } catch {
+                        guard self.generation == token else { return }
+                        self.busy = false; self.status = "Local AI failed: \(error.localizedDescription) You can switch to label search."; return
+                    }
+                } else {
+                    self.candidates = result.controls.filter { Guidance.score(request: query, label: $0.label) > 0 }
+                        .sorted { Guidance.score(request: query, label: $0.label) > Guidance.score(request: query, label: $1.label) }.prefix(12).map { $0 }
+                }
+                self.busy = false
+                self.status = self.candidates.isEmpty ? "No match. Try the control's visible name, or another app window." : "Choose the intended control below. \(ai ? "Local AI suggestions" : "Label search — no AI used")."
+                if result.limited { self.status += " Only part of the window could be read; a smaller window may help." }
+            }
+        }
+    }
+    func guide(_ control: Control) {
+        guard let app = NSRunningApplication(processIdentifier: selectedPID), !app.isTerminated else { stop(message: "That app has closed. Refresh the application list."); return }
+        guard let storedWindow = window, let activeWindow = Accessibility.focusedWindow(selectedPID), CFEqual(storedWindow, activeWindow), Accessibility.enabled(control.element), Accessibility.rect(control.element) != nil else {
+            stop(message: "The selected window or control changed. Find controls again before guiding.")
+            return
+        }
+        generation += 1; target = control; guiding = true; lastSpoken = ""; status = "Guiding to \(control.label). You move and click. Stop with the menu bar or this window."
+        app.activate(options: [.activateIgnoringOtherApps])
+    }
+    private func tick() {
+        pollNumber += 1
+        if pollNumber % 6 == 0 { trusted = AXIsProcessTrusted() }
+        guard guiding, let current = target else { return }
+        guard trusted else { stop(message: "Accessibility permission was removed. Guidance stopped."); return }
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == selectedPID else {
+            overlay.hide(); voice.stopSpeaking(at: .immediate); lastSpoken = ""; return
+        }
+        guard !checking else { return }
+        checking = true
+        let token = generation, pid = selectedPID, expectedWindow = window
+        reader.async {
+            let activeWindow = Accessibility.focusedWindow(pid)
+            let frame = Accessibility.rect(current.element)
+            let enabled = Accessibility.enabled(current.element)
+            let sameWindow = expectedWindow != nil && activeWindow != nil && CFEqual(expectedWindow!, activeWindow!)
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.checking = false
+                guard self.generation == token, self.guiding else { return }
+                guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { self.overlay.hide(); return }
+                guard sameWindow, enabled, let frame else { self.stop(message: "The window or control changed. Find the next control before continuing."); return }
+                guard let primary = NSScreen.screens.first else { return }
+                let rect = Guidance.appKitRect(frame, primaryHeight: primary.frame.height)
+                guard NSScreen.screens.contains(where: { $0.frame.intersects(rect) }) else { self.stop(message: "The target is off screen. Bring it into view and search again."); return }
+                self.target = Control(id: current.id, label: current.label, role: current.role, region: current.region, element: current.element, rect: frame)
+                let p = NSEvent.mouseLocation
+                let instruction = Guidance.direction(pointer: CGPoint(x: p.x, y: primary.frame.height - p.y), target: frame)
+                self.overlay.show(rect: rect, label: current.label, direction: instruction)
+                if self.speech && instruction != self.lastSpoken && Date().timeIntervalSince(self.lastSpeechAt) > 1.5 {
+                    self.voice.stopSpeaking(at: .immediate)
+                    let utterance = AVSpeechUtterance(string: instruction)
+                    utterance.rate = 0.45; self.voice.speak(utterance)
+                    self.lastSpoken = instruction; self.lastSpeechAt = Date()
+                }
+            }
+        }
+    }
+}
