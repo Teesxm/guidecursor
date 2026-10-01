@@ -1,0 +1,17 @@
+{
+  "name": "GuideCursor",
+  "short_name": "GuideCursor",
+  "description": "AI-powered cursor guidance that helps people use mainstream software through the normal workflow.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f2ed",
+  "theme_color": "#111116",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
