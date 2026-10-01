@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111116" />
+  <meta name="guidecursor-build" content="%VITE_BUILD_ID%" />
+  <title>Thank you — GuideCursor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=%VITE_BUILD_ID%" />
+  <script src="/tab-title.js?v=%VITE_BUILD_ID%"></script>
+  <script src="/purchase-state.js?v=%VITE_BUILD_ID%"></script>
+  <link rel="stylesheet" href="/legal-ui.css?v=%VITE_BUILD_ID%" />
+  <link rel="stylesheet" href="/update-guard.css?v=%VITE_BUILD_ID%" />
+  <script src="/update-guard.js?v=%VITE_BUILD_ID%"></script>
+  <style>
+    :root{--paper:#f4f2ed;--ink:#111116;--indigo:#6758f4;--mint:#a0f1d5;--muted:#77727b;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}
+    *{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;overflow-x:hidden;background:radial-gradient(circle at 50% -10%,rgba(103,88,244,.18),transparent 38%),linear-gradient(180deg,#fbfaf6,var(--paper));color:var(--ink)}a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}[hidden]{display:none!important}
+    .nav-wrap{position:fixed;z-index:50;top:18px;left:0;right:0;padding:0 24px;pointer-events:none}.nav{pointer-events:auto;width:min(1180px,100%);height:62px;margin:auto;padding:8px 10px 8px 15px;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.62);border-radius:18px;background:rgba(248,247,243,.82);backdrop-filter:blur(24px) saturate(150%);box-shadow:0 14px 42px rgba(18,18,25,.08)}.brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:19px;letter-spacing:-.045em}.brand b{color:var(--indigo)}.mark{position:relative;width:35px;height:35px;border-radius:10px;background:var(--ink);display:grid;place-items:center;color:#fff}.mark i{position:absolute;right:6px;top:6px;width:6px;height:6px;border-radius:50%;background:var(--mint)}.nav-download{padding:12px 14px;border-radius:11px;background:#dff8ef;color:#245c4b;font-size:12px;font-weight:750;box-shadow:inset 0 0 0 1px rgba(36,92,75,.08)}
+    main{position:relative;min-height:100vh;padding:150px 24px 80px;display:grid;place-items:center;overflow:hidden}.orb{position:absolute;border-radius:50%;filter:blur(2px);pointer-events:none}.orb.a{width:520px;height:520px;left:-190px;top:220px;background:radial-gradient(circle,rgba(160,241,213,.28),transparent 67%);animation:floatA 8s ease-in-out infinite}.orb.b{width:560px;height:560px;right:-230px;top:80px;background:radial-gradient(circle,rgba(103,88,244,.19),transparent 67%);animation:floatB 10s ease-in-out infinite}.success{position:relative;z-index:2;width:min(760px,100%);padding:52px;border:1px solid rgba(17,17,22,.09);border-radius:34px;background:rgba(251,250,247,.9);box-shadow:0 40px 120px rgba(38,29,89,.13);backdrop-filter:blur(18px);text-align:center;animation:cardIn .7s cubic-bezier(.22,1,.36,1) both}.check{position:relative;width:92px;height:92px;margin:0 auto 28px;border-radius:29px;background:linear-gradient(145deg,#dff8ef,var(--mint));display:grid;place-items:center;color:#255d4b;font-size:38px;box-shadow:0 0 0 14px rgba(160,241,213,.13),0 18px 46px rgba(67,132,109,.15);animation:checkPop .75s cubic-bezier(.22,1,.36,1) .18s both}.eyebrow{color:#77737b;font:500 9px "DM Mono",monospace;letter-spacing:.14em;text-transform:uppercase}.success h1{margin:15px 0 16px;font-size:clamp(52px,7vw,86px);line-height:.91;letter-spacing:-.067em}.success h1 span{display:block;color:var(--indigo)}.success>p{max-width:580px;margin:0 auto 28px;color:#6c6870;font-size:14px;line-height:1.65}.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.primary,.secondary{min-height:52px;padding:0 18px;border-radius:13px;border:0;font-weight:750;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}.primary{background:var(--ink);color:#fff;box-shadow:0 14px 34px rgba(17,17,22,.15);transition:.2s}.primary:hover{transform:translateY(-2px)}.secondary{background:#ece9e2;color:#5e5a62}.receipt{margin-top:33px;padding:18px;border:1px solid rgba(17,17,22,.08);border-radius:17px;background:rgba(255,255,255,.62);text-align:left}.receipt-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-bottom:13px;border-bottom:1px solid rgba(17,17,22,.08)}.receipt-head strong{font-size:12px}.receipt-head span{color:#8a868e;font:500 8px "DM Mono",monospace}.receipt-lines div{min-height:38px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid rgba(17,17,22,.06);color:#77737b;font-size:9px}.receipt-lines div:last-child{border-bottom:0}.receipt-lines strong{color:var(--ink);font-weight:650}.demo-note{margin-top:14px;color:#9b979e;font-size:8px;line-height:1.5}.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}.confetti i{position:absolute;top:-30px;width:8px;height:14px;border-radius:3px;background:var(--indigo);opacity:.8;animation:fall linear infinite}.confetti i:nth-child(2n){background:var(--mint)}.confetti i:nth-child(3n){width:6px;height:10px;background:#111116}.download-toast{position:fixed;z-index:80;left:50%;bottom:24px;transform:translate(-50%,18px);opacity:0;padding:12px 16px;border-radius:12px;background:#111116;color:#fff;font-size:10px;box-shadow:0 16px 40px rgba(0,0,0,.2);transition:.3s}.download-toast.show{opacity:1;transform:translate(-50%,0)}
+    @keyframes cardIn{from{opacity:0;transform:translateY(28px) scale(.98);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}@keyframes checkPop{from{opacity:0;transform:scale(.55) rotate(-12deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes floatA{50%{transform:translate(50px,-25px)}}@keyframes floatB{50%{transform:translate(-35px,35px)}}@keyframes fall{to{transform:translateY(115vh) rotate(540deg)}}@media(max-width:620px){.nav-wrap{padding:0 10px}.brand span:last-child{display:none}.success{padding:34px 20px;border-radius:24px}.success h1{font-size:52px}.actions{flex-direction:column}.primary,.secondary{width:100%}.receipt{padding:14px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+  </style>
+  <link rel="stylesheet" href="/mobile-hardening.css?v=%VITE_BUILD_ID%" />
+</head>
+<body>
+  <header class="nav-wrap"><nav class="nav"><a class="brand" href="/"><span class="mark">↖<i></i></span><span>Guide<b>Cursor</b></span></a><a class="nav-download" data-purchase-download hidden href="/downloads">Download <span>↓</span></a></nav></header>
+  <main>
+    <div class="orb a"></div><div class="orb b"></div>
+    <div class="confetti" aria-hidden="true" id="confetti"></div>
+    <section class="success">
+      <div class="check">✓</div>
+      <span class="eyebrow">PAYMENT COMPLETE · DEMO</span>
+      <h1>Thank you.<span>GuideCursor is ready.</span></h1>
+      <p>Your demo purchase is complete. Nothing was actually charged, but the site now behaves like you own GuideCursor and unlocks the download area.</p>
+      <div class="actions"><button class="primary" id="download-now" type="button">Download GuideCursor <span>↓</span></button><a class="secondary" href="/downloads">Choose another platform</a></div>
+      <div class="receipt">
+        <div class="receipt-head"><strong>Demo receipt</strong><span id="receipt-id">GC-DEMO</span></div>
+        <div class="receipt-lines"><div><span>Plan</span><strong id="receipt-plan">Personal</strong></div><div><span>Payment method</span><strong id="receipt-method">Card</strong></div><div><span>Total</span><strong id="receipt-total">€0.00</strong></div><div><span>Status</span><strong style="color:#34745f">Paid · simulated</strong></div></div>
+      </div>
+      <div class="demo-note">The downloaded installer is also simulated and contains no executable software.</div>
+    </section>
+  </main>
+  <div class="download-toast" id="toast">Demo download started ↓</div>
+  <script>
+    const purchase=window.GuideCursorPurchase?.read();
+    window.GuideCursorTitle?.setBase('Thank you — GuideCursor');
+    if(!purchase){location.replace('/pricing')}else{
+      document.querySelector('#receipt-id').textContent=purchase.receipt||'GC-DEMO';
+      document.querySelector('#receipt-plan').textContent=purchase.plan+(purchase.billing==='annual'?' · Annual':' · Monthly');
+      document.querySelector('#receipt-method').textContent=purchase.paymentMethod||'Demo payment';
+      document.querySelector('#receipt-total').textContent=new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR'}).format(purchase.total||0);
+    }
+    const isWindows=/Windows/i.test(navigator.userAgent||'');const platform=isWindows?'windows':'mac';
+    document.querySelector('#download-now').textContent=isWindows?'Download for Windows 11 ↓':'Download for macOS ↓';
+    document.querySelector('#download-now').addEventListener('click',()=>{
+      window.GuideCursorPurchase.fakeDownload(platform);
+      const t=document.querySelector('#toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);
+    });
+    const confetti=document.querySelector('#confetti'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const confettiCount=reduceMotion?0:(matchMedia('(max-width:620px)').matches?16:34);
+    for(let i=0;i<confettiCount;i++){const el=document.createElement('i');el.style.left=(Math.random()*100)+'%';el.style.animationDuration=(3.8+Math.random()*4)+'s';el.style.animationDelay=(-Math.random()*5)+'s';el.style.transform='rotate('+(Math.random()*180)+'deg)';confetti.appendChild(el)}
+  </script>
+  <script src="/legal-ui.js?v=%VITE_BUILD_ID%"></script>
+  <script src="/mobile-hardening.js?v=%VITE_BUILD_ID%"></script>
+</body>
+</html>
