@@ -1,0 +1,88 @@
+/* GuideCursor deployment update guard v2 */
+.gc-update-v2[hidden]{display:none!important}
+.gc-update-v2{
+  position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:22px;
+  background:
+    radial-gradient(circle at 50% 18%,rgba(103,88,244,.16),transparent 34%),
+    rgba(9,9,13,.82);
+  backdrop-filter:blur(22px) saturate(120%);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  animation:gcUpdateBackdrop .36s ease both;
+}
+.gc-update-v2:before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.17;
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:62px 62px;mask-image:radial-gradient(circle at 50% 45%,#000,transparent 72%);
+}
+.gc-update-card{
+  position:relative;width:min(590px,100%);overflow:hidden;padding:34px;border-radius:27px;
+  border:1px solid rgba(255,255,255,.13);
+  background:linear-gradient(150deg,rgba(29,28,37,.985),rgba(14,14,19,.995));
+  color:#fff;
+  box-shadow:0 55px 150px rgba(0,0,0,.58),0 0 0 1px rgba(103,88,244,.08),0 0 100px rgba(103,88,244,.12);
+  animation:gcUpdateCardIn .58s cubic-bezier(.22,1,.36,1) both;
+}
+.gc-update-card:before{
+  content:"";position:absolute;width:430px;height:430px;right:-200px;top:-250px;border-radius:50%;
+  background:radial-gradient(circle,rgba(103,88,244,.58),rgba(103,88,244,.07) 48%,transparent 70%);
+  pointer-events:none;animation:gcUpdateOrb 6s ease-in-out infinite;
+}
+.gc-update-card:after{
+  content:"";position:absolute;width:300px;height:300px;left:-180px;bottom:-180px;border-radius:50%;
+  background:radial-gradient(circle,rgba(160,241,213,.18),transparent 68%);pointer-events:none;
+}
+.gc-update-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:26px}
+.gc-update-badge{
+  display:inline-flex;align-items:center;gap:9px;padding:8px 11px;border-radius:999px;
+  border:1px solid rgba(160,241,213,.18);background:rgba(160,241,213,.08);color:#a0f1d5;
+  font:500 9px "DM Mono",monospace;letter-spacing:.12em;text-transform:uppercase;
+}
+.gc-update-badge i{width:7px;height:7px;border-radius:50%;background:#a0f1d5;box-shadow:0 0 0 0 rgba(160,241,213,.2);animation:gcUpdatePulse 1.5s ease-in-out infinite}
+.gc-update-count{
+  min-width:86px;height:58px;padding:0 14px;border-radius:18px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.035);display:flex;flex-direction:column;align-items:flex-end;justify-content:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+.gc-update-count strong{font-size:25px;line-height:1;letter-spacing:-.04em;color:#fff}
+.gc-update-count span{margin-top:4px;color:rgba(255,255,255,.36);font:500 8px "DM Mono",monospace;letter-spacing:.09em;text-transform:uppercase}
+.gc-update-copy{position:relative}
+.gc-update-copy h2{margin:0;max-width:470px;font-size:clamp(38px,7vw,58px);line-height:.96;letter-spacing:-.06em;font-weight:640}
+.gc-update-copy h2 span{color:#a0f1d5}
+.gc-update-copy p{max-width:500px;margin:17px 0 0;color:rgba(255,255,255,.56);font-size:13px;line-height:1.62}
+.gc-update-timeline{
+  position:relative;margin:26px 0 20px;padding:16px;border-radius:17px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);
+}
+.gc-update-timeline-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;color:rgba(255,255,255,.38);font:500 8px "DM Mono",monospace;letter-spacing:.1em;text-transform:uppercase}
+.gc-update-track{position:relative;height:3px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.gc-update-track i{position:absolute;inset:0;transform-origin:left center;background:linear-gradient(90deg,#a0f1d5,#8c81ff 72%,#fff);box-shadow:0 0 18px rgba(160,241,213,.25);animation:gcUpdateTrackIn .9s cubic-bezier(.22,1,.36,1) .2s both}
+.gc-update-track:after{content:"";position:absolute;top:-8px;bottom:-8px;width:95px;left:-110px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.78),transparent);filter:blur(7px);animation:gcUpdateSweep 1.75s linear infinite}
+.gc-update-builds{position:relative;display:flex;align-items:center;gap:9px;margin:13px 0 0;color:rgba(255,255,255,.4);font:500 8px "DM Mono",monospace;letter-spacing:.06em}
+.gc-update-builds b{color:rgba(255,255,255,.74);font-weight:500}
+.gc-update-builds i{flex:1;height:1px;background:linear-gradient(90deg,rgba(160,241,213,.24),rgba(140,129,255,.42),transparent)}
+.gc-update-refresh{
+  position:relative;width:100%;min-height:57px;border:0;border-radius:15px;background:#fff;color:#111116;
+  display:flex;align-items:center;justify-content:center;gap:10px;font-weight:760;cursor:pointer;
+  box-shadow:0 16px 38px rgba(0,0,0,.24);overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;
+}
+.gc-update-refresh:before{content:"";position:absolute;top:-20px;bottom:-20px;width:100px;left:-120px;background:linear-gradient(90deg,transparent,rgba(103,88,244,.16),transparent);transform:skewX(-16deg);animation:gcUpdateButtonSweep 2.6s ease-in-out infinite}
+.gc-update-refresh:hover{transform:translateY(-2px);box-shadow:0 20px 45px rgba(0,0,0,.28)}.gc-update-refresh:active{transform:translateY(1px)}
+.gc-update-refresh:disabled{cursor:wait;opacity:.72}.gc-update-refresh .gc-update-icon{font-size:18px;line-height:1}.gc-update-refresh.is-loading .gc-update-icon{animation:gcUpdateSpin .8s linear infinite}
+.gc-update-note{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:13px;color:rgba(255,255,255,.28);font:500 8px "DM Mono",monospace;letter-spacing:.07em;text-transform:uppercase}
+.gc-update-note i{width:4px;height:4px;border-radius:50%;background:#a0f1d5}
+body.gc-update-v2-open{overflow:hidden!important}
+@keyframes gcUpdateBackdrop{from{opacity:0}to{opacity:1}}
+@keyframes gcUpdateCardIn{from{opacity:0;transform:translateY(24px) scale(.975);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+@keyframes gcUpdatePulse{0%,100%{box-shadow:0 0 0 0 rgba(160,241,213,.1);opacity:.55}50%{box-shadow:0 0 0 8px rgba(160,241,213,0);opacity:1}}
+@keyframes gcUpdateOrb{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-28px,22px) scale(1.08)}}
+@keyframes gcUpdateTrackIn{from{transform:scaleX(.05);opacity:.2}to{transform:scaleX(1);opacity:1}}
+@keyframes gcUpdateSweep{0%{left:-110px;opacity:0}16%{opacity:1}84%{opacity:1}100%{left:calc(100% + 20px);opacity:0}}
+@keyframes gcUpdateButtonSweep{0%,58%{left:-120px;opacity:0}66%{opacity:1}100%{left:calc(100% + 30px);opacity:0}}
+@keyframes gcUpdateSpin{to{transform:rotate(360deg)}}
+@media(max-width:620px){
+  .gc-update-v2{padding:12px}.gc-update-card{padding:25px 21px;border-radius:22px}.gc-update-top{margin-bottom:21px}
+  .gc-update-count{min-width:74px;height:53px}.gc-update-copy h2{font-size:39px}.gc-update-copy p{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .gc-update-v2,.gc-update-card,.gc-update-badge i,.gc-update-card:before,.gc-update-track i,.gc-update-track:after,.gc-update-refresh:before,.gc-update-refresh .gc-update-icon{animation:none!important}
+}
