@@ -124,3 +124,7 @@ Added this handoff file. Implemented optional macOS Zoom controls with explicit 
 ## 2 October additional verification
 
 The user confirmed GuideCursor displays “Accessibility enabled,” and the process was observed running from the personal Applications folder. Actual Finder control matching has not yet been reported. Added stale-window validation before activating guidance and human-readable control regions; six core checks (twelve assertions) and release build pass. The computer-control tool is still denied separate permissions, so do not claim direct UI verification.
+
+## Draft PR and CI status
+
+Draft PR: https://github.com/Teesxm/guidecursor/pull/1. Branch `alberto/mvp-development` was pushed; main remains unchanged. Initial macOS CI failed in `Model.swift` because the GitHub compiler rejected a weak timer capture in a concurrent Task. Adjusted capture to `[weak model = self]` and local release build/checks pass; verify the new GitHub CI run before claiming the issue resolved. The original website CI passed.

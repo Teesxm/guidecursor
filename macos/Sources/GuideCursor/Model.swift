@@ -34,7 +34,7 @@ import GuideCursorCore
     init() {
         refreshApps()
         timer = Timer.scheduledTimer(withTimeInterval: 0.18, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            Task { @MainActor [weak model = self] in model?.tick() }
         }
         monitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in
             Task { @MainActor in

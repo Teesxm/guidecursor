@@ -50,3 +50,7 @@ Added comprehensive CLAUDE.md for continuity. Added user-triggered macOS Zoom sh
 ## 2 October target validation
 
 After the user confirmed native Accessibility permission, added a guard against selecting a target from a window that changed while the candidate list was open. Replaced raw target coordinates in candidate rows with relative window regions to distinguish similar controls more clearly. Split the main app menu from the menu-bar status item so each has its own menu. Six core checks (twelve assertions) and release build pass; the Finder target remains awaiting live user feedback.
+
+## CI compiler difference
+
+The first GitHub macOS build used a different Swift compiler and rejected a weak timer capture inside a concurrently executing Task. The local compiler had accepted it. Changed the Task capture list to bind a separate weak model reference. Local release build and six core checks pass; the GitHub rerun is the required verification.
