@@ -52,20 +52,38 @@ enum Accessibility {
         AXUIElementSetMessagingTimeout(app, 0.15)
         guard let window = focusedWindow(pid) else { return Scan(controls: [], window: nil, limited: false) }
         let windowFrame = rect(window)
-        let allowed: Set<String> = [kAXButtonRole, kAXCheckBoxRole, kAXRadioButtonRole, kAXPopUpButtonRole, kAXMenuButtonRole, kAXTextFieldRole, kAXComboBoxRole, "AXLink"]
-        var stack: [(AXUIElement, Int)] = [(window, 0)], visited = Set<CFHashCode>(), controls: [Control] = []
+        var stack: [(element: AXUIElement, parent: Int?, depth: Int)] = [(window, nil, 0)]
+        var visited = Set<CFHashCode>(), nodes: [ControlNode] = [], elements: [AXUIElement] = []
         let deadline = Date().addingTimeInterval(3)
-        while let (node, depth) = stack.popLast(), visited.count < 1200, Date() < deadline {
+        while let item = stack.popLast(), visited.count < 1200, Date() < deadline {
             // Hash collisions only omit candidates; they can never select a wrong target.
-            guard visited.insert(CFHash(node)).inserted, depth < 30 else { continue }
+            let node = item.element
+            guard visited.insert(CFHash(node)).inserted, item.depth < 30 else { continue }
             let role = value(node, kAXRoleAttribute) as? String ?? ""
-            if allowed.contains(role), enabled(node), let frame = rect(node) {
-                let label = [kAXTitleAttribute, kAXDescriptionAttribute, kAXHelpAttribute].compactMap { value(node, $0) as? String }.first { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                if let label { controls.append(Control(id: controls.count, label: String(label.prefix(160)), role: role, region: windowFrame.map { Guidance.region(target: frame, window: $0) } ?? "position unknown", element: node, rect: frame)) }
+            let id = nodes.count
+            nodes.append(ControlNode(
+                id: id, parent: item.parent, role: role,
+                title: value(node, kAXTitleAttribute) as? String,
+                description: value(node, kAXDescriptionAttribute) as? String,
+                help: value(node, kAXHelpAttribute) as? String,
+                staticText: role == "AXStaticText" ? value(node, kAXValueAttribute) as? String : nil,
+                frame: rect(node), enabled: enabled(node)
+            ))
+            elements.append(node)
+
+            // Finder and other outline views can expose rows separately from children.
+            var children = value(node, kAXVisibleChildrenAttribute) as? [AXUIElement] ?? []
+            if children.isEmpty { children = value(node, kAXChildrenAttribute) as? [AXUIElement] ?? [] }
+            if role == "AXOutline" || role == "AXTable" {
+                let visibleRows = value(node, kAXVisibleRowsAttribute) as? [AXUIElement] ?? []
+                children += visibleRows.isEmpty ? (value(node, kAXRowsAttribute) as? [AXUIElement] ?? []) : visibleRows
             }
-            if let children = value(node, kAXChildrenAttribute) as? [AXUIElement] {
-                stack.append(contentsOf: children.reversed().map { ($0, depth + 1) })
-            }
+            stack.append(contentsOf: children.reversed().map { ($0, id, item.depth + 1) })
+        }
+        let controls = ControlIndex.candidates(in: nodes).map { candidate in
+            Control(id: candidate.nodeID, label: candidate.label, role: candidate.role,
+                    region: windowFrame.map { Guidance.region(target: candidate.frame, window: $0) } ?? "position unknown",
+                    element: elements[candidate.nodeID], rect: candidate.frame)
         }
         return Scan(controls: controls, window: window, limited: !stack.isEmpty)
     }

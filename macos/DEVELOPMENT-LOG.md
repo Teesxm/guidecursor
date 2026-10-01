@@ -54,3 +54,9 @@ After the user confirmed native Accessibility permission, added a guard against 
 ## CI compiler difference
 
 The first GitHub macOS build used a different Swift compiler and rejected a weak timer capture inside a concurrently executing Task. The local compiler had accepted it. Changed the Task capture list to bind a separate weak model reference. Local release build and six core checks pass; the GitHub rerun is the required verification.
+
+## Cross-app control discovery
+
+The first live Finder test showed a visible Downloads sidebar item but no GuideCursor match. This exposed a general limitation in how controls were indexed: interactive rows can contain their visible names in child static-text elements. Extended the bounded scanner to follow visible children and outline/table rows, then added an app-independent index that associates nested text with the nearest interactive ancestor. There is no Finder-specific selector or hardcoded Downloads behavior. Synthetic accessibility-tree checks now cover an outline row, a button in another tree shape, and the rule that editable field contents are not used as labels. Nine core checks (eighteen assertions), a release build and signature verification pass. The changed binary has not yet been tried against the real Finder window, so this is a reasoned fix rather than confirmed runtime resolution.
+
+The goal is broad coverage through shared macOS accessibility conventions. Apps that do not expose enough usable metadata will still need a future, permissioned screenshot/vision fallback. Competitor material was reviewed for positioning: Clicky offers a screen-aware cursor companion; Be My Eyes Desktop emphasizes AI screen description. GuideCursor's proposed distinction is accessibility-specific, continuous guidance of the user's own pointer and human-controlled clicks across ordinary apps. This positioning does not prove uniqueness or accessibility effectiveness.

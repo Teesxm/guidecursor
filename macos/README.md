@@ -42,7 +42,7 @@ Model replies may only nominate IDs from that scan. The user confirms the target
 
 - Native AppKit/SwiftUI macOS app and an installable local `.app` bundle.
 - Accessibility permission flow and selection of an existing application's window.
-- Bounded background accessibility-tree traversal with labelled control candidates.
+- Bounded background accessibility-tree traversal with labelled control candidates, including text nested in standard rows and cells.
 - Label search and optional local Ollama target-selection adapter.
 - Click-through target highlight and pointer-following companion across displays.
 - Real-time geometric directions using live target positions and system speech.
@@ -52,7 +52,7 @@ Model replies may only nominate IDs from that scan. The user confirms the target
 
 This is a desktop foundation, not the completed course MVP. No automatic multi-step planning, screenshot fallback, voice input, pointer snapping, motor stabilization or live captions yet. Hearing remains TBD in the project draft. The first scope is visual guidance in a few selected desktop apps.
 
-Some applications omit accessibility labels or expose only part of their interface. Duplicate labels require user selection. The app does not yet detect all occlusion, same-window content changes, or whether a click successfully completed an action. Movement guidance is not validated for blind users; conduct supervised testing before claiming accessibility outcomes. Relative-window regions distinguish duplicate labels but need validation with intended users.
+Control discovery uses shared macOS accessibility roles and hierarchy, with no app-specific rules. It should transfer to other apps that expose their controls through the accessibility API, but coverage is not universal. Some applications omit accessibility labels or expose only part of their interface; screenshot/vision fallback is future work and would require Screen Recording permission. Duplicate labels require user selection. The app does not yet detect all occlusion, same-window content changes, or whether a click successfully completed an action. Movement guidance is not validated for blind users; conduct supervised testing before claiming accessibility outcomes. Relative-window regions distinguish duplicate labels but need validation with intended users.
 
 Next: verify the native overlay and control discovery with permission on this Mac; test a local model; verify the optional macOS Zoom shortcut; complete and validate one multi-step desktop journey with synthetic data. Keep the working website as a presentation asset.
 
@@ -63,6 +63,6 @@ swift run --package-path macos GuideCursorCoreChecks
 ./macos/scripts/build.sh
 ```
 
-Core checks cover pointer directions, multi-display coordinate conversion, target regions, no-match handling and rejecting invented model IDs. Permission-dependent integration, speech quality and different applications require live testing. A successful build does not establish those behaviors.
+Core checks cover pointer directions, multi-display coordinate conversion, target regions, no-match handling, rejecting invented model IDs, and generic accessibility-tree cases for nested row text and labelled buttons. Permission-dependent integration, speech quality and different applications require live testing. A successful build does not establish those behaviors.
 
 API references: [Apple accessibility attributes](https://developer.apple.com/documentation/applicationservices/1462085-axuielementcopyattributevalue), [NSPanel](https://developer.apple.com/documentation/appkit/nspanel), [click-through windows](https://developer.apple.com/documentation/appkit/nswindow/ignoresmouseevents), [Ollama chat API](https://docs.ollama.com/api/chat).

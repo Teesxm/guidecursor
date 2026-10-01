@@ -41,8 +41,8 @@ Currently label search is deterministic, not AI. Keep that distinction visible. 
 - Alberto's local branch: `alberto/mvp-development`
 - Original baseline: `767864a510ac41cd3a07eeece4cd7fc25434f2f3`.
 - GitHub connector account: `tenochespinosa-stack`. Rechecked after invitation acceptance: repository `push=true`, collaborator permission `write`.
-- Connector access is distinct from command-line Git credentials. No terminal push authentication has been tested; `gh` was not on PATH.
-- Source work is local and uncommitted as of the handoff. No branch push, PR, merge or deployment has happened.
+- Command-line Git push succeeded on Alberto's branch. `gh` is not on PATH, so use the GitHub web/API to inspect PR checks if needed.
+- Draft PR: https://github.com/Teesxm/guidecursor/pull/1. No merge or deployment has happened.
 - Keep `main` presentation-ready. Develop on the feature branch, test, then use a reviewable PR for collaboration. Do not overwrite teammates' changes or force-push shared history.
 - README says the existing Vercel project originally used `Teesxm/dbisassignment`; production linkage to the new repo is unverified. Do not change deployment as a side effect of desktop development.
 - Do not put private WhatsApp exports, personal documents or credentials in this public repository.
@@ -55,16 +55,17 @@ Root: Vite static HTML/CSS/JavaScript website, with retained React/TypeScript fi
 
 - `Sources/GuideCursor/Application.swift`: app lifecycle, main window, app picker, task field, candidate selection, menu-bar Stop/Quit.
 - `Model.swift`: observable state, bounded background scans, explicit target confirmation, generation tokens to reject stale work, live target validation, geometric guidance/speech, click-near-target handling.
-- `Accessibility.swift`: accessibility permission-independent helpers, focused window/sheet lookup, labelled controls, bounded traversal (time/nodes/depth). Reads labels/roles/geometry, not field values. Labels can still contain personal information.
+- `Accessibility.swift`: accessibility permission-independent helpers, focused window/sheet lookup, bounded traversal (time/nodes/depth), including visible children and outline/table rows. Reads labels/roles/geometry and static text, never editable field values. Labels and static text can still contain personal information.
 - `Magnification.swift`: explicit user-confirmed Option–Command–8 system Zoom shortcut; requires prior macOS Zoom keyboard setup and Accessibility permission. Does not claim the effect succeeded.
 - `Overlay.swift`: floating, click-through target outline and companion near the real pointer; does not warp the pointer or click.
 - `Ollama.swift`: optional loopback `/api/chat` adapter; sends task and at most 150 controls, validates returned IDs against the scan, requires the person to select a candidate. No screenshots. An independently configured Ollama service could use cloud models; configure local-only before testing sensitive context.
 - `Sources/GuideCursorCore/Guidance.swift`: coordinate conversion, directions, simple label scoring, model ID validation.
+- `Sources/GuideCursorCore/ControlIndex.swift`: app-independent accessibility-tree index. It attaches visible text nested inside a row/cell/button to that interactive ancestor. This is a cross-app rule, not a Finder-specific selector.
 - `Tests/GuideCursorCoreTests/main.swift`: executable check harness; full XCTest is unavailable in this Mac's Command Line Tools.
 - `scripts/build.sh`: builds and bundles an ad-hoc signed `.app`.
 - `README.md`: native setup, limitations and test instructions.
 - `DEVELOPMENT-LOG.md`: working notes for the course log.
-- `.github/workflows/macos.yml`: PR-triggered macOS build/check job; not run on GitHub yet.
+- `.github/workflows/macos.yml`: PR-triggered macOS build/check job. Initial run found a compiler capture issue; a fix was pushed. Recheck current run.
 
 ### Implemented baseline, not end-to-end verified
 
@@ -77,10 +78,10 @@ Click detection says only that the user clicked near a target; it does not prove
 - macOS 26.6.2 / Apple Silicon / 16 GB RAM on the development machine.
 - Swift 6.3.3 from `/Library/Developer/CommandLineTools`; Swift package language mode 5.9.
 - Release build passed. Ad-hoc signature verified, including a freshly extracted packaged copy.
-- Six core checks with twelve assertions passed: geometry, display conversion, matching/no-match, rejecting invented/duplicate model IDs. Update counts if tests change.
+- Nine core checks with eighteen assertions passed: geometry, display conversion, matching/no-match, rejecting invented/duplicate model IDs, generic row/cell/static-text indexing, privacy of editable fields, and labelled buttons.
 - `git diff --check` passed.
 - Live app launch/UI inspection was blocked by the computer-use tool's missing macOS permissions. **No actual cross-application overlay, speech, accessibility-tree result, Zoom, model inference or completed workflow has been verified.** Do not convert code inspection into a claim of working runtime behavior.
-- GuideCursor itself separately requires the user to grant Accessibility access. No Screen Recording permission is needed for the AX-only baseline. Do not enable permissions silently or claim they are already granted.
+- The user confirmed that the installed GuideCursor says “Accessibility enabled.” No Screen Recording permission is needed for the AX-only baseline. A screenshot/vision fallback would require its own permission flow.
 - Ollama command not found and no service listening at `127.0.0.1:11434`; no model downloaded or tested.
 - Do not repeatedly invoke the unavailable computer-control tool; it stalled twice. The user prefers direct tools/local inspection over token-heavy browser viewers. Use UI only when it answers an actual visual/interaction question and permissions are available.
 - Building in Documents can cause the macOS file provider to re-add Finder metadata and invalidate a later strict signature check. Strip generated bundle metadata immediately before signing/packaging; ZIP without extended attributes. Never strip attributes from unrelated user files.
@@ -103,7 +104,7 @@ User-facing artifacts currently reside outside the repo at `/Users/alberto/Docum
 ## Next work, in order
 
 1. Read current git diff and this file; preserve work left by the previous assistant. The macOS Zoom shortcut integration is implemented and compiles; test it after the user configures Zoom. Do not claim the shortcut succeeded without observing it.
-2. GuideCursor Accessibility access is enabled (user-confirmed); verify a real control in Finder or another selected app; investigate empty/duplicate controls, foreground switching, scrolling, sheets, overlays and multi-monitor placement. Record evidence and limitations.
+2. The user's first live Finder query for “downloads” returned “No match” although Downloads was visible. An app-independent tree indexing fix now handles row/cell labels stored in child static text, with synthetic checks and a full build. The installed app may still be the older version. Validate the updated build once, then investigate any remaining tree/foreground/overlay issues with evidence.
 3. Test a real local model on synthetic/public interfaces. Validate latency, ambiguous tasks, no-match behavior, invalid replies and unavailable model handling. Do not hardcode targets and describe that as AI.
 4. Deliver one coherent multi-step desktop journey. Keep each click user-controlled; re-observe after it. The early PDF's three examples (Gmail attachment, Finder folder, Chrome downloads) are proposals, not already built integrations or three mandatory requirements.
 5. Refine assistance settings and accessibility of GuideCursor itself. Current relative-window region descriptions help distinguish duplicates but still need validation with blind users. Do not grow profiles/features at the expense of the core journey.
@@ -123,8 +124,12 @@ Added this handoff file. Implemented optional macOS Zoom controls with explicit 
 
 ## 2 October additional verification
 
-The user confirmed GuideCursor displays “Accessibility enabled,” and the process was observed running from the personal Applications folder. Actual Finder control matching has not yet been reported. Added stale-window validation before activating guidance and human-readable control regions; six core checks (twelve assertions) and release build pass. The computer-control tool is still denied separate permissions, so do not claim direct UI verification.
+The user confirmed GuideCursor displays “Accessibility enabled,” and the process was observed running from the personal Applications folder. The first Finder “downloads” query returned no match despite a visible Downloads row. Added stale-window validation before activating guidance and human-readable control regions. The computer-control tool is still denied separate permissions, so do not claim direct UI verification of the fix.
 
 ## Draft PR and CI status
 
 Draft PR: https://github.com/Teesxm/guidecursor/pull/1. Branch `alberto/mvp-development` was pushed; main remains unchanged. Initial macOS CI failed in `Model.swift` because the GitHub compiler rejected a weak timer capture in a concurrent Task. Adjusted capture to `[weak model = self]` and local release build/checks pass; verify the new GitHub CI run before claiming the issue resolved. The original website CI passed.
+
+## Cross-app discovery update
+
+The first failed Finder test exposed a general AX-tree issue: selectable rows can have their text in nested `AXStaticText` rather than in the row's own title. The scanner now traverses visible children and outline/table rows, then the pure indexer maps child text to the nearest interactive ancestor. It contains no Finder bundle-ID or hardcoded “Downloads” path. Synthetic tree checks cover an outline row, a labelled button in a different tree shape, and absence of editable text in candidate labels; nine checks/eighteen assertions plus a release build pass. Real cross-app behavior and the updated Finder case remain unverified until a new app build is run with permission. The broad design is AX first, with a permissioned screenshot/vision fallback later for apps that expose too little AX metadata; never promise universal coverage from AX alone.
