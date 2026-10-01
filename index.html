@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111116" />
+  <meta name="description" content="GuideCursor is an assistive cursor that helps people use mainstream software through the normal workflow." />
+  <meta name="guidecursor-build" content="%VITE_BUILD_ID%" />
+  <title>GuideCursor — Assistive cursor guidance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--paper:#f4f2ed;--paper2:#e9e6de;--ink:#111116;--muted:#6c6870;--indigo:#6758f4;--indigo2:#8c81ff;--mint:#a0f1d5;--line:rgba(17,17,22,.13);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--paper)}body{margin:0;min-width:320px;overflow-x:hidden;background:var(--paper);color:var(--ink)}a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}::selection{background:var(--indigo);color:#fff}
+    .nav-wrap{position:fixed;z-index:50;top:18px;left:0;right:0;padding:0 24px;pointer-events:none}.nav{pointer-events:auto;width:min(1180px,100%);height:62px;margin:auto;padding:8px 10px 8px 15px;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.55);border-radius:18px;background:rgba(247,246,242,.76);backdrop-filter:blur(24px) saturate(150%);box-shadow:0 14px 42px rgba(18,18,25,.07)}.brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:19px;letter-spacing:-.045em}.brand b{color:var(--indigo)}.mark{position:relative;width:35px;height:35px;border-radius:10px;background:var(--ink);display:grid;place-items:center;color:#fff}.mark i{position:absolute;right:6px;top:6px;width:6px;height:6px;border-radius:50%;background:var(--mint)}.nav-links{display:flex;align-items:center;gap:28px;font-size:13px;font-weight:600}.nav-links>a:not(.nav-cta){opacity:.58;transition:.2s}.nav-links>a:not(.nav-cta):hover{opacity:1}.nav-cta{position:relative;isolation:isolate;overflow:hidden;padding:13px 15px;border-radius:12px;background:linear-gradient(135deg,#111116 15%,#252036 58%,#111116 100%);color:#fff;display:flex;gap:7px;align-items:center;box-shadow:0 0 0 1px rgba(160,241,213,.13),0 0 22px rgba(103,88,244,.24),0 9px 22px rgba(17,17,22,.14);animation:tryCtaGlow 2.25s ease-in-out infinite;transition:transform .2s ease,box-shadow .2s ease}
+    .nav-cta:before{content:"";position:absolute;top:-45%;bottom:-45%;left:-58px;width:38px;z-index:-1;transform:rotate(17deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);filter:blur(3px);animation:tryCtaSweep 3.2s cubic-bezier(.55,.05,.35,1) infinite;pointer-events:none}
+    .nav-cta:after{content:"";position:absolute;right:8px;top:7px;width:5px;height:5px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.08),0 0 13px rgba(160,241,213,.75);animation:tryCtaSpark 1.65s ease-in-out infinite;pointer-events:none}
+    .nav-cta:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 0 0 1px rgba(160,241,213,.22),0 0 34px rgba(103,88,244,.34),0 13px 28px rgba(17,17,22,.18)}
+    .nav-cta span{display:inline-block;animation:tryArrowNudge 1.55s ease-in-out infinite}.nav-download{opacity:1!important;padding:11px 12px!important;border-radius:10px;background:#dff8ef;color:#245c4b!important;box-shadow:inset 0 0 0 1px rgba(36,92,75,.08);font-weight:750}.nav-download:hover{background:#d4f5e8!important;color:#1f5947!important}
+    @keyframes tryCtaGlow{0%,100%{box-shadow:0 0 0 1px rgba(160,241,213,.11),0 0 18px rgba(103,88,244,.2),0 9px 22px rgba(17,17,22,.14)}50%{box-shadow:0 0 0 1px rgba(160,241,213,.24),0 0 31px rgba(103,88,244,.34),0 10px 26px rgba(17,17,22,.16)}}
+    @keyframes tryCtaSweep{0%,56%{left:-58px;opacity:0}62%{opacity:.9}82%{left:calc(100% + 32px);opacity:.55}100%{left:calc(100% + 32px);opacity:0}}
+    @keyframes tryCtaSpark{0%,100%{opacity:.35;transform:scale(.75)}50%{opacity:1;transform:scale(1.25)}}
+    @keyframes tryArrowNudge{0%,100%{transform:translate(0,0)}50%{transform:translate(2px,-2px)}}.nav-toggle{display:none;background:none;border:0;width:42px;height:42px}.nav-toggle span{display:block;width:20px;height:1px;background:var(--ink);margin:5px auto}
+    .hero{position:relative;min-height:1280px;padding:180px 24px 96px;overflow:hidden;background:radial-gradient(circle at 50% -8%,rgba(103,88,244,.2),transparent 34%),linear-gradient(180deg,#faf8f4 0%,var(--paper) 78%)}.grid{position:absolute;inset:0;opacity:.35;background-image:linear-gradient(rgba(17,17,22,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(17,17,22,.045) 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(to bottom,#000,transparent 74%)}.orb{position:absolute;border-radius:50%;pointer-events:none;will-change:transform}.orb.a{width:280px;height:280px;right:3%;top:220px;background:rgba(160,241,213,.28);filter:blur(3px)}.orb.b{width:340px;height:340px;left:-3%;top:670px;background:rgba(103,88,244,.11);filter:blur(4px)}.hero-copy{position:relative;z-index:2;width:min(1240px,100%);margin:auto;text-align:center;will-change:transform,opacity}.eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:26px;color:#5e5b63;font:500 11px "DM Mono",monospace;letter-spacing:.15em;text-transform:uppercase}.eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.3)}h1{max-width:1120px;margin:0 auto;font-size:clamp(58px,7.7vw,120px);line-height:.9;letter-spacing:-.075em;font-weight:650}h1 span{display:block;color:var(--indigo)}.hero-copy>p{max-width:720px;margin:32px auto 0;color:#5c5962;font-size:clamp(18px,1.55vw,23px);line-height:1.55;letter-spacing:-.025em}.hero-actions{display:flex;justify-content:center;align-items:center;gap:25px;margin-top:34px}.primary{position:relative;isolation:isolate;overflow:hidden;display:inline-flex;align-items:center;gap:10px;padding:17px 22px;border-radius:14px;background:linear-gradient(135deg,#111116 5%,#28213d 55%,#17161e 100%);color:#fff;font-size:14px;font-weight:700;box-shadow:0 0 0 1px rgba(160,241,213,.13),0 0 30px rgba(103,88,244,.24),0 14px 34px rgba(17,17,22,.16);animation:heroTryGlow 2.35s ease-in-out infinite;transition:transform .2s ease,box-shadow .2s ease}
+    .primary:before{content:"";position:absolute;inset:-2px;z-index:-2;border-radius:inherit;background:linear-gradient(115deg,rgba(160,241,213,.5),rgba(103,88,244,.56),rgba(160,241,213,.18));opacity:.32;filter:blur(9px);animation:heroTryAura 2.35s ease-in-out infinite}
+    .primary:after{content:"";position:absolute;top:-60%;bottom:-60%;left:-68px;width:44px;z-index:-1;transform:rotate(18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.56),transparent);filter:blur(3px);animation:heroTrySweep 3s ease-in-out infinite}
+    .primary:hover{transform:translateY(-3px) scale(1.025);box-shadow:0 0 0 1px rgba(160,241,213,.24),0 0 44px rgba(103,88,244,.38),0 18px 42px rgba(17,17,22,.19)}
+    .primary span{display:inline-block;animation:tryArrowNudge 1.55s ease-in-out infinite}
+    @keyframes heroTryGlow{0%,100%{box-shadow:0 0 0 1px rgba(160,241,213,.12),0 0 25px rgba(103,88,244,.22),0 14px 34px rgba(17,17,22,.16)}50%{box-shadow:0 0 0 1px rgba(160,241,213,.25),0 0 43px rgba(103,88,244,.38),0 16px 38px rgba(17,17,22,.18)}}
+    @keyframes heroTryAura{0%,100%{opacity:.24;transform:scale(.96)}50%{opacity:.5;transform:scale(1.04)}}
+    @keyframes heroTrySweep{0%,48%{left:-68px;opacity:0}57%{opacity:.9}80%{left:calc(100% + 35px);opacity:.6}100%{left:calc(100% + 35px);opacity:0}}.secondary{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:650}
+    .demo-wrap{position:relative;z-index:5;width:min(1120px,92vw);margin:84px auto 0;transform-origin:center top;will-change:transform}.demo-shell{padding:8px;border-radius:26px;border:1px solid rgba(255,255,255,.95);background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(219,215,250,.78));box-shadow:0 52px 110px rgba(56,44,130,.18),0 8px 28px rgba(17,17,22,.08)}.demo-top{height:48px;padding:0 12px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;color:#67636b}.traffic{display:flex;gap:6px}.traffic i{width:9px;height:9px;border-radius:50%;background:#c8c4c1}.demo-title{font-size:11px;font-weight:700}.privacy{justify-self:end;display:flex;align-items:center;gap:7px;font-size:10px;font-weight:650}.demo-stage{position:relative;min-height:500px;overflow:hidden;border-radius:20px;background:#f8f8f7;display:grid;grid-template-columns:220px 1fr}.demo-side{padding:34px 18px;background:#17171c;color:#fff;display:flex;flex-direction:column;gap:6px}.demo-side>span{margin:0 10px 14px;color:rgba(255,255,255,.42);font:500 9px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}.task{position:relative;border:0;background:transparent;color:rgba(255,255,255,.58);border-radius:12px;padding:13px 12px;display:flex;align-items:center;gap:10px;text-align:left;font-size:12px;cursor:pointer}.task.active{background:rgba(255,255,255,.08);color:#fff}.task.active:before{content:"";position:absolute;left:-2px;width:4px;height:18px;border-radius:99px;background:var(--mint)}.mail{position:absolute;left:calc(50% + 110px);top:50%;transform:translate(-50%,-48%);width:540px;height:310px;border-radius:18px;border:1px solid #e1dfdc;background:#fff;box-shadow:0 20px 50px rgba(17,17,22,.1);overflow:visible}.mail-head{height:48px;padding:0 18px;border-bottom:1px solid #efeeec;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700}.mail-head div{display:flex;gap:6px}.mail-head i{width:6px;height:6px;border-radius:50%;background:#c9c7c4}.fields{padding:15px 18px 8px;color:#4a484e;font-size:11px}.fields div{padding:8px 0;border-bottom:1px solid #efeeec}.fields span{display:inline-block;width:56px;color:#a09da3}.mail-body{height:110px;padding:12px 18px;color:#8b8990;font-size:11px}.mail-body p{margin:0 0 8px}.mail-actions{display:flex;align-items:center;gap:8px;padding:10px 16px 14px}.mail-actions button{position:relative;min-height:34px;padding:0 12px;border:1px solid #e5e3df;border-radius:9px;background:#f8f7f5;display:flex;align-items:center;gap:6px;font-size:10px}.mail-actions .send{background:var(--indigo);color:#fff;border-color:var(--indigo)}.attach.target:after{content:"";position:absolute;inset:-6px;border:1px solid var(--indigo);border-radius:12px;animation:target 1.8s infinite}.cursor{position:absolute;left:0;top:0;z-index:9;width:31px;height:31px;color:var(--ink);filter:drop-shadow(0 4px 5px rgba(0,0,0,.14));transform:translate(360px,85px);transition:none}.cursor:after{content:"";position:absolute;left:17px;top:17px;width:28px;height:28px;border-radius:50%;border:1px solid var(--indigo);animation:ring 1.6s infinite}.guide{position:absolute;z-index:10;right:-95px;top:102px;width:250px;min-height:92px;padding:14px;border-radius:16px;background:rgba(18,18,23,.96);color:#fff;box-shadow:0 18px 46px rgba(10,10,12,.2);display:flex;gap:10px;backdrop-filter:blur(14px)}.guide-logo{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:var(--indigo);display:grid;place-items:center}.guide small{display:block;margin-bottom:4px;color:#aaa5c4;font:500 8px "DM Mono",monospace;letter-spacing:.12em}.guide strong{display:block;font-size:11px;line-height:1.25}.guide p{margin:4px 0 0;color:rgba(255,255,255,.58);font-size:9px;line-height:1.4}.prompt{position:absolute;left:calc(50% - 150px);bottom:20px;width:430px;min-height:46px;padding:0 14px;border:1px solid #e5e2dd;border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 12px 30px rgba(17,17,22,.07);display:flex;align-items:center;gap:10px;color:#55535a;font-size:11px}.prompt svg{color:var(--indigo)}.prompt span{flex:1}.prompt i{font-style:normal;color:#6b6970;font-size:9px;background:#efede8;padding:5px 7px;border-radius:99px}
+    .gc-hearing-showcase{display:none;position:relative;min-height:500px;overflow:hidden;border-radius:20px;background:#111419;color:#fff;grid-template-columns:230px 1fr}
+    body[data-gc-demo-mode="hearing"] .demo-stage{display:none}
+    body[data-gc-demo-mode="hearing"] .gc-hearing-showcase{display:grid}
+    .gc-hearing-side{padding:32px 18px;background:#171a20;border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column}
+    .gc-hearing-side>small{margin:0 10px 15px;color:rgba(255,255,255,.38);font:500 9px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}
+    .gc-hearing-feature{padding:13px 12px;border-radius:12px;color:rgba(255,255,255,.48);font-size:10px;line-height:1.45;border:1px solid transparent;transition:.2s}
+    .gc-hearing-feature strong{display:block;margin-bottom:4px;color:#fff;font-size:11px}
+    .gc-hearing-feature.active{background:rgba(160,241,213,.07);border-color:rgba(160,241,213,.13);color:rgba(255,255,255,.62)}
+    .gc-hearing-feature.active strong{color:var(--mint)}
+    .gc-hearing-note{margin-top:auto;padding:12px;border-radius:11px;background:rgba(255,255,255,.035);color:rgba(255,255,255,.38);font-size:9px;line-height:1.5}
+    .gc-hearing-main{position:relative;padding:26px 28px 24px;background:radial-gradient(circle at 75% 15%,rgba(103,88,244,.18),transparent 32%),#111419}
+    .gc-hearing-main-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:16px}
+    .gc-hearing-main-head small{display:block;margin-bottom:6px;color:var(--mint);font:500 8px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}
+    .gc-hearing-main-head strong{display:block;font-size:18px;letter-spacing:-.035em}
+    .gc-hearing-live{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.52);font:500 8px "DM Mono",monospace}
+    .gc-hearing-live i{width:6px;height:6px;border-radius:50%;background:#ff736c;box-shadow:0 0 0 5px rgba(255,115,108,.08);animation:gcVideoLive 1.15s ease-in-out infinite}
+    .gc-hearing-screen{position:relative;height:320px;border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;background:linear-gradient(145deg,#242a33,#161a20 65%);box-shadow:0 22px 45px rgba(0,0,0,.2)}
+    .gc-hearing-screen:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.04) 45%,transparent 70%);transform:translateX(-90%);animation:gcVideoSheen 5s ease-in-out infinite}
+    .gc-hearing-people{position:absolute;inset:16px 16px 88px;display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+    .gc-hearing-person{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:linear-gradient(155deg,rgba(255,255,255,.08),rgba(255,255,255,.025));display:flex;align-items:flex-end;padding:10px}
+    .gc-hearing-person:before{content:"";position:absolute;width:74px;height:74px;border-radius:50%;left:50%;top:30px;transform:translateX(-50%);background:linear-gradient(145deg,#b9aaff,#6c5bbd)}
+    .gc-hearing-person:after{content:"";position:absolute;width:112px;height:82px;border-radius:54px 54px 12px 12px;left:50%;top:94px;transform:translateX(-50%);background:linear-gradient(160deg,#3a414f,#232831)}
+    .gc-hearing-person.secondary:before{background:linear-gradient(145deg,#a0f1d5,#4b8c78)}.gc-hearing-person.secondary:after{background:linear-gradient(160deg,#40504a,#242d2a)}
+    .gc-hearing-name{position:relative;z-index:2;padding:5px 7px;border-radius:6px;background:rgba(0,0,0,.5);font-size:8px}
+    .gc-hearing-sound{position:absolute;z-index:5;right:16px;top:16px;padding:7px 9px;border:1px solid rgba(160,241,213,.16);border-radius:9px;background:rgba(9,14,12,.78);color:var(--mint);font-size:8px;box-shadow:0 10px 26px rgba(0,0,0,.2);animation:gcSoundChip 2.1s ease-in-out infinite}
+    .gc-hearing-caption{position:absolute;z-index:5;left:16px;right:16px;bottom:48px;padding:11px 13px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(5,7,9,.86);backdrop-filter:blur(9px)}
+    .gc-hearing-caption small{display:block;margin-bottom:4px;color:var(--mint);font:500 7px "DM Mono",monospace;letter-spacing:.12em}.gc-hearing-caption strong{display:block;font-size:11px;line-height:1.4}
+    .gc-hearing-controls{position:absolute;left:0;right:0;bottom:0;height:44px;padding:0 14px;display:flex;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.06);background:#12151a}
+    .gc-hearing-control{position:relative;min-height:30px;padding:0 10px;border:1px solid rgba(255,255,255,.09);border-radius:8px;background:rgba(255,255,255,.025);color:rgba(255,255,255,.58);font-size:8px;cursor:pointer;transition:.18s}
+    .gc-hearing-control:hover,.gc-hearing-control.active{color:var(--mint);border-color:rgba(160,241,213,.22);background:rgba(160,241,213,.06)}
+    .gc-hearing-time{margin-left:auto;color:rgba(255,255,255,.28);font:500 7px "DM Mono",monospace}
+    .gc-hearing-transcript{margin-top:12px;padding:11px 13px;border:1px solid rgba(255,255,255,.07);border-radius:11px;background:rgba(255,255,255,.025);color:rgba(255,255,255,.5);font-size:9px;line-height:1.55}
+    .gc-hearing-transcript[hidden]{display:none!important}.gc-hearing-transcript strong{color:var(--mint)}
+    @keyframes gcVideoSheen{0%,55%{transform:translateX(-90%)}82%,100%{transform:translateX(100%)}}
+    @keyframes gcVideoLive{0%,100%{opacity:.45}50%{opacity:1}}
+    @keyframes gcSoundChip{0%,100%{transform:translateY(0);opacity:.72}50%{transform:translateY(-2px);opacity:1}}
+    .hero-foot{width:min(1120px,92vw);margin:32px auto 0;display:flex;justify-content:space-between;color:#87838c;font:500 12px "DM Mono",monospace;letter-spacing:.1em;text-transform:uppercase}
+    @keyframes target{0%,100%{transform:scale(.96);opacity:.25}50%{transform:scale(1.04);opacity:.75}}@keyframes ring{from{transform:scale(.35);opacity:.8}to{transform:scale(1.7);opacity:0}}
+    .marquee{height:96px;background:var(--ink);color:#fff;display:flex;align-items:center;overflow:hidden}.marquee-track{display:flex;width:max-content;white-space:nowrap;animation:marquee 25s linear infinite}.marquee span{display:inline-flex;align-items:center;gap:36px;margin-right:36px;font-size:18px;font-weight:580}.marquee i{width:7px;height:7px;border-radius:50%;background:var(--mint)}@keyframes marquee{to{transform:translateX(-50%)}}
+    .section-index{display:block;margin-bottom:24px;color:#79757d;font:500 10px "DM Mono",monospace;letter-spacing:.15em}.problem{padding:150px 24px 160px}.section-head{width:min(1320px,100%);margin:0 auto 90px}.section-head h2,.modes h2{margin:0;font-size:clamp(50px,6.2vw,96px);line-height:.96;letter-spacing:-.065em;font-weight:620}.section-head em,.modes em{color:var(--indigo);font-style:normal}.problem-lines{width:110vw;margin-left:-5vw;display:flex;flex-direction:column;gap:14px}.problem-line{min-height:110px;padding:0 7vw;display:grid;grid-template-columns:.55fr 1.4fr .7fr;align-items:center;gap:30px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(255,255,255,.3);will-change:transform}.problem-line.dark{background:var(--ink);color:#fff;border-color:var(--ink)}.problem-line>span:first-child{color:#76737a;font:500 10px "DM Mono",monospace;letter-spacing:.1em;text-transform:uppercase}.problem-line.dark>span:first-child,.problem-line.dark .line-note{color:rgba(255,255,255,.5)}.problem-line strong{font-size:clamp(22px,2.2vw,36px);font-weight:570;letter-spacing:-.04em}.line-note{justify-self:end;max-width:190px;color:#77747c;font-size:12px;line-height:1.4}.problem-note{width:min(1320px,100%);margin:36px auto 0;color:#737078;font-size:13px}
+    .system{position:relative;overflow:hidden;padding:165px 24px 150px;background:var(--ink);color:#fff}
+    .system:before{content:"";position:absolute;right:-12%;top:7%;width:620px;height:620px;border-radius:50%;background:radial-gradient(circle,rgba(103,88,244,.17),transparent 68%);filter:blur(12px);pointer-events:none}
+    .system:after{content:"";position:absolute;left:-10%;bottom:4%;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(160,241,213,.07),transparent 69%);filter:blur(12px);pointer-events:none}
+    .system-shell{position:relative;z-index:1;width:min(1320px,100%);margin:auto}
+    .system-intro{display:grid;grid-template-columns:1.05fr .95fr;gap:9vw;align-items:end;margin-bottom:92px}
+    .system .section-index{color:rgba(255,255,255,.45)}
+    .system h2{margin:0;font-size:clamp(58px,6.4vw,100px);line-height:.92;letter-spacing:-.073em;font-weight:620}
+    .system h2 span{color:var(--indigo2)}
+    .system-intro-copy{padding-bottom:9px}
+    .system-intro-copy>p{max-width:520px;margin:0 0 26px;color:rgba(255,255,255,.57);font-size:17px;line-height:1.65}
+    .principle{display:inline-flex;align-items:center;gap:9px;padding:10px 13px;border:1px solid rgba(160,241,213,.2);border-radius:99px;background:rgba(160,241,213,.1);color:var(--mint);font-size:11px;font-weight:650}
+    .system-sequence{position:relative;border-top:1px solid rgba(255,255,255,.14)}
+    .system-stage{position:relative;min-height:230px;padding:34px 0;display:grid;grid-template-columns:64px minmax(250px,.72fr) minmax(360px,1fr);gap:36px;align-items:center;border-bottom:1px solid rgba(255,255,255,.14);opacity:.34;transform:translateY(26px);transition:opacity .6s ease,transform .65s cubic-bezier(.22,1,.36,1),background .45s ease}
+    .system-stage:before{content:"";position:absolute;inset:0 -24px;opacity:0;background:linear-gradient(90deg,rgba(103,88,244,.1),rgba(103,88,244,0) 60%);transition:opacity .45s ease;pointer-events:none}
+    .system-stage.in-view{opacity:1;transform:none}
+    .system-stage.in-view:before{opacity:1}
+    .system-stage-num{align-self:start;padding-top:10px;color:rgba(255,255,255,.34);font:500 10px "DM Mono",monospace;letter-spacing:.12em}
+    .system-stage-copy{position:relative;z-index:1}
+    .system-stage-copy small{display:block;margin-bottom:11px;color:var(--mint);font:500 9px "DM Mono",monospace;letter-spacing:.15em;text-transform:uppercase}
+    .system-stage-copy h3{margin:0 0 12px;font-size:clamp(36px,3.3vw,54px);line-height:.96;letter-spacing:-.055em;font-weight:600}
+    .system-stage-copy p{max-width:480px;margin:0;color:rgba(255,255,255,.52);font-size:13px;line-height:1.6}
+    .system-stage-visual{position:relative;z-index:1;height:126px;min-width:0;overflow:hidden;border-left:1px solid rgba(255,255,255,.1);padding-left:42px}
+    .visual-label{position:absolute;top:0;left:42px;color:rgba(255,255,255,.28);font:500 8px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}
+    .scan-frame{position:absolute;right:5%;top:25px;width:min(360px,80%);height:82px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:linear-gradient(135deg,rgba(255,255,255,.035),rgba(255,255,255,.012));overflow:hidden}
+    .scan-frame:before,.scan-frame:after{content:"";position:absolute;left:18px;right:18px;height:7px;border-radius:99px;background:rgba(255,255,255,.1)}
+    .scan-frame:before{top:22px;width:58%}.scan-frame:after{top:43px;width:78%}
+    .scan-line{position:absolute;left:0;right:0;top:10px;height:1px;background:linear-gradient(90deg,transparent,var(--mint),transparent);box-shadow:0 0 18px rgba(160,241,213,.45);animation:systemScan 2.8s ease-in-out infinite}
+    .understand-visual{position:absolute;inset:22px 5% 4px 42px;display:grid;grid-template-columns:1fr 68px 1fr;align-items:center;gap:14px}
+    .signal-pill{min-height:54px;padding:0 18px;border:1px solid rgba(255,255,255,.13);border-radius:14px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.72);font-size:11px;background:rgba(255,255,255,.025)}
+    .merge-core{position:relative;width:54px;height:54px;margin:auto;border-radius:17px;border:1px solid rgba(160,241,213,.34);background:rgba(160,241,213,.08);display:grid;place-items:center;color:var(--mint);font-size:18px;box-shadow:0 0 0 10px rgba(160,241,213,.025)}
+    .merge-core:before,.merge-core:after{content:"";position:absolute;top:50%;width:42px;height:1px;background:linear-gradient(90deg,transparent,var(--indigo2))}
+    .merge-core:before{right:100%}.merge-core:after{left:100%;transform:rotate(180deg)}
+    .guide-route{position:absolute;left:42px;right:5%;top:30px;bottom:10px}
+    .guide-route:before{content:"";position:absolute;left:7%;right:11%;top:58%;border-top:1px dashed rgba(255,255,255,.18);transform:rotate(-8deg);transform-origin:center}
+    .guide-cursor{position:absolute;left:9%;top:56%;color:var(--mint);font-size:26px;filter:drop-shadow(0 0 14px rgba(160,241,213,.35));animation:guideDrift 2.9s ease-in-out infinite}
+    .guide-target{position:absolute;right:10%;top:27%;width:58px;height:58px;border:1px solid rgba(103,88,244,.62);border-radius:17px;display:grid;place-items:center;color:var(--indigo2);background:rgba(103,88,244,.08);box-shadow:0 0 0 10px rgba(103,88,244,.035)}
+    .guide-target:after{content:"";width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 8px rgba(160,241,213,.08)}
+    .assist-visual{position:absolute;inset:18px 5% 5px 42px;display:flex;align-items:center;justify-content:center}
+    .assist-target{position:relative;width:92px;height:92px;border:1px solid rgba(160,241,213,.18);border-radius:50%;display:grid;place-items:center}
+    .assist-target:before,.assist-target:after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(160,241,213,.22)}
+    .assist-target:before{inset:14px}.assist-target:after{inset:30px;background:rgba(160,241,213,.1)}
+    .assist-cursor{position:absolute;left:28%;top:18%;z-index:2;color:#fff;font-size:25px;animation:assistSnap 2.6s cubic-bezier(.22,1,.36,1) infinite}
+    .assist-caption{position:absolute;left:calc(50% + 72px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;color:rgba(255,255,255,.42);font-size:10px}
+    .assist-caption strong{color:var(--mint);font-size:12px;font-weight:650}
+    .system-handoff{display:flex;align-items:center;justify-content:space-between;gap:30px;padding-top:30px;color:rgba(255,255,255,.43);font:500 10px "DM Mono",monospace;letter-spacing:.12em;text-transform:uppercase}
+    .system-handoff strong{color:var(--mint);font-weight:500}
+    .system-handoff .handoff-line{height:1px;flex:1;background:linear-gradient(90deg,rgba(160,241,213,.45),rgba(103,88,244,.35),transparent)}
+    @keyframes systemScan{0%,100%{transform:translateY(0);opacity:.35}50%{transform:translateY(58px);opacity:1}}
+    @keyframes guideDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(170px,-27px)}}
+    @keyframes assistSnap{0%,18%{transform:translate(-72px,34px);opacity:.45}55%,100%{transform:translate(4px,22px);opacity:1}}
+    .agency{padding:155px 24px 185px;background:#dff8ef;text-align:center}.agency-kicker{margin-bottom:25px;color:#4f615b;font:500 10px "DM Mono",monospace;letter-spacing:.16em}.agency>h2{max-width:1050px;margin:0 auto 80px;font-size:clamp(48px,5.4vw,82px);line-height:.98;letter-spacing:-.06em;font-weight:620}.agency>h2 span{color:#397863}.compare{width:min(1180px,100%);margin:auto;display:grid;grid-template-columns:1fr 50px 1fr;align-items:center;text-align:left}.panel{min-height:460px;padding:34px;border-radius:28px;display:flex;flex-direction:column;justify-content:space-between}.panel.agent{background:#edf0ed;border:1px solid rgba(17,17,22,.08);color:#777b79}.panel.guide-panel{background:var(--ink);color:#fff;box-shadow:0 25px 60px rgba(30,60,51,.18)}.panel-label{color:currentColor;opacity:.55;font:500 9px "DM Mono",monospace;letter-spacing:.15em}.sequence{display:flex;flex-direction:column;gap:22px}.bubble{padding:16px;border-radius:14px;background:rgba(255,255,255,.7);color:#474a49;font-size:13px}.guide-panel .bubble{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.07)}.agent-process{min-height:95px;border-radius:14px;background:rgba(17,17,22,.05);display:flex;align-items:center;justify-content:center;gap:9px;font-size:12px}.chips{display:flex;flex-wrap:wrap;gap:7px}.chips span{padding:8px 10px;border:1px solid rgba(17,17,22,.11);border-radius:99px;font-size:10px}.guide-panel .chips span{border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.7)}.panel>p{margin:0;font-size:13px;opacity:.62}.versus{display:grid;place-items:center;position:relative;z-index:3}.versus span{width:46px;height:46px;border-radius:50%;border:1px solid rgba(17,17,22,.1);background:#fff;display:grid;place-items:center;font:500 10px "DM Mono",monospace}.route{position:relative;height:95px;padding:0 28px;display:flex;align-items:center;justify-content:space-between}.route:before{content:"";position:absolute;left:50px;right:50px;height:1px;background:linear-gradient(90deg,var(--indigo),var(--mint))}.route i{position:relative;z-index:2;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25)}.route-start,.route-end{position:relative;z-index:3;width:48px;height:48px;border-radius:14px;display:grid;place-items:center}.route-start{background:var(--indigo)}.route-end{border:1px solid rgba(160,241,213,.42);background:rgba(160,241,213,.12);color:var(--mint);box-shadow:0 0 0 8px rgba(160,241,213,.04)}
+    .modes{padding:160px 24px 170px}.modes-head{width:min(1320px,100%);margin:0 auto 80px}.modes-layout{width:min(1320px,100%);margin:auto;display:grid;grid-template-columns:.9fr 1.1fr;gap:70px;align-items:center}.mode-tabs{display:flex;flex-direction:column}.mode-tab{min-height:140px;border:0;border-top:1px solid var(--line);background:transparent;display:grid;grid-template-columns:38px 1fr 28px;gap:18px;align-items:center;text-align:left;cursor:pointer;opacity:.36;transition:.25s}.mode-tab:last-child{border-bottom:1px solid var(--line)}.mode-tab.active,.mode-tab:hover{opacity:1}.mode-tab>span{font:500 9px "DM Mono",monospace}.mode-tab small{display:block;margin-bottom:8px;color:#77737b;font-size:10px}.mode-tab strong{display:block;max-width:430px;font-size:20px;letter-spacing:-.03em}.mode-visual{min-height:620px;padding:52px;border-radius:30px;background:#dfdcff;display:flex;flex-direction:column;justify-content:center}.mode-window{overflow:hidden;border-radius:18px;background:#fff;box-shadow:0 25px 70px rgba(77,61,169,.16)}.window-top{height:42px;padding:0 14px;border-bottom:1px solid #efedf0;display:flex;align-items:center;gap:6px}.window-top i{width:7px;height:7px;border-radius:50%;background:#d3d0d2}.window-body{height:330px;display:grid;grid-template-columns:105px 1fr}.fake-side{padding:30px 18px;border-right:1px solid #efedf0;display:flex;flex-direction:column;gap:18px}.fake-side i{height:7px;border-radius:99px;background:#e4e2e4}.fake-main{position:relative;padding:44px 40px}.fake-head{width:42%;height:16px;border-radius:6px;background:#29272d;margin-bottom:25px}.fake-line{width:86%;height:8px;border-radius:99px;background:#dedcdf;margin-bottom:11px}.fake-line.short{width:65%}.fake-actions{position:absolute;left:40px;bottom:42px;display:flex;gap:9px}.fake-actions i{width:70px;height:30px;border-radius:8px;background:#efedf0}.mode-cursor{position:absolute;left:46%;top:51%;width:26px;height:26px}.mode-effect{position:absolute;left:18px;top:17px;min-width:134px;min-height:72px;border-radius:18px;border:3px solid var(--indigo);background:#fff;box-shadow:0 15px 35px rgba(69,52,172,.18);display:flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;font-size:11px;font-weight:700}.mode-effect.voice{border:0;background:var(--ink);color:#fff;min-width:112px;min-height:42px;border-radius:12px}.mode-effect.snap{min-width:78px;min-height:78px;border-radius:50%;background:rgba(103,88,244,.09)}.mode-copy{margin:30px 6px 0;color:#4c4766;font-size:15px;line-height:1.6}
+    .desktop{overflow:hidden;padding:160px 24px 80px;background:var(--ink);color:#fff}.desktop-copy{width:min(1180px,100%);margin:0 auto 85px;text-align:center}.desktop .section-index{color:rgba(255,255,255,.45)}.desktop h2{max-width:1000px;margin:0 auto;font-size:clamp(52px,6vw,92px);line-height:.96;letter-spacing:-.065em;font-weight:620}.desktop-copy p{max-width:650px;margin:28px auto 0;color:rgba(255,255,255,.5);font-size:16px;line-height:1.6}.perspective{width:min(1240px,100%);margin:auto;perspective:1500px}.desktop-frame{transform-origin:center bottom;border-radius:28px 28px 0 0;padding:8px 8px 0;background:linear-gradient(160deg,#4d4b55,#1d1d23);box-shadow:0 50px 120px rgba(0,0,0,.45);will-change:transform}.menu{height:33px;padding:0 12px;border-radius:20px 20px 0 0;background:rgba(24,24,28,.88);display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,.74);font-size:8px}.menu div{display:flex;gap:14px;align-items:center}.wallpaper{position:relative;height:610px;overflow:hidden;background:radial-gradient(circle at 35% 15%,#8480ef 0 10%,transparent 34%),radial-gradient(circle at 72% 68%,#82dbc0 0 8%,transparent 34%),linear-gradient(145deg,#3b356c,#171722 68%)}.finder{position:absolute;left:9%;top:13%;width:64%;height:64%;overflow:hidden;border-radius:16px;background:rgba(246,245,244,.94);color:#333137;box-shadow:0 28px 65px rgba(0,0,0,.24);backdrop-filter:blur(18px)}.finder-top{height:40px;padding:0 14px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:6px}.finder-top i{width:8px;height:8px;border-radius:50%;background:#c9c5c5}.finder-top span{margin:auto;font-size:9px;font-weight:700}.finder-body{height:calc(100% - 40px);display:grid;grid-template-columns:120px 1fr}.finder-body aside{padding:26px 14px;border-right:1px solid rgba(0,0,0,.07);display:flex;flex-direction:column;gap:12px;color:#77737b;font-size:9px}.finder-body aside span{padding:6px 8px;border-radius:6px}.finder-body aside .selected{background:#dcd8ff;color:#4d43b4}.finder-main{padding:38px;display:flex;gap:35px}.folder{display:flex;flex-direction:column;align-items:center;gap:8px;color:#6d61e8}.folder svg{width:30px}.folder span{color:#68656c;font-size:8px}.floating{position:absolute;right:8%;bottom:13%;width:290px;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(17,17,22,.92);box-shadow:0 25px 50px rgba(0,0,0,.28);backdrop-filter:blur(20px)}.floating-brand{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:700}.floating-mark{width:23px;height:23px;border-radius:7px;background:var(--indigo);display:grid;place-items:center}.floating p{margin:20px 0 12px;font-size:15px;letter-spacing:-.02em}.floating-input{min-height:40px;padding:0 10px;border-radius:10px;background:rgba(255,255,255,.08);display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.5);font-size:9px}.floating-input span{flex:1}.floating-input kbd{padding:3px 6px;border-radius:5px;background:rgba(255,255,255,.08)}.desk-cursor{position:absolute;left:66%;top:52%;color:#fff;filter:drop-shadow(0 4px 6px rgba(0,0,0,.3))}.workflow{width:min(1240px,100%);min-height:110px;margin:auto;border-bottom:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;gap:26px;color:rgba(255,255,255,.78)}.workflow>span{color:rgba(255,255,255,.35);font:500 8px "DM Mono",monospace;letter-spacing:.12em;text-transform:uppercase}.workflow strong{font-size:11px}.workflow i{width:4px;height:4px;border-radius:50%;background:var(--mint)}
+    .research{padding:160px 24px 170px}.research-top{width:min(1180px,100%);margin:0 auto 70px;display:grid;grid-template-columns:1fr 1.1fr;gap:60px}.research-top .section-index{grid-column:1/-1;margin-bottom:-15px}.research h2{margin:0;font-size:clamp(50px,5.5vw,86px);line-height:.96;letter-spacing:-.06em;font-weight:620}.research-top p{align-self:end;max-width:520px;margin:0;color:#66636b;font-size:16px;line-height:1.65}.papers{width:min(1180px,100%);margin:auto;border-top:1px solid var(--line)}.paper{min-height:120px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:55px 1fr 1.8fr 24px;gap:28px;align-items:center;transition:.25s}.paper:hover{padding:0 18px;background:rgba(255,255,255,.45)}.paper-num{color:#8b878e;font:500 9px "DM Mono",monospace}.paper-author,.paper-title{display:flex;flex-direction:column;gap:7px}.paper-author strong{font-size:13px}.paper-author span,.paper-title span{color:#88848c;font-size:11px}.paper-title strong{font-size:15px}.paper-title span{line-height:1.45}
+    .final{position:relative;min-height:760px;padding:120px 24px;overflow:hidden;background:var(--indigo);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.glow{position:absolute;left:50%;top:50%;width:850px;height:850px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(160,241,213,.32),transparent 62%)}.final .section-index{position:relative;color:rgba(255,255,255,.5)}.final h2{position:relative;margin:0;font-size:clamp(58px,7vw,110px);line-height:.9;letter-spacing:-.07em;font-weight:640}.final h2 span{color:var(--mint)}.final p{position:relative;margin:28px 0;color:rgba(255,255,255,.72);font-size:16px}.final a{position:relative;padding:16px 19px;border-radius:14px;background:#fff;color:var(--ink);display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:700;box-shadow:0 15px 35px rgba(40,31,121,.22)}.final-cursor{position:absolute;color:rgba(255,255,255,.45)}.final-cursor.one{left:14%;top:30%;transform:rotate(-12deg)}.final-cursor.two{right:16%;bottom:25%;transform:rotate(10deg) scale(.75)}
+    footer{min-height:130px;padding:0 max(24px,calc((100vw - 1180px)/2));background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:space-between}footer .mark{background:#fff;color:var(--ink)}.footer-mid{display:flex;gap:22px;color:rgba(255,255,255,.42);font:500 9px "DM Mono",monospace;letter-spacing:.08em;text-transform:uppercase}footer>a:last-child{color:rgba(255,255,255,.62);font-size:10px}
+    @media(max-width:980px){.gc-hearing-showcase{grid-template-columns:180px 1fr}.gc-hearing-main{padding:22px}.gc-hearing-screen{height:300px}.nav-toggle{display:block}.nav-links{position:absolute;top:70px;left:16px;right:16px;padding:18px;border:1px solid rgba(17,17,22,.08);border-radius:18px;background:rgba(246,245,241,.97);backdrop-filter:blur(20px);box-shadow:0 18px 45px rgba(17,17,22,.1);flex-direction:column;align-items:stretch;gap:12px;opacity:0;pointer-events:none;transform:translateY(-8px);transition:.2s}.nav-links.open{opacity:1;pointer-events:auto;transform:none}.nav-links a{padding:10px 8px}.nav-cta{justify-content:center}.demo-stage{grid-template-columns:170px 1fr;min-height:440px}.mail{left:calc(50% + 85px);width:470px;transform:translate(-50%,-50%) scale(.88)}.prompt{left:calc(50% - 160px);width:390px}.problem-line{grid-template-columns:1fr;gap:8px;padding-top:26px;padding-bottom:26px}.line-note{justify-self:start}.system{padding:130px 28px}.system-intro{grid-template-columns:1fr;gap:34px;margin-bottom:68px}.system-intro-copy{padding-bottom:0}.system-stage{grid-template-columns:50px minmax(230px,.8fr) 1fr;gap:24px}.system-stage-visual{padding-left:28px}.visual-label{left:28px}.understand-visual,.guide-route,.assist-visual{left:28px}.compare{grid-template-columns:1fr;gap:24px}.versus{display:none}.modes-layout{grid-template-columns:1fr}.research-top{grid-template-columns:1fr}.paper{grid-template-columns:45px 1fr 1.6fr 22px}.workflow{flex-wrap:wrap;padding:25px 0}}
+    @media(max-width:700px){.gc-hearing-showcase{display:none;min-height:520px;grid-template-columns:1fr}.gc-hearing-side{display:none}body[data-gc-demo-mode="hearing"] .gc-hearing-showcase{display:block}.gc-hearing-main{padding:18px 12px}.gc-hearing-main-head{padding:0 4px}.gc-hearing-screen{height:330px}.gc-hearing-people{grid-template-columns:1fr 1fr;inset:14px 10px 92px}.nav-wrap{padding:0 14px}.hero{min-height:970px;padding:145px 18px 80px}.hero h1{font-size:clamp(50px,15vw,72px)}.hero-copy>p{font-size:16px}.hero-actions{flex-direction:column;gap:16px}.demo-wrap{width:100%;margin-top:60px}.demo-shell{border-radius:20px}.demo-top{grid-template-columns:auto 1fr}.privacy{display:none}.demo-title{justify-self:end}.demo-stage{display:block;min-height:420px}.demo-side{display:none}.mail{left:50%;top:46%;width:500px;transform:translate(-50%,-50%) scale(.66)}.guide{right:-50px}.prompt{left:12px;bottom:12px;width:calc(100% - 24px)}.hero-foot{display:none}.marquee{height:78px}.problem,.agency,.modes,.research{padding-left:18px;padding-right:18px}.problem{padding-top:110px}.section-head h2,.modes h2{font-size:53px}.problem-lines{width:100%;margin-left:0}.problem-line{transform:none!important}.system{padding:110px 18px 100px}.system h2{font-size:56px}.system-intro{margin-bottom:58px}.system-stage{min-height:0;padding:34px 0;grid-template-columns:34px 1fr;gap:14px 16px}.system-stage-copy{grid-column:2}.system-stage-copy h3{font-size:38px}.system-stage-visual{grid-column:2;height:110px;border-left:0;padding-left:0;margin-top:6px}.visual-label{left:0}.understand-visual,.guide-route,.assist-visual{left:0}.scan-frame{right:0;width:92%}.system-handoff{align-items:flex-start;flex-direction:column;gap:12px}.system-handoff .handoff-line{width:100%;flex:none}.agency>h2{font-size:48px}.panel{min-height:400px;padding:24px}.mode-tab{min-height:120px;grid-template-columns:28px 1fr 20px}.mode-tab strong{font-size:17px}.mode-visual{min-height:470px;padding:22px}.window-body{height:280px;grid-template-columns:70px 1fr}.fake-main{padding:35px 24px}.fake-actions{left:24px}.desktop{padding:120px 0 60px}.desktop-copy{padding:0 18px}.desktop h2{font-size:52px}.perspective{width:760px;margin-left:50%;transform:translateX(-50%) scale(.72);transform-origin:center top;margin-bottom:-130px}.workflow{padding-left:18px;padding-right:18px;justify-content:flex-start;gap:14px}.research h2{font-size:52px}.paper{grid-template-columns:35px 1fr 22px;gap:14px;padding:20px 0}.paper-title{grid-column:2/3}.paper>svg{grid-column:3;grid-row:1/span 2}.final{min-height:650px}.final h2{font-size:58px}footer{min-height:160px;padding:30px 20px;flex-wrap:wrap;gap:20px}.footer-mid{order:3;width:100%}}
+
+    /* GuideCursor interactive product-demo layer */
+    .hero{--cursor-x:50%;--cursor-y:24%}
+    .hero:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(360px circle at var(--cursor-x) var(--cursor-y),rgba(103,88,244,.11),transparent 68%);opacity:.75;transition:opacity .3s ease}
+    .hero-title-line{display:block!important;color:var(--ink)!important;animation:heroLineReveal .8s cubic-bezier(.22,1,.36,1) both}
+    .hero-title-line.accent{color:var(--indigo)!important;animation-delay:.1s}
+    @keyframes heroLineReveal{from{opacity:0;transform:translateY(28px);filter:blur(5px)}to{opacity:1;transform:none;filter:none}}
+    .demo-shell{--demo-tilt-x:0deg;--demo-tilt-y:0deg;transform:perspective(1400px) rotateX(var(--demo-tilt-x)) rotateY(var(--demo-tilt-y));transition:transform .16s ease-out}
+    .system-stage{--stage-x:70%;--stage-y:50%}
+    .system-stage:after{content:"";position:absolute;inset:0 -24px;z-index:0;pointer-events:none;opacity:0;background:radial-gradient(280px circle at var(--stage-x) var(--stage-y),rgba(160,241,213,.09),transparent 72%);transition:opacity .3s ease}
+    .system-stage:hover:after{opacity:1}
+    .agency{background:linear-gradient(180deg,var(--ink) 0,#dff8ef 110px,#dff8ef 100%)}
+    .desktop.desktop-live .floating{animation:desktopCompanion 2.8s cubic-bezier(.22,1,.36,1) both}
+    .desktop.desktop-live .desk-cursor{animation:desktopCursorGuide 3s cubic-bezier(.22,1,.36,1) both}
+    @keyframes desktopCompanion{0%,24%{box-shadow:0 25px 50px rgba(0,0,0,.28)}55%,82%{box-shadow:0 25px 50px rgba(0,0,0,.28),0 0 0 1px rgba(160,241,213,.22),0 0 42px rgba(160,241,213,.13)}100%{box-shadow:0 25px 50px rgba(0,0,0,.28)}}
+    @keyframes desktopCursorGuide{0%{transform:translate(-80px,55px);opacity:.25}48%,76%{transform:translate(-12px,8px);opacity:1}100%{transform:none;opacity:1}}
+
+    .gc-mode-picker[hidden],.gc-companion[hidden],.gc-demo-panel[hidden]{display:none!important}
+    .gc-mode-picker{position:fixed;inset:0;z-index:9994;display:grid;place-items:center;padding:24px;background:rgba(9,9,13,.72);backdrop-filter:blur(20px) saturate(120%);animation:gcPickerFade .3s ease both}
+    .gc-mode-card{position:relative;width:min(760px,100%);overflow:hidden;padding:34px;border:1px solid rgba(255,255,255,.13);border-radius:28px;background:linear-gradient(150deg,rgba(27,26,35,.985),rgba(14,14,19,.995));color:#fff;box-shadow:0 45px 130px rgba(0,0,0,.48),0 0 70px rgba(103,88,244,.11);animation:gcPickerIn .5s cubic-bezier(.22,1,.36,1) both}
+    .gc-mode-card:before{content:"";position:absolute;width:430px;height:430px;right:-210px;top:-260px;border-radius:50%;background:radial-gradient(circle,rgba(103,88,244,.48),transparent 68%);pointer-events:none}
+    .gc-mode-close{position:absolute;z-index:2;right:18px;top:18px;width:38px;height:38px;border:1px solid rgba(255,255,255,.1);border-radius:50%;background:rgba(255,255,255,.03);color:rgba(255,255,255,.65);display:grid;place-items:center;cursor:pointer;transition:.2s}
+    .gc-mode-close:hover{color:#fff;background:rgba(255,255,255,.08)}
+    .gc-mode-eyebrow{position:relative;display:inline-flex;align-items:center;gap:8px;color:var(--mint);font:500 9px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}
+    .gc-mode-eyebrow i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08)}
+    .gc-mode-card h2{position:relative;max-width:610px;margin:18px 0 10px;font-size:clamp(38px,5.4vw,62px);line-height:.97;letter-spacing:-.06em;font-weight:630}
+    .gc-mode-card>p{position:relative;max-width:610px;margin:0;color:rgba(255,255,255,.5);font-size:13px;line-height:1.6}
+    .gc-mode-options{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:28px}
+    .gc-mode-option{position:relative;min-height:210px;padding:20px;border:1px solid rgba(255,255,255,.1);border-radius:19px;background:rgba(255,255,255,.035);color:#fff;text-align:left;cursor:pointer;overflow:hidden;transition:transform .22s ease,border-color .22s ease,background .22s ease,box-shadow .22s ease}
+    .gc-mode-option:before{content:"";position:absolute;inset:auto -50px -70px auto;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(103,88,244,.2),transparent 68%);transition:.25s}
+    .gc-mode-option:hover{transform:translateY(-4px);border-color:rgba(160,241,213,.25);background:rgba(255,255,255,.055);box-shadow:0 18px 40px rgba(0,0,0,.18)}
+    .gc-mode-option:hover:before{transform:scale(1.18)}
+    .gc-mode-icon{position:relative;width:44px;height:44px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.04);display:grid;place-items:center;font-size:19px;color:var(--mint)}
+    .gc-mode-option small{position:relative;display:block;margin:23px 0 7px;color:rgba(255,255,255,.4);font:500 8px "DM Mono",monospace;letter-spacing:.11em;text-transform:uppercase}
+    .gc-mode-option strong{position:relative;display:block;font-size:18px;letter-spacing:-.035em}
+    .gc-mode-option span:last-child{position:relative;display:block;margin-top:9px;color:rgba(255,255,255,.48);font-size:10px;line-height:1.5}
+    .gc-mode-option[data-demo-mode="vision"] .gc-mode-icon{color:#fff;background:linear-gradient(135deg,rgba(103,88,244,.42),rgba(160,241,213,.12))}
+    .gc-mode-option[data-demo-mode="hearing"] .gc-mode-icon{color:#fff;background:linear-gradient(135deg,rgba(160,241,213,.22),rgba(103,88,244,.12))}
+    .gc-mode-option[data-demo-mode="motor"] .gc-mode-icon{color:#fff;background:linear-gradient(135deg,rgba(103,88,244,.24),rgba(160,241,213,.2))}
+    .gc-mode-foot{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:18px;color:rgba(255,255,255,.3);font:500 8px "DM Mono",monospace;letter-spacing:.06em}
+    .gc-mode-foot b{color:var(--mint);font-weight:500}
+    body.gc-picker-open{overflow:hidden}
+
+    .gc-companion{position:fixed;z-index:9991;left:0;top:0;display:flex;align-items:flex-start;gap:8px;pointer-events:none;will-change:transform;filter:drop-shadow(0 12px 24px rgba(17,17,22,.17));opacity:0;transition:opacity .16s ease}
+    .gc-companion.is-visible{opacity:1}
+    .gc-companion.flip-x{flex-direction:row-reverse}
+    .gc-companion-mark{width:28px;height:28px;border-radius:9px;background:var(--indigo);color:#fff;display:grid;place-items:center;font-size:15px;box-shadow:0 0 0 6px rgba(103,88,244,.08),0 6px 18px rgba(76,62,183,.22);animation:gcMarkPulse 1.9s ease-in-out infinite}
+    .gc-companion-bubble{width:210px;padding:11px 12px;border:1px solid rgba(255,255,255,.12);border-radius:13px;background:rgba(17,17,22,.94);color:#fff;backdrop-filter:blur(16px);box-shadow:0 14px 38px rgba(0,0,0,.19)}
+    .gc-companion-bubble small{display:block;margin-bottom:4px;color:var(--mint);font:500 8px "DM Mono",monospace;letter-spacing:.13em}
+    .gc-companion-bubble strong{display:block;font-size:11px;line-height:1.25}
+    .gc-companion-bubble span{display:block;margin-top:4px;color:rgba(255,255,255,.48);font-size:9px;line-height:1.35}
+    @keyframes gcMarkPulse{0%,100%{box-shadow:0 0 0 5px rgba(103,88,244,.06),0 6px 18px rgba(76,62,183,.2)}50%{box-shadow:0 0 0 9px rgba(160,241,213,.08),0 6px 22px rgba(76,62,183,.27)}}
+
+    .gc-demo-panel{position:fixed;z-index:9990;right:22px;bottom:22px;width:min(410px,calc(100vw - 44px));padding:16px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(17,17,22,.92);color:#fff;backdrop-filter:blur(22px) saturate(125%);box-shadow:0 24px 70px rgba(0,0,0,.28);animation:gcPanelIn .42s cubic-bezier(.22,1,.36,1) both}
+    .gc-mode-switcher{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:-3px 0 13px;padding:4px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}
+    .gc-mode-switch{min-height:34px;padding:0 8px;border:0;border-radius:9px;background:transparent;color:rgba(255,255,255,.42);font-size:9px;font-weight:650;cursor:pointer;transition:.2s}
+    .gc-mode-switch:hover{color:#fff;background:rgba(255,255,255,.05)}
+    .gc-mode-switch.active{color:#fff;background:rgba(103,88,244,.28);box-shadow:inset 0 0 0 1px rgba(140,129,255,.2)}
+    .gc-demo-feedback{display:flex;align-items:center;gap:9px;margin-top:10px;padding:9px 11px;border-radius:11px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);color:rgba(255,255,255,.47);font-size:9px;line-height:1.35}
+    .gc-demo-feedback i{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--indigo2);box-shadow:0 0 0 4px rgba(140,129,255,.06)}
+    .gc-demo-feedback strong{color:rgba(255,255,255,.82);font-weight:650}
+    .gc-voice-status{margin-left:auto;color:rgba(255,255,255,.32);font:500 8px "DM Mono",monospace;letter-spacing:.06em;text-transform:uppercase}
+    .gc-mini-btn[hidden]{display:none!important}
+    .gc-demo-panel[data-mode="vision"] .gc-demo-feedback i{background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.07)}
+    .gc-demo-panel[data-mode="hearing"] .gc-demo-feedback{border-color:rgba(160,241,213,.14);background:rgba(160,241,213,.045)}
+    .gc-demo-panel[data-mode="hearing"] .gc-demo-feedback i{border-radius:2px;background:var(--mint);animation:gcVisualBeat .85s ease-in-out infinite}
+    .gc-demo-panel[data-mode="motor"] .gc-demo-feedback i{background:var(--indigo2);animation:gcMotorBeat 1.2s ease-in-out infinite}
+    .gc-demo-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}
+    .gc-demo-brand{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700}
+    .gc-demo-brand i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08)}
+    .gc-demo-progress{padding:6px 8px;border:1px solid rgba(255,255,255,.1);border-radius:999px;color:rgba(255,255,255,.56);font:500 8px "DM Mono",monospace;letter-spacing:.12em}
+    .gc-demo-task{padding:15px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)}
+    .gc-demo-task small{display:block;margin-bottom:6px;color:var(--mint);font:500 8px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}
+    .gc-demo-task strong{display:block;font-size:18px;letter-spacing:-.035em}
+    .gc-demo-task p{margin:7px 0 0;color:rgba(255,255,255,.52);font-size:11px;line-height:1.5}
+    .gc-demo-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+    .gc-mini-btn{min-height:35px;padding:0 10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:transparent;color:rgba(255,255,255,.62);display:inline-flex;align-items:center;gap:6px;font-size:9px;cursor:pointer;transition:.2s}
+    .gc-mini-btn:hover{color:#fff;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.17)}
+    .gc-mini-btn[aria-pressed="true"]{color:var(--mint);border-color:rgba(160,241,213,.24);background:rgba(160,241,213,.07)}
+    .gc-replay{color:var(--mint)}
+    @keyframes gcPanelIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+
+    .gc-demo-target{position:relative!important;z-index:56!important;transition:transform .18s ease,box-shadow .25s ease,background .25s ease!important}
+    .gc-demo-target:after{content:"";position:absolute!important;inset:-8px!important;border:1px solid rgba(103,88,244,.58)!important;border-radius:inherit!important;pointer-events:none!important;box-shadow:0 0 0 0 rgba(103,88,244,.12);animation:gcTargetRing 1.55s ease-in-out infinite!important}
+    .gc-demo-target.gc-target-near{transform:translate(var(--gc-mag-x,0),var(--gc-mag-y,0)) scale(1.025)!important;box-shadow:0 10px 34px rgba(103,88,244,.14)!important}
+    .gc-demo-target.gc-target-ready:after{border-color:var(--mint)!important;box-shadow:0 0 0 8px rgba(160,241,213,.08),0 0 28px rgba(160,241,213,.16)!important;animation:gcReadyRing .8s ease-in-out infinite!important}
+    body[data-gc-demo-mode="vision"] .gc-demo-target:after{border-width:2px!important;inset:-12px!important;box-shadow:0 0 0 5px rgba(103,88,244,.055),0 0 30px rgba(103,88,244,.14)!important}
+    body[data-gc-demo-mode="vision"] .gc-demo-target.gc-target-ready:after{box-shadow:0 0 0 11px rgba(160,241,213,.11),0 0 42px rgba(160,241,213,.25)!important}
+    body[data-gc-demo-mode="hearing"] .gc-demo-target:after{border-width:2px!important;border-style:solid!important;border-color:var(--mint)!important;animation:gcHearingRing .72s ease-in-out infinite!important}
+    body[data-gc-demo-mode="hearing"] .gc-demo-target.gc-target-ready{animation:gcHearingTarget .62s ease-in-out infinite!important}
+    body[data-gc-demo-mode="motor"] .gc-demo-target:after{inset:-20px!important;border-width:2px!important;border-color:rgba(140,129,255,.48)!important;box-shadow:0 0 0 8px rgba(103,88,244,.045)!important}
+    body[data-gc-demo-mode="motor"] .gc-demo-target.gc-target-ready:after{inset:-25px!important;border-color:var(--mint)!important;box-shadow:0 0 0 12px rgba(160,241,213,.08),0 0 38px rgba(160,241,213,.16)!important}
+
+    @keyframes gcTargetRing{0%,100%{box-shadow:0 0 0 0 rgba(103,88,244,.13);opacity:.55}50%{box-shadow:0 0 0 7px rgba(103,88,244,0);opacity:1}}
+    @keyframes gcReadyRing{0%,100%{transform:scale(.98);opacity:.65}50%{transform:scale(1.03);opacity:1}}
+    @keyframes gcPickerFade{from{opacity:0}to{opacity:1}}
+    @keyframes gcPickerIn{from{opacity:0;transform:translateY(22px) scale(.975);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+    @keyframes gcVisualBeat{0%,100%{opacity:.35;transform:scale(.72)}50%{opacity:1;transform:scale(1.2)}}
+    @keyframes gcMotorBeat{0%,100%{box-shadow:0 0 0 3px rgba(140,129,255,.04)}50%{box-shadow:0 0 0 8px rgba(140,129,255,0)}}
+    @keyframes gcHearingRing{0%,100%{opacity:.58;transform:scale(.985)}50%{opacity:1;transform:scale(1.045)}}
+    @keyframes gcHearingTarget{0%,100%{filter:brightness(1)}50%{filter:brightness(1.08)}}
+
+    .gc-demo-complete .gc-demo-task{background:rgba(160,241,213,.08);border-color:rgba(160,241,213,.16)}
+    .gc-demo-complete .gc-demo-task small,.gc-demo-complete .gc-demo-task strong{color:var(--mint)}
+    .gc-demo-complete .gc-demo-progress{color:var(--mint);border-color:rgba(160,241,213,.18)}
+    @media(max-width:700px){
+      .hero-title-line{animation:none}
+      .demo-shell{transform:none!important}
+      .gc-demo-panel{left:12px;right:12px;bottom:12px;width:auto}
+      .gc-mode-picker{padding:10px}.gc-mode-card{padding:26px 20px;border-radius:22px}.gc-mode-options{grid-template-columns:1fr}.gc-mode-option{min-height:145px}.gc-mode-option small{margin-top:15px}
+
+      .gc-demo-actions{justify-content:space-between}
+    }
+    @media(pointer:coarse){.gc-companion{display:none!important}}
+
+    .deploy-update[hidden]{display:none!important}
+    .deploy-update{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:24px;background:rgba(10,10,14,.76);backdrop-filter:blur(18px) saturate(115%);animation:deployFade .32s ease both}
+    .deploy-card{position:relative;width:min(520px,100%);overflow:hidden;padding:34px;border:1px solid rgba(255,255,255,.13);border-radius:24px;background:linear-gradient(145deg,rgba(27,26,34,.98),rgba(15,15,20,.99));color:#fff;box-shadow:0 40px 120px rgba(0,0,0,.52),0 0 0 1px rgba(103,88,244,.08);animation:deployRise .42s cubic-bezier(.22,1,.36,1) both}
+    .deploy-card:before{content:"";position:absolute;width:280px;height:280px;right:-110px;top:-150px;border-radius:50%;background:radial-gradient(circle,rgba(103,88,244,.38),transparent 68%);pointer-events:none}
+    .deploy-badge{position:relative;display:inline-flex;align-items:center;gap:8px;margin-bottom:22px;padding:8px 10px;border:1px solid rgba(160,241,213,.18);border-radius:999px;background:rgba(160,241,213,.08);color:var(--mint);font:500 9px "DM Mono",monospace;letter-spacing:.12em;text-transform:uppercase}
+    .deploy-badge i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08);animation:deployPulse 1.5s ease-in-out infinite}
+    .deploy-card h2{position:relative;margin:0;font-size:clamp(34px,5vw,50px);line-height:.98;letter-spacing:-.055em;font-weight:620}
+    .deploy-card p{position:relative;margin:18px 0 24px;color:rgba(255,255,255,.58);font-size:14px;line-height:1.6}
+    .deploy-refresh{position:relative;width:100%;min-height:54px;border:0;border-radius:14px;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:10px;font-weight:750;cursor:pointer;box-shadow:0 14px 30px rgba(0,0,0,.2);transition:transform .18s ease,opacity .18s ease}
+    .deploy-refresh:hover{transform:translateY(-1px)}.deploy-refresh:active{transform:translateY(1px)}.deploy-refresh:disabled{cursor:wait;opacity:.7}
+    .deploy-refresh .refresh-icon{display:inline-block;font-size:18px;line-height:1}.deploy-refresh.is-loading .refresh-icon{animation:deploySpin .8s linear infinite}
+    .deploy-meta{position:relative;display:flex;justify-content:center;margin-top:14px;color:rgba(255,255,255,.26);font:500 8px "DM Mono",monospace;letter-spacing:.08em;text-transform:uppercase}
+    body.deploy-update-open{overflow:hidden}
+    @keyframes deployFade{from{opacity:0}to{opacity:1}}@keyframes deployRise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}@keyframes deployPulse{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}@keyframes deploySpin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}.marquee-track{transform:none!important}}
+  </style>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=%VITE_BUILD_ID%" />
+  <link rel="manifest" href="/site.webmanifest?v=%VITE_BUILD_ID%" />
+  <meta name="application-name" content="GuideCursor" />
+  <script src="/tab-title.js?v=%VITE_BUILD_ID%"></script>
+  <script src="/purchase-state.js?v=%VITE_BUILD_ID%"></script>
+  <link rel="stylesheet" href="/legal-ui.css?v=%VITE_BUILD_ID%" />
+  <link rel="stylesheet" href="/update-guard.css?v=%VITE_BUILD_ID%" />
+  <script src="/update-guard.js?v=%VITE_BUILD_ID%"></script>
+  <link rel="stylesheet" href="/mobile-hardening.css?v=%VITE_BUILD_ID%" />
+</head>
+<body>
+  <header class="nav-wrap">
+    <nav class="nav">
+      <a class="brand" href="#top" aria-label="GuideCursor home"><span class="mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 3l13 8-6 2 3 6-2 1-3-6-5 4V3z" fill="currentColor"/></svg><i></i></span><span>Guide<b>Cursor</b></span></a>
+      <button class="nav-toggle" aria-label="Toggle navigation"><span></span><span></span></button>
+      <div class="nav-links"><a href="#product">Product</a><a href="#how">How it works</a><a href="/pricing">Pricing</a><a href="#research" data-guide-target="research-nav">Research</a><a class="nav-download" data-purchase-download hidden href="/downloads">Download <span>↓</span></a><a class="nav-cta" href="#demo" data-start-guide-demo>Try the concept <span>↗</span></a></div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="top" data-page-title="GuideCursor — Assistive cursor guidance">
+      <div class="grid"></div><div class="orb a"></div><div class="orb b"></div>
+      <div class="hero-copy">
+        <div class="eyebrow"><i></i> Assistive interaction, rethought</div>
+        <h1><span class="hero-title-line">Use the same computer.</span><span class="hero-title-line accent">Get the guidance you need.</span></h1>
+        <p>GuideCursor is an AI assistive cursor that understands what’s on screen, knows what you’re trying to do and guides your real pointer through the normal workflow.</p>
+        <div class="hero-actions"><a class="primary" href="#demo" data-start-guide-demo>Try GuideCursor <span>↗</span></a><a class="secondary" href="#how">Explore how it works <span>↗</span></a></div>
+      </div>
+
+      <div class="demo-wrap" id="demo">
+        <div class="demo-shell">
+          <div class="demo-top"><div class="traffic"><i></i><i></i><i></i></div><div class="demo-title" id="gc-demo-shell-title">GuideCursor live concept</div><div class="privacy">◇ User stays in control</div></div>
+          <div class="demo-stage">
+            <aside class="demo-side"><span>Try a task</span><button class="task active" data-task="attach">⌕ <span>Attach a file</span></button><button class="task" data-task="folder">□ <span>Create a folder</span></button><button class="task" data-task="downloads">↓ <span>Open downloads</span></button></aside>
+            <div class="mail">
+              <div class="mail-head"><span>New message</span><div><i></i><i></i><i></i></div></div>
+              <div class="fields"><div><span>To</span> james@company.com</div><div><span>Subject</span> Project files</div></div>
+              <div class="mail-body"><p>Hi James,</p><p>Sharing the latest project files with you.</p></div>
+              <div class="mail-actions"><button class="send">Send</button><button class="attach target" data-guide-target="attach">⌕ Attach file</button><button>More</button></div>
+              <div class="cursor"><svg width="31" height="31" viewBox="0 0 24 24"><path d="M5 3l13 8-6 2 3 6-2 1-3-6-5 4V3z" fill="currentColor"/></svg></div>
+              <div class="guide"><span class="guide-logo"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M5 3l13 8-6 2 3 6-2 1-3-6-5 4V3z" fill="currentColor"/></svg></span><div><small>GUIDECURSOR</small><strong class="guide-title">Move slightly left…</strong><p class="guide-copy">You’re close. I’ll help with the final few pixels.</p></div></div>
+            </div>
+            <div class="prompt"><span style="color:#6758f4">≋</span><span class="prompt-copy">Help me attach a file to this email.</span><i>Listening</i></div>
+          </div>
+
+          <div class="gc-hearing-showcase" id="gc-hearing-showcase">
+            <aside class="gc-hearing-side">
+              <small>Hearing assistance</small>
+              <div class="gc-hearing-feature active"><strong>Live captions</strong>Speech stays visible in real time.</div>
+              <div class="gc-hearing-feature"><strong>Sound awareness</strong>Important non-speech sounds become visual cues.</div>
+              <div class="gc-hearing-feature"><strong>Persistent transcript</strong>Missed dialogue remains available after it disappears.</div>
+              <div class="gc-hearing-note">The video is simulated for this MVP. The interaction demonstrates how GuideCursor could surface hearing-focused assistance inside an existing app.</div>
+            </aside>
+            <div class="gc-hearing-main">
+              <div class="gc-hearing-main-head"><div><small>GuideCursor hearing showcase</small><strong>Team meeting · accessibility review</strong></div><span class="gc-hearing-live"><i></i> LIVE DEMO</span></div>
+              <div class="gc-hearing-screen">
+                <div class="gc-hearing-people"><div class="gc-hearing-person"><span class="gc-hearing-name">Maya · Product</span></div><div class="gc-hearing-person secondary"><span class="gc-hearing-name">Jon · Design</span></div></div>
+                <div class="gc-hearing-sound" id="gc-sound-chip">♪ Notification sound detected</div>
+                <div class="gc-hearing-caption"><small>LIVE CAPTIONS</small><strong id="gc-caption-line">Maya: The accessibility review starts after lunch.</strong></div>
+                <div class="gc-hearing-controls">
+                  <button type="button" class="gc-hearing-control active" id="gc-caption-control" data-guide-target="hearing-cc">CC · Captions on</button>
+                  <button type="button" class="gc-hearing-control" id="gc-transcript-control" data-guide-target="hearing-transcript">Transcript</button>
+                  <span class="gc-hearing-time" id="gc-video-time">00:08 / 00:18</span>
+                </div>
+              </div>
+              <div class="gc-hearing-transcript" id="gc-transcript" hidden><strong>Transcript</strong> · Maya: The accessibility review starts after lunch. Jon: I added the latest interaction notes. System: Notification sound detected.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-foot"><span>Same apps.</span><span>Same cursor.</span><span>More reachable.</span></div>
+    </section>
+
+    <div class="marquee"><div class="marquee-track"><span>Screen understanding <i></i></span><span>Directional guidance <i></i></span><span>Target snapping <i></i></span><span>Local magnification <i></i></span><span>Spoken labels <i></i></span><span>User-controlled interaction <i></i></span><span>Screen understanding <i></i></span><span>Directional guidance <i></i></span><span>Target snapping <i></i></span><span>Local magnification <i></i></span><span>Spoken labels <i></i></span><span>User-controlled interaction <i></i></span></div></div>
+
+    <section class="problem" id="product" data-page-title="Why GuideCursor — Accessible point-and-click">
+      <div class="section-head"><span class="section-index">01 / THE PROBLEM</span><h2>Point-and-click is efficient.<br><em>Not equally accessible.</em></h2></div>
+      <div class="problem-lines">
+        <div class="problem-line parallax-line" data-shift="-70"><span>Blind users</span><strong>often navigate sequentially through controls</strong><span class="line-note">instead of directly pointing</span></div>
+        <div class="problem-line dark parallax-line" data-shift="90"><span>Low vision</span><strong>can turn small controls into search problems</strong><span class="line-note">even when the task is simple</span></div>
+        <div class="problem-line parallax-line" data-shift="-70"><span>Motor control</span><strong>can make the last few pixels the hardest part</strong><span class="line-note">tiny hit areas, high precision</span></div>
+      </div>
+      <p class="problem-note">GuideCursor is designed around the existing interface, not a replacement interface.</p>
+    </section>
+
+    <section class="system" id="how" data-page-title="How GuideCursor works — Perceive, guide, assist">
+      <div class="system-shell">
+        <div class="system-intro">
+          <div>
+            <span class="section-index">02 / THE SYSTEM</span>
+            <h2>AI that stays<br><span>beside your cursor.</span></h2>
+          </div>
+          <div class="system-intro-copy">
+            <p>GuideCursor does not take over the screen. It reads the interface, understands the task and helps the user move through the same workflow themselves.</p>
+            <div class="principle">✓ Human intent stays in control</div>
+          </div>
+        </div>
+
+        <div class="system-sequence" aria-label="How GuideCursor works">
+          <article class="system-stage">
+            <span class="system-stage-num">01</span>
+            <div class="system-stage-copy">
+              <small>Screen state</small>
+              <h3>Perceive</h3>
+              <p>Reads interface structure and what is visible on screen so the system knows what controls, labels and targets are currently available.</p>
+            </div>
+            <div class="system-stage-visual" aria-hidden="true">
+              <span class="visual-label">Interface scan</span>
+              <div class="scan-frame"><i class="scan-line"></i></div>
+            </div>
+          </article>
+
+          <article class="system-stage">
+            <span class="system-stage-num">02</span>
+            <div class="system-stage-copy">
+              <small>Intent + context</small>
+              <h3>Understand</h3>
+              <p>Combines the user’s goal with the current interface state, narrowing the screen down to the control that matters for this task.</p>
+            </div>
+            <div class="system-stage-visual" aria-hidden="true">
+              <span class="visual-label">Context matching</span>
+              <div class="understand-visual"><div class="signal-pill">Your goal</div><div class="merge-core">✦</div><div class="signal-pill">Screen state</div></div>
+            </div>
+          </article>
+
+          <article class="system-stage">
+            <span class="system-stage-num">03</span>
+            <div class="system-stage-copy">
+              <small>Directional help</small>
+              <h3>Guide</h3>
+              <p>Turns that target into directions, labels, warnings and speech while the user keeps moving the real cursor through the interface.</p>
+            </div>
+            <div class="system-stage-visual" aria-hidden="true">
+              <span class="visual-label">User moves the cursor</span>
+              <div class="guide-route"><span class="guide-cursor">↖</span><span class="guide-target"></span></div>
+            </div>
+          </article>
+
+          <article class="system-stage">
+            <span class="system-stage-num">04</span>
+            <div class="system-stage-copy">
+              <small>Precision layer</small>
+              <h3>Assist</h3>
+              <p>Adds snapping, stabilization and larger effective targets only where needed, making the final few pixels easier without performing the click for the user.</p>
+            </div>
+            <div class="system-stage-visual" aria-hidden="true">
+              <span class="visual-label">Precision assistance</span>
+              <div class="assist-visual"><div class="assist-target"><span class="assist-cursor">↖</span></div><div class="assist-caption"><strong>Target acquired</strong><span>User still clicks</span></div></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="system-handoff"><span>Perceive → Understand → Guide → Assist</span><span class="handoff-line"></span><strong>Then control stays with you ↘</strong></div>
+      </div>
+    </section>
+
+    <section class="agency" data-page-title="Human control — GuideCursor">
+      <div class="agency-kicker">NOT AN AUTOPILOT</div>
+      <h2>Most AI tries to do the task for you.<br><span>GuideCursor helps you do it yourself.</span></h2>
+      <div class="compare">
+        <article class="panel agent"><span class="panel-label">AUTONOMOUS AGENT</span><div class="sequence"><div class="bubble">“Attach report.pdf”</div><div class="agent-process">✦ AI takes over the workflow</div><div class="chips"><span>opens email</span><span>selects attachment</span><span>clicks send</span></div></div><p>The system acts on the interface.</p></article>
+        <div class="versus"><span>vs.</span></div>
+        <article class="panel guide-panel"><span class="panel-label">GUIDECURSOR</span><div class="sequence"><div class="bubble">“Help me attach report.pdf”</div><div class="route"><span class="route-start">↖</span><i></i><i></i><i></i><i></i><span class="route-end">⌕</span></div><div class="chips"><span>identifies target</span><span>guides movement</span><span>you click</span></div></div><p>The system helps you act on the interface.</p></article>
+      </div>
+    </section>
+
+    <section class="modes" data-page-title="Accessibility modes — GuideCursor">
+      <div class="modes-head"><span class="section-index">03 / ADAPTS TO ABILITY</span><h2>One cursor.<br><em>Different kinds of help.</em></h2></div>
+      <div class="modes-layout">
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="voice"><span>01</span><div><small>Blind / severe vision loss</small><strong>Hear the path, not a list of tabs.</strong></div><b>↗</b></button>
+          <button class="mode-tab" data-mode="vision"><span>02</span><div><small>Low vision</small><strong>Bring the interface to the cursor.</strong></div><b>↗</b></button>
+          <button class="mode-tab" data-mode="motor" data-guide-target="motor-mode"><span>03</span><div><small>Reduced motor control</small><strong>Make the last few pixels forgiving.</strong></div><b>↗</b></button>
+        </div>
+        <div class="mode-visual">
+          <div class="mode-window"><div class="window-top"><i></i><i></i><i></i></div><div class="window-body"><div class="fake-side"><i></i><i></i><i></i><i></i></div><div class="fake-main"><div class="fake-head"></div><div class="fake-line"></div><div class="fake-line short"></div><div class="mode-cursor"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M5 3l13 8-6 2 3 6-2 1-3-6-5 4V3z" fill="currentColor"/></svg><div class="mode-effect voice">≋ Move right</div></div><div class="fake-actions"><i></i><i></i><i></i></div></div></div></div>
+          <p class="mode-copy">Directional voice guidance identifies the control you actually need, then keeps you oriented as you move through the same interface everyone else sees.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="desktop" data-page-title="GuideCursor for macOS">
+      <div class="desktop-copy"><span class="section-index">04 / MACOS FIRST</span><h2>A companion that lives<br>where the work already happens.</h2><p>The MVP focuses on a small set of reliable workflows rather than pretending to understand every application from day one.</p></div>
+      <div class="perspective"><div class="desktop-frame"><div class="menu"><div><span>●</span><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span></div><div><span>9:41</span><span>⌁</span><span>◔</span></div></div><div class="wallpaper">
+        <div class="finder"><div class="finder-top"><i></i><i></i><i></i><span>Documents</span></div><div class="finder-body"><aside><span>Recents</span><span>Desktop</span><span class="selected">Documents</span><span>Downloads</span></aside><div class="finder-main"><div class="folder"><svg viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v10H3z" fill="currentColor"/></svg><span>Projects</span></div><div class="folder"><svg viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v10H3z" fill="currentColor"/></svg><span>University</span></div></div></div></div>
+        <div class="floating"><div class="floating-brand"><span class="floating-mark">↖</span> GuideCursor</div><p>What do you want help with?</p><div class="floating-input"><span>≋</span><span>Type or speak…</span><kbd>↵</kbd></div></div>
+        <div class="desk-cursor"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M5 3l13 8-6 2 3 6-2 1-3-6-5 4V3z" fill="currentColor"/></svg></div>
+      </div></div></div>
+      <div class="workflow"><span>First MVP workflows</span><strong>Attach a Gmail file</strong><i></i><strong>Create a Finder folder</strong><i></i><strong>Open Chrome downloads</strong></div>
+    </section>
+
+    <section class="research" id="research" data-page-title="Research — GuideCursor">
+      <div class="research-top"><span class="section-index">05 / RESEARCH FOUNDATION</span><h2>Not a feature in search of a problem.</h2><p>The concept combines ideas already supported across accessibility and HCI research: mouse-like access, screen understanding, larger effective targets and ability-based design.</p></div>
+      <div class="papers">
+        <a class="paper" target="_blank" rel="noreferrer" href="https://doi.org/10.1109/SMC42975.2020.9283015"><span class="paper-num">01</span><div class="paper-author"><strong>Lee, Ashok & Ramakrishnan</strong><span>2020</span></div><div class="paper-title"><strong>Repurposing Visual Input Modalities for Blind Users</strong><span>Supports mouse-like point-and-click access for blind users.</span></div><span>↗</span></a>
+        <a class="paper" data-guide-target="screen-recognition" target="_blank" rel="noreferrer" href="https://doi.org/10.1145/3411764.3445186"><span class="paper-num">02</span><div class="paper-author"><strong>Zhang et al.</strong><span>2021</span></div><div class="paper-title"><strong>Screen Recognition</strong><span>Shows that interface metadata can be inferred from screen pixels.</span></div><span>↗</span></a>
+        <a class="paper" target="_blank" rel="noreferrer" href="https://doi.org/10.1145/1866029.1866055"><span class="paper-num">03</span><div class="paper-author"><strong>Findlater et al.</strong><span>2010</span></div><div class="paper-title"><strong>Enhanced Area Cursors</strong><span>Supports larger effective targets to reduce fine pointing demands.</span></div><span>↗</span></a>
+        <a class="paper" target="_blank" rel="noreferrer" href="https://doi.org/10.1145/1952383.1952384"><span class="paper-num">04</span><div class="paper-author"><strong>Wobbrock et al.</strong><span>2011</span></div><div class="paper-title"><strong>Ability-Based Design</strong><span>Frames systems around adapting to users rather than the reverse.</span></div><span>↗</span></a>
+      </div>
+    </section>
+
+    <section class="final" data-page-title="A more reachable interface — GuideCursor"><div class="glow"></div><div class="final-cursor one">↖</div><div class="final-cursor two">↖</div><span class="section-index">GUIDECURSOR</span><h2>The same software.<br><span>A more reachable interface.</span></h2><p>Use the same computer. Get the guidance you need.</p><a href="#demo" data-start-guide-demo>Experience the concept <span>↗</span></a></section>
+  </main>
+
+    <div class="gc-mode-picker" id="gc-mode-picker" role="dialog" aria-modal="true" aria-labelledby="gc-mode-title" hidden>
+    <div class="gc-mode-card">
+      <button type="button" class="gc-mode-close" id="gc-mode-close" aria-label="Close demo setup">×</button>
+      <span class="gc-mode-eyebrow"><i></i> Choose a demo mode</span>
+      <h2 id="gc-mode-title">How should GuideCursor assist you?</h2>
+      <p>Pick an accessibility profile to experience the same tasks through different assistance. You can switch profiles at any point during the demo.</p>
+      <div class="gc-mode-options">
+        <button type="button" class="gc-mode-option" data-demo-mode="vision">
+          <span class="gc-mode-icon" aria-hidden="true">◉</span>
+          <small>Visual impairment</small>
+          <strong>Spoken guidance</strong>
+          <span>Live voice directions, high-contrast target highlighting and repeated audio instructions.</span>
+        </button>
+        <button type="button" class="gc-mode-option" data-demo-mode="hearing">
+          <span class="gc-mode-icon" aria-hidden="true">◫</span>
+          <small>Hearing impairment</small>
+          <strong>Visual-first feedback</strong>
+          <span>Captioned status, stronger visual confirmations and rhythmic target cues without relying on sound.</span>
+        </button>
+        <button type="button" class="gc-mode-option" data-demo-mode="motor">
+          <span class="gc-mode-icon" aria-hidden="true">↖</span>
+          <small>Reduced motor function</small>
+          <strong>Precision assistance</strong>
+          <span>Larger effective targets, stronger snap assistance and a more forgiving final approach.</span>
+        </button>
+      </div>
+      <div class="gc-mode-foot"><span>This is a simulated product demo.</span><b>You stay in control of every click.</b></div>
+    </div>
+  </div>
+
+  <div class="gc-companion" id="gc-companion" aria-hidden="true" hidden>
+    <span class="gc-companion-mark">↖</span>
+    <div class="gc-companion-bubble">
+      <small id="gc-companion-mode">GUIDECURSOR</small>
+      <strong id="gc-direction">Move toward the target</strong>
+      <span id="gc-distance">You move. GuideCursor assists.</span>
+    </div>
+  </div>
+
+  <aside class="gc-demo-panel" id="gc-demo-panel" aria-live="polite" hidden>
+    <div class="gc-demo-head">
+      <span class="gc-demo-brand"><i></i> GuideCursor demo</span>
+      <span class="gc-demo-progress" id="gc-demo-progress">1 / 3</span>
+    </div>
+    <div class="gc-mode-switcher" role="group" aria-label="Demo accessibility profile">
+      <button type="button" class="gc-mode-switch" data-gc-mode-switch="vision">Vision</button>
+      <button type="button" class="gc-mode-switch" data-gc-mode-switch="hearing">Hearing</button>
+      <button type="button" class="gc-mode-switch" data-gc-mode-switch="motor">Motor</button>
+    </div>
+    <div class="gc-demo-task">
+      <small id="gc-demo-kicker">Task 01</small>
+      <strong id="gc-demo-title">Attach the file</strong>
+      <p id="gc-demo-copy">Move your real cursor toward the highlighted Attach file control, then click it.</p>
+      <div class="gc-demo-feedback">
+        <i></i>
+        <span><strong id="gc-feedback-title">Guidance active</strong> <span id="gc-feedback-copy">Follow the GuideCursor cue.</span></span>
+        <span class="gc-voice-status" id="gc-voice-status">Ready</span>
+      </div>
+    </div>
+    <div class="gc-demo-actions">
+      <button type="button" class="gc-mini-btn" id="gc-voice-toggle" aria-pressed="true"><span>♪</span> Voice on</button>
+      <button type="button" class="gc-mini-btn" id="gc-repeat-voice"><span>↻</span> Repeat audio</button>
+      <button type="button" class="gc-mini-btn gc-replay" id="gc-replay-demo" hidden><span>↻</span> Replay</button>
+      <button type="button" class="gc-mini-btn" id="gc-exit-demo"><span>×</span> Exit demo</button>
+    </div>
+  </aside>
+
+  <div class="deploy-update" id="deploy-update-modal" role="alertdialog" aria-modal="true" aria-labelledby="deploy-update-title" aria-describedby="deploy-update-copy" hidden>
+    <div class="deploy-card">
+      <div class="deploy-badge"><i></i> New version available</div>
+      <h2 id="deploy-update-title">A fresh GuideCursor build is live.</h2>
+      <p id="deploy-update-copy">This tab is still running the previous deployment. Refresh now to load the newest design and changes.</p>
+      <button class="deploy-refresh" id="deploy-refresh-btn" type="button"><span class="refresh-icon">↻</span><span>Hard refresh to latest version</span></button>
+      <div class="deploy-meta" id="deploy-update-meta">Waiting for latest deployment…</div>
+    </div>
+  </div>
+
+    <script>
+    const qs=(s,p=document)=>p.querySelector(s),qsa=(s,p=document)=>[...p.querySelectorAll(s)];
+    const loadedBuild=(document.querySelector('meta[name="guidecursor-build"]')?.content||'').trim();
+    const updateModal=qs('#deploy-update-modal'),updateButton=qs('#deploy-refresh-btn'),updateMeta=qs('#deploy-update-meta');
+    let latestBuild='',updateVisible=false,updateCheckBusy=false;
+    function showDeployUpdate(data){
+      if(updateVisible)return;
+      updateVisible=true;latestBuild=data.build||'';
+      updateMeta.textContent=data.commit?'Latest build · '+data.commit:'Latest deployment is ready';
+      updateModal.hidden=false;document.body.classList.add('deploy-update-open');
+      requestAnimationFrame(()=>updateButton.focus());
+    }
+    async function checkForDeployUpdate(){
+      if(updateCheckBusy||updateVisible)return;
+      updateCheckBusy=true;
+      try{
+        const res=await fetch('/version.json?__gc_check='+Date.now(),{cache:'no-store',headers:{'Cache-Control':'no-cache'}});
+        if(!res.ok)return;
+        const data=await res.json();
+        if(data?.build&&loadedBuild&&loadedBuild!=='%VITE_BUILD_ID%'&&data.build!==loadedBuild)showDeployUpdate(data);
+      }catch(_){}
+      finally{updateCheckBusy=false}
+    }
+    async function hardRefreshToLatest(){
+      updateButton.disabled=true;updateButton.classList.add('is-loading');updateButton.querySelector('span:last-child').textContent='Loading latest version…';
+      try{if('caches'in window){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)))}}catch(_){}
+      const url=new URL(location.href);url.searchParams.set('__gc_build',latestBuild||String(Date.now()));location.replace(url.toString());
+    }
+    updateButton.addEventListener('click',hardRefreshToLatest);
+    document.addEventListener('keydown',e=>{if(!updateVisible)return;if(e.key==='Escape'){e.preventDefault();e.stopPropagation()}if(e.key==='Tab'){e.preventDefault();updateButton.focus()}},true);
+    if(!window.__gcUpdateGuardV2){
+      setTimeout(checkForDeployUpdate,2500);setInterval(checkForDeployUpdate,7000);
+      addEventListener('focus',checkForDeployUpdate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForDeployUpdate()});
+    }
+    qs('.nav-toggle').addEventListener('click',()=>qs('.nav-links').classList.toggle('open'));
+    qsa('.nav-links a').forEach(a=>a.addEventListener('click',()=>qs('.nav-links').classList.remove('open')));
+
+    const taskData={
+      attach:{prompt:'Help me attach a file to this email.',title:'Move slightly left…',copy:'You’re close. I’ll help with the final few pixels.',x:185,y:150},
+      folder:{prompt:'Help me make a new folder.',title:'Move down toward the toolbar…',copy:'I found the folder control.',x:205,y:182},
+      downloads:{prompt:'Show me my recent downloads.',title:'Move up toward the browser controls…',copy:'Downloads is identified.',x:288,y:62}
+    };
+    let taskTimer;
+    function animateCursor(task){
+      const c=qs('.cursor'),d=taskData[task]; if(window.__gcActive)return; if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+      c.style.transition='none';c.style.opacity='0';c.style.transform='translate(360px,85px)';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{c.style.transition='transform 2.5s cubic-bezier(.22,1,.36,1),opacity .35s';c.style.opacity='1';c.style.transform='translate('+d.x+'px,'+d.y+'px)'}));
+      clearTimeout(taskTimer);taskTimer=setTimeout(()=>animateCursor(task),4200);
+    }
+    qsa('.task').forEach(btn=>btn.addEventListener('click',()=>{
+      qsa('.task').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+      const t=btn.dataset.task,d=taskData[t];qs('.prompt-copy').textContent=d.prompt;qs('.guide-title').textContent=d.title;qs('.guide-copy').textContent=d.copy;
+      qs('.attach').classList.toggle('target',t==='attach');animateCursor(t);
+    }));
+    animateCursor('attach');
+
+    // Real-pointer GuideCursor concept demo. It never moves the system cursor; it only
+    // adds contextual guidance and a visual "magnetic" response around the target.
+    const gcPanel=qs('#gc-demo-panel'),gcModePicker=qs('#gc-mode-picker'),gcModeClose=qs('#gc-mode-close'),gcCompanion=qs('#gc-companion'),gcCompanionMode=qs('#gc-companion-mode'),gcDirection=qs('#gc-direction'),gcDistance=qs('#gc-distance'),gcProgress=qs('#gc-demo-progress'),gcKicker=qs('#gc-demo-kicker'),gcTitle=qs('#gc-demo-title'),gcCopy=qs('#gc-demo-copy'),gcFeedbackTitle=qs('#gc-feedback-title'),gcFeedbackCopy=qs('#gc-feedback-copy'),gcVoiceStatus=qs('#gc-voice-status'),gcVoiceToggle=qs('#gc-voice-toggle'),gcRepeatVoice=qs('#gc-repeat-voice'),gcExit=qs('#gc-exit-demo'),gcReplay=qs('#gc-replay-demo'),gcDemoShellTitle=qs('#gc-demo-shell-title'),gcCaptionLine=qs('#gc-caption-line'),gcSoundChip=qs('#gc-sound-chip'),gcCaptionControl=qs('#gc-caption-control'),gcTranscriptControl=qs('#gc-transcript-control'),gcTranscript=qs('#gc-transcript'),gcVideoTime=qs('#gc-video-time');
+    const coarsePointer=matchMedia('(pointer:coarse)').matches;
+    let gcActive=false,gcTaskIndex=0,gcPointer={x:innerWidth*.5,y:innerHeight*.5,seen:false},gcAudio=null,gcRaf=0,gcComplete=false,gcTarget=null,gcMode='vision',gcVoiceOn=true,gcLastDirection='',gcLastDirectionAt=0,gcVoice=null,gcCaptionTimer=0,gcCaptionIndex=0;
+    const desktopGuideTasks=[
+      {target:()=>qs('[data-guide-target="attach"]'),title:'Attach the file',copy:'Move your real cursor toward the highlighted Attach file control, then click it.',voice:'Task one. Attach the file. Move toward the highlighted Attach file button. I will tell you which direction to move.',kicker:'Task 01'},
+      {target:()=>qs('[data-guide-target="research-nav"]'),title:'Go to Research',copy:'GuideCursor found the Research destination. Move to it in the navigation and click normally.',voice:'Task two. Go to Research. Move toward the Research link in the navigation. I will keep you oriented as you move.',kicker:'Task 02'},
+      {target:()=>qs('[data-guide-target="screen-recognition"]'),title:'Open Screen Recognition',copy:'Scroll until the research paper appears, then move to the highlighted result and click it.',voice:'Task three. Open Screen Recognition. If the target is off screen, I will tell you when to scroll. Then move to the highlighted research paper.',kicker:'Task 03'}
+    ];
+    const touchGuideTasks=[
+      {target:()=>qs('[data-guide-target="attach"]'),title:'Attach the file',copy:'Tap the highlighted Attach file control. GuideCursor makes the intended target easier to identify.',voice:'Task one. Attach the file. The Attach file control is highlighted. Move through the page and activate that control.',kicker:'Task 01'},
+      {target:()=>qs('[data-guide-target="motor-mode"]'),title:'Choose motor assistance',copy:'Scroll to the highlighted accessibility mode and tap it.',voice:'Task two. Choose motor assistance. Scroll until the motor assistance option is highlighted, then activate it.',kicker:'Task 02'},
+      {target:()=>qs('[data-guide-target="screen-recognition"]'),title:'Open Screen Recognition',copy:'Scroll to the highlighted research paper and tap it.',voice:'Task three. Open Screen Recognition. Scroll until the Screen Recognition research paper is highlighted, then activate it.',kicker:'Task 03'}
+    ];
+    const hearingGuideTasks=[
+      {target:()=>gcCaptionControl,title:'Keep the conversation visible',copy:'This simulated meeting has live captions and a visual label for non-speech audio. Click the highlighted CC control to confirm captions.',voice:'',kicker:'Task 01'},
+      {target:()=>gcTranscriptControl,title:'Open the transcript',copy:'Persistent text can help when a caption is missed. Open the transcript below the video.',voice:'',kicker:'Task 02'},
+      {target:()=>qs('[data-guide-target="research-nav"]'),title:'Continue to Research',copy:'Now use the visual direction cue to reach Research in the site navigation.',voice:'',kicker:'Task 03'}
+    ];
+    const gcModes={
+      vision:{label:'VISION · SPOKEN',feedback:'Spoken guidance',detail:'Voice directions and high-contrast targeting are active.'},
+      hearing:{label:'HEARING · VISUAL',feedback:'Visual-first guidance',detail:'Status, direction and confirmation are shown visually with no audio required.'},
+      motor:{label:'MOTOR · PRECISION',feedback:'Precision assistance',detail:'The effective target is larger and snap assistance becomes stronger as you get close.'}
+    };
+    function gcTasks(){return gcMode==='hearing'?hearingGuideTasks:(coarsePointer?touchGuideTasks:desktopGuideTasks)}
+    const gcCaptionFrames=[
+      {line:'Maya: The accessibility review starts after lunch.',sound:'♪ Notification sound detected',time:'00:08 / 00:18'},
+      {line:'Jon: I added the latest interaction notes to the handoff.',sound:'♪ Door chime shown visually',time:'00:11 / 00:18'},
+      {line:'Maya: Great. Please flag anything that still needs testing.',sound:'♪ No speech missed',time:'00:14 / 00:18'}
+    ];
+    function gcRenderCaptionFrame(){
+      const frame=gcCaptionFrames[gcCaptionIndex%gcCaptionFrames.length];
+      gcCaptionLine.textContent=frame.line;gcSoundChip.textContent=frame.sound;gcVideoTime.textContent=frame.time;
+    }
+    function gcStartCaptionLoop(){
+      clearInterval(gcCaptionTimer);gcCaptionIndex=0;gcRenderCaptionFrame();
+      gcCaptionTimer=setInterval(()=>{gcCaptionIndex=(gcCaptionIndex+1)%gcCaptionFrames.length;gcRenderCaptionFrame()},2400);
+    }
+    function gcStopCaptionLoop(){clearInterval(gcCaptionTimer);gcCaptionTimer=0}
+    function gcPickVoice(){
+      if(!('speechSynthesis'in window))return null;
+      const voices=speechSynthesis.getVoices();
+      if(!voices.length)return null;
+      const english=voices.filter(v=>/^en([-_]|$)/i.test(v.lang||''));
+      const preferred=english.find(v=>/Samantha|Daniel|Google UK|Microsoft (Sonia|Ryan)|Natural/i.test(v.name||''))||english.find(v=>/^en-GB/i.test(v.lang||''))||english.find(v=>/^en-US/i.test(v.lang||''))||english[0]||voices[0];
+      gcVoice=preferred||null;
+      return gcVoice;
+    }
+    if('speechSynthesis'in window){
+      gcPickVoice();
+      speechSynthesis.addEventListener?.('voiceschanged',gcPickVoice);
+    }
+    function gcSetVoiceStatus(text){gcVoiceStatus.textContent=text}
+    function gcSpeak(text,{interrupt=true}={}){
+      if(gcMode!=='vision'||!gcVoiceOn||!text)return;
+      if(!('speechSynthesis'in window)){gcSetVoiceStatus('Voice unavailable');return}
+      try{
+        if(interrupt)speechSynthesis.cancel();
+        const utterance=new SpeechSynthesisUtterance(text);
+        utterance.lang=gcVoice?.lang||'en-GB';
+        utterance.rate=.96;utterance.pitch=1;utterance.volume=1;
+        const voice=gcVoice||gcPickVoice();if(voice)utterance.voice=voice;
+        utterance.onstart=()=>gcSetVoiceStatus('Speaking');
+        utterance.onend=()=>gcSetVoiceStatus('Voice ready');
+        utterance.onerror=()=>gcSetVoiceStatus('Try repeat');
+        speechSynthesis.speak(utterance);
+      }catch(_){gcSetVoiceStatus('Try repeat')}
+    }
+    function gcSpeakTask(prefix=''){
+      if(!gcActive||gcComplete)return;
+      const task=gcTasks()[gcTaskIndex];
+      gcSpeak((prefix?prefix+' ':'')+task.voice);
+    }
+    function gcMaybeSpeakDirection(direction){
+      if(gcMode!=='vision'||!gcVoiceOn||!direction)return;
+      const now=performance.now();
+      if(direction===gcLastDirection||now-gcLastDirectionAt<1150)return;
+      if('speechSynthesis'in window&&speechSynthesis.speaking&&now-gcLastDirectionAt<1800)return;
+      gcLastDirection=direction;gcLastDirectionAt=now;
+      const spoken=direction.replace('— click once',', click once').replace('-',' ');
+      gcSpeak(spoken,{interrupt:false});
+    }
+    function gcEarcon(kind='success'){
+      if(gcMode!=='vision'||!gcVoiceOn)return;
+      try{
+        gcAudio=gcAudio||new (window.AudioContext||window.webkitAudioContext)();
+        const now=gcAudio.currentTime,osc=gcAudio.createOscillator(),gain=gcAudio.createGain();
+        osc.type='sine';osc.frequency.setValueAtTime(kind==='success'?660:480,now);osc.frequency.exponentialRampToValueAtTime(kind==='success'?900:610,now+.12);
+        gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.04,now+.018);gain.gain.exponentialRampToValueAtTime(.0001,now+.17);
+        osc.connect(gain);gain.connect(gcAudio.destination);osc.start(now);osc.stop(now+.18);
+      }catch(_){}
+    }
+    function gcModeTaskCopy(task){
+      if(gcMode==='vision')return 'Voice guidance is on. '+task.copy;
+      if(gcMode==='hearing')return 'Use the hearing showcase in the main demo area. '+task.copy;
+      return 'Move normally. GuideCursor enlarges the effective target and adds stronger snap assistance near the control.';
+    }
+    function gcUpdateModeUI(){
+      const mode=gcModes[gcMode];
+      gcPanel.dataset.mode=gcMode;
+      document.body.dataset.gcDemoMode=gcMode;
+      gcCompanionMode.textContent='GUIDECURSOR · '+mode.label;
+      qsa('[data-gc-mode-switch]').forEach(btn=>btn.classList.toggle('active',btn.dataset.gcModeSwitch===gcMode));
+      gcVoiceToggle.hidden=gcMode!=='vision';gcRepeatVoice.hidden=gcMode!=='vision';gcVoiceStatus.hidden=gcMode!=='vision';
+      gcDemoShellTitle.textContent=gcMode==='hearing'?'GuideCursor hearing assistance':'GuideCursor live concept';
+      if(gcMode==='hearing')gcStartCaptionLoop();else gcStopCaptionLoop();
+      gcVoiceToggle.setAttribute('aria-pressed',String(gcVoiceOn));
+      gcVoiceToggle.innerHTML='<span>♪</span> Voice '+(gcVoiceOn?'on':'off');
+      gcFeedbackTitle.textContent=mode.feedback;gcFeedbackCopy.textContent=mode.detail;
+      if(gcMode==='vision')gcSetVoiceStatus('Voice ready');
+      else if('speechSynthesis'in window)speechSynthesis.cancel();
+    }
+    function gcSetMode(mode,{announce=true}={}){
+      if(!gcModes[mode]||mode===gcMode)return;
+      gcClearTarget();gcMode=mode;gcTaskIndex=0;gcComplete=false;gcLastDirection='';gcLastDirectionAt=0;
+      gcUpdateModeUI();gcUpdatePanel();gcSetTarget();gcRevealTouchTarget();
+      const stage=gcMode==='hearing'?qs('#gc-hearing-showcase'):qs('#demo');
+      stage?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
+      gcQueue();
+      if(announce&&gcActive&&gcMode==='vision')gcSpeakTask('Vision mode selected. Spoken guidance is on.');
+    }
+    function gcClearTarget(){
+      if(!gcTarget)return;
+      gcTarget.classList.remove('gc-demo-target','gc-target-near','gc-target-ready');
+      gcTarget.style.removeProperty('--gc-mag-x');gcTarget.style.removeProperty('--gc-mag-y');
+      gcTarget=null;
+    }
+    function gcSetTarget(){
+      gcClearTarget();
+      if(!gcActive||gcComplete)return;
+      const task=gcTasks()[gcTaskIndex];gcTarget=task?.target?.()||null;
+      if(gcTarget)gcTarget.classList.add('gc-demo-target');
+    }
+    function gcUpdatePanel(){
+      if(!gcActive)return;
+      const task=gcTasks()[gcTaskIndex],mode=gcModes[gcMode];
+      gcProgress.textContent=gcComplete?'3 / 3':(gcTaskIndex+1)+' / 3';
+      if(gcComplete){
+        const completionCopy=gcMode==='vision'?'Spoken guidance and high-contrast targeting helped you reach each control while you kept every click.':gcMode==='hearing'?'Captioned directions and visual confirmations carried the entire interaction without relying on sound.':'Larger effective targets and stronger snap assistance reduced fine pointing demands while you kept control.';
+        gcPanel.classList.add('gc-demo-complete');gcKicker.textContent='Demo complete';gcTitle.textContent='You stayed in control.';gcCopy.textContent=completionCopy;gcReplay.hidden=false;
+        gcFeedbackTitle.textContent=mode.feedback;gcFeedbackCopy.textContent='Switch profiles above to compare another assistance style.';
+        window.GuideCursorTitle?.setContext('Demo complete — '+mode.label+' · GuideCursor');
+      }else{
+        gcPanel.classList.remove('gc-demo-complete');gcKicker.textContent=task.kicker+' · '+mode.label;gcTitle.textContent=task.title;gcCopy.textContent=gcModeTaskCopy(task);gcReplay.hidden=true;
+        gcFeedbackTitle.textContent=mode.feedback;gcFeedbackCopy.textContent=mode.detail;
+        window.GuideCursorTitle?.setContext('Demo '+(gcTaskIndex+1)+'/3 — '+task.title+' · '+mode.label+' · GuideCursor');
+      }
+    }
+    function gcDirectionName(dx,dy){
+      const ax=Math.abs(dx),ay=Math.abs(dy);
+      if(ax<2&&ay<2)return 'Target found — click once';
+      if(ax>ay*1.35)return dx>0?'Move right':'Move left';
+      if(ay>ax*1.35)return dy>0?'Move down':'Move up';
+      return (dy>0?'Move down':'Move up')+(dx>0?'-right':'-left');
+    }
+    function gcRender(){
+      gcRaf=0;
+      if(!gcActive||gcComplete||!gcTarget)return;
+      const r=gcTarget.getBoundingClientRect(),vh=innerHeight,vw=innerWidth;
+      let direction='',detail='';
+      if(r.top>=vh){direction='Scroll down';detail='The target is below this view.';gcTarget.classList.remove('gc-target-near','gc-target-ready')}
+      else if(r.bottom<=0){direction='Scroll up';detail='The target is above this view.';gcTarget.classList.remove('gc-target-near','gc-target-ready')}
+      else if(coarsePointer){
+        direction='Tap highlighted target';
+        if(gcMode==='motor')detail='The enlarged touch zone is active. Tap the highlighted control or just beside it.';
+        else if(gcMode==='hearing')detail='The target is visible. Follow the visual pulse and tap it.';
+        else detail='The target is on screen. Spoken guidance will confirm the step after you tap it.';
+        gcTarget.classList.add('gc-target-near');gcTarget.classList.remove('gc-target-ready');
+        gcTarget.style.removeProperty('--gc-mag-x');gcTarget.style.removeProperty('--gc-mag-y');
+      }else{
+        const nearestX=Math.max(r.left,Math.min(r.right,gcPointer.x)),nearestY=Math.max(r.top,Math.min(r.bottom,gcPointer.y));
+        const dx=nearestX-gcPointer.x,dy=nearestY-gcPointer.y,dist=Math.hypot(dx,dy);
+        const cx=r.left+r.width/2,cy=r.top+r.height/2;
+        direction=gcDirectionName(dx,dy);
+        const nearRadius=gcMode==='motor'?265:gcMode==='vision'?205:180;
+        const readyPad=gcMode==='motor'?38:gcMode==='vision'?20:gcMode==='hearing'?10:0;
+        const near=dist<nearRadius,ready=(gcPointer.x>=r.left-readyPad&&gcPointer.x<=r.right+readyPad&&gcPointer.y>=r.top-readyPad&&gcPointer.y<=r.bottom+readyPad);
+        if(ready)direction=gcMode==='motor'?'Snap zone ready — click':'Target found — click once';
+        if(gcMode==='motor')detail=ready?'Snap zone active. Clicking anywhere in this enlarged area activates the intended control.':near?'Strong snap assist is expanding the effective target.':'Move normally. Precision help increases as you get closer.';
+        else if(gcMode==='hearing')detail=ready?'Visual confirmation: target ready.':near?'The pulse is stronger as you approach the target.':'Follow the caption and visual pulse.';
+        else detail=dist<70?'Target is ready. I will confirm when you click.':dist<170?'You are close. The high-contrast target is expanding.':'Follow the spoken direction.';
+        gcTarget.classList.toggle('gc-target-near',near);gcTarget.classList.toggle('gc-target-ready',ready);
+        if(near&&gcMode==='motor'){
+          const magX=Math.max(-8,Math.min(8,(gcPointer.x-cx)*.055)),magY=Math.max(-8,Math.min(8,(gcPointer.y-cy)*.055));
+          gcTarget.style.setProperty('--gc-mag-x',magX+'px');gcTarget.style.setProperty('--gc-mag-y',magY+'px');
+        }else{gcTarget.style.removeProperty('--gc-mag-x');gcTarget.style.removeProperty('--gc-mag-y')}
+      }
+      gcDirection.textContent=direction;gcDistance.textContent=detail;
+      if(gcMode==='hearing'){gcFeedbackTitle.textContent=direction;gcFeedbackCopy.textContent=detail}
+      else if(gcMode==='motor'){gcFeedbackTitle.textContent=direction==='Target found — click once'?'Snap target ready':'Precision assistance';gcFeedbackCopy.textContent=detail}
+      else{gcFeedbackTitle.textContent='Spoken guidance';gcFeedbackCopy.textContent=detail;gcMaybeSpeakDirection(direction)}
+      if(!coarsePointer&&gcPointer.seen){
+        const bubbleW=250,flip=gcPointer.x>vw-bubbleW-46;
+        gcCompanion.classList.toggle('flip-x',flip);gcCompanion.classList.add('is-visible');
+        const x=Math.max(10,Math.min(vw-bubbleW-36,gcPointer.x+(flip?-238:18))),y=Math.max(92,Math.min(vh-105,gcPointer.y+18));
+        gcCompanion.style.transform='translate3d('+x+'px,'+y+'px,0)';
+      }
+    }
+    function gcQueue(){if(!gcRaf)gcRaf=requestAnimationFrame(gcRender)}
+    function gcRevealTouchTarget(){
+      if(!coarsePointer||!gcTarget)return;
+      const mobileNav=gcTarget.closest?.('.nav-links');
+      if(!mobileNav)return;
+      mobileNav.classList.add('open');
+      const toggle=qs('.nav-toggle');if(toggle)toggle.setAttribute('aria-expanded','true');
+    }
+    function gcCloseTouchNav(){
+      const mobileNav=qs('.nav-links');if(!mobileNav)return;
+      mobileNav.classList.remove('open');
+      const toggle=qs('.nav-toggle');if(toggle)toggle.setAttribute('aria-expanded','false');
+    }
+    function gcActivateTask(index,{scroll=false,speak=true}={}){
+      gcTaskIndex=Math.max(0,Math.min(gcTasks().length-1,index));gcComplete=false;gcLastDirection='';
+      if(gcMode==='hearing'&&gcTaskIndex===0){gcCaptionControl.textContent='CC · Captions on';gcCaptionControl.classList.add('active');gcTranscript.hidden=true;gcTranscriptControl.classList.remove('active')}
+      gcUpdatePanel();gcSetTarget();gcRevealTouchTarget();
+      if(scroll&&gcTarget)gcTarget.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
+      gcQueue();
+      if(speak&&gcMode==='vision')gcSpeakTask();
+    }
+    function openGuideDemoPicker(e){
+      if(e)e.preventDefault();
+      gcModePicker.hidden=false;document.body.classList.add('gc-picker-open');
+      requestAnimationFrame(()=>qs('[data-demo-mode="vision"]')?.focus());
+    }
+    function closeGuideDemoPicker(){
+      gcModePicker.hidden=true;document.body.classList.remove('gc-picker-open');
+      window.GuideCursorTitle?.clearContext();syncSectionTitle();
+    }
+    function beginGuideDemo(mode){
+      gcModePicker.hidden=true;document.body.classList.remove('gc-picker-open');
+      gcActive=true;window.__gcActive=true;gcComplete=false;gcVoiceOn=true;document.body.classList.add('guide-demo-active');gcPanel.hidden=false;gcCompanion.hidden=false;
+      clearTimeout(taskTimer);const fakeCursor=qs('.cursor');if(fakeCursor)fakeCursor.style.opacity='0';
+      gcMode=mode;gcUpdateModeUI();gcActivateTask(0,{scroll:true,speak:false});
+      if(gcMode==='hearing')setTimeout(()=>qs('#gc-hearing-showcase')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'}),90);
+      if(gcMode==='vision')gcSpeak('Vision mode selected. Spoken guidance is on. '+gcTasks()[0].voice);
+      else if(gcMode==='hearing'){gcFeedbackTitle.textContent='Visual-only guidance';gcFeedbackCopy.textContent='No sound is required. Watch the caption and pulsing target.'}
+      else{gcFeedbackTitle.textContent='Precision assistance';gcFeedbackCopy.textContent='A larger snap zone is active around the target.'}
+      gcEarcon('start');
+    }
+    function stopGuideDemo(){
+      gcActive=false;window.__gcActive=false;gcComplete=false;document.body.classList.remove('guide-demo-active');delete document.body.dataset.gcDemoMode;gcPanel.hidden=true;gcCompanion.hidden=true;gcCompanion.classList.remove('is-visible');gcPanel.classList.remove('gc-demo-complete');gcClearTarget();
+      if('speechSynthesis'in window)speechSynthesis.cancel();
+      gcStopCaptionLoop();gcTranscript.hidden=true;gcTranscriptControl.classList.remove('active');gcCloseTouchNav();
+      window.GuideCursorTitle?.clearContext();syncSectionTitle();
+      const fakeCursor=qs('.cursor');if(fakeCursor){fakeCursor.style.opacity='';animateCursor('attach')}
+    }
+    function finishGuideDemo(){
+      gcClearTarget();gcCloseTouchNav();gcComplete=true;gcUpdatePanel();gcEarcon('success');gcDirection.textContent='✓ That’s GuideCursor';gcDistance.textContent='The interface stayed yours the whole time.';
+      if(gcMode==='vision')gcSpeak('Demo complete. You stayed in control of every click.');
+      if(!coarsePointer){gcCompanion.classList.add('is-visible');setTimeout(()=>{if(gcComplete)gcCompanion.classList.remove('is-visible')},2200)}
+    }
+    function completeGuideTask(clicked){
+      if(!gcActive||gcComplete)return;
+      gcEarcon('success');
+      if(gcTaskIndex>=gcTasks().length-1){finishGuideDemo();return}
+      gcClearTarget();gcTaskIndex++;gcUpdatePanel();setTimeout(()=>{gcSetTarget();gcRevealTouchTarget();gcQueue();if(gcMode==='vision')gcSpeakTask()},360);
+    }
+    qsa('[data-start-guide-demo]').forEach(el=>el.addEventListener('click',openGuideDemoPicker));
+    if(new URLSearchParams(location.search).get('demo')==='1'){
+      setTimeout(()=>{openGuideDemoPicker();const clean=new URL(location.href);clean.searchParams.delete('demo');history.replaceState({},'',clean.pathname+clean.search+clean.hash)},500);
+    }
+    qsa('[data-demo-mode]').forEach(btn=>btn.addEventListener('click',()=>beginGuideDemo(btn.dataset.demoMode)));
+    qsa('[data-gc-mode-switch]').forEach(btn=>btn.addEventListener('click',()=>{
+      const next=btn.dataset.gcModeSwitch;
+      if(next===gcMode)return;
+      gcSetMode(next,{announce:true});
+      if(next==='hearing'){gcFeedbackTitle.textContent='Visual-only guidance';gcFeedbackCopy.textContent='Audio is not needed in this profile. Watch the live caption and target pulse.'}
+      if(next==='motor'){gcFeedbackTitle.textContent='Precision assistance';gcFeedbackCopy.textContent='The effective target and snap zone are now larger.'}
+    }));
+    gcModeClose.addEventListener('click',closeGuideDemoPicker);
+    gcExit.addEventListener('click',stopGuideDemo);
+    gcReplay.addEventListener('click',()=>gcActivateTask(0,{scroll:true,speak:true}));
+    gcVoiceToggle.addEventListener('click',()=>{
+      gcVoiceOn=!gcVoiceOn;gcVoiceToggle.setAttribute('aria-pressed',String(gcVoiceOn));gcVoiceToggle.innerHTML='<span>♪</span> Voice '+(gcVoiceOn?'on':'off');
+      if(!gcVoiceOn){if('speechSynthesis'in window)speechSynthesis.cancel();gcSetVoiceStatus('Voice off')}
+      else{gcSetVoiceStatus('Voice ready');gcSpeakTask('Voice guidance enabled.')}
+    });
+    gcRepeatVoice.addEventListener('click',()=>gcSpeakTask('Repeating the current instruction.'));
+    addEventListener('pointermove',e=>{gcPointer.x=e.clientX;gcPointer.y=e.clientY;gcPointer.seen=true;gcQueue()},{passive:true});
+    addEventListener('scroll',gcQueue,{passive:true});addEventListener('resize',gcQueue);
+    document.addEventListener('keydown',e=>{
+      if(!gcModePicker.hidden&&e.key==='Escape'){e.preventDefault();closeGuideDemoPicker()}
+    });
+    function gcClickPad(){return gcMode==='motor'?38:gcMode==='vision'?20:gcMode==='hearing'?10:0}
+    function gcPointInsideTarget(x,y,target,pad=0){
+      const r=target.getBoundingClientRect();
+      return x>=r.left-pad&&x<=r.right+pad&&y>=r.top-pad&&y<=r.bottom+pad;
+    }
+    function gcActivateTarget(target,{virtual=false}={}){
+      if(!target)return;
+      const href=target.matches?.('a[href]')?target.getAttribute('href'):'';
+      let delay=220;
+      if(href?.startsWith('#')){
+        const destination=qs(href);
+        if(destination){destination.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});delay=520}
+      }else if(href){
+        try{window.open(target.href,'_blank','noopener')}catch(_){}
+      }
+      if(target===gcTranscriptControl){gcTranscript.hidden=false;gcTranscriptControl.classList.add('active')}
+      if(target===gcCaptionControl){gcCaptionControl.classList.add('active');gcCaptionControl.textContent='CC · Captions confirmed'}
+      if(coarsePointer&&target.closest?.('.nav-links'))gcCloseTouchNav();
+      qs('.guide-title').textContent=virtual?'Snap assist ✓':'Target found ✓';
+      qs('.guide-copy').textContent=virtual?'Your click landed inside the assisted target zone. GuideCursor activated the intended control.':'You made the click. GuideCursor only helped you get there.';
+      if(gcMode==='motor'){gcFeedbackTitle.textContent='✓ Snap activation';gcFeedbackCopy.textContent=virtual?'The enlarged effective target accepted the click.':'Direct click registered inside the target.'}
+      if(gcMode==='vision'){gcFeedbackTitle.textContent='✓ Target activated';gcFeedbackCopy.textContent=virtual?'The high-contrast assist zone accepted the click near the control.':'The intended control was activated.';gcSpeak('Target activated.')}
+      if(gcMode==='hearing'){gcFeedbackTitle.textContent='✓ Visual confirmation';gcFeedbackCopy.textContent=target===gcTranscriptControl?'Transcript opened below the video.':'Caption control confirmed visually.'}
+      setTimeout(()=>completeGuideTask(target),delay);
+    }
+    document.addEventListener('click',e=>{
+      if(!gcActive||gcComplete||!gcTarget)return;
+      const direct=e.target.closest?.('[data-guide-target]')===gcTarget;
+      const pad=gcClickPad();
+      const virtual=!direct&&pad>0&&gcPointInsideTarget(e.clientX,e.clientY,gcTarget,pad);
+      if(!direct&&!virtual)return;
+      e.preventDefault();e.stopPropagation();
+      gcActivateTarget(gcTarget,{virtual});
+    },true);
+
+    // Small ambient reactions keep the page feeling cursor-aware even when demo mode is off.
+    const demoShell=qs('.demo-shell');
+    if(!matchMedia('(pointer:coarse)').matches){
+      qs('.hero').addEventListener('pointermove',e=>{
+        const heroEl=qs('.hero'),r=heroEl.getBoundingClientRect(),x=((e.clientX-r.left)/r.width)*100,y=((e.clientY-r.top)/r.height)*100;heroEl.style.setProperty('--cursor-x',x+'%');heroEl.style.setProperty('--cursor-y',y+'%');
+        if(demoShell&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+          const dr=demoShell.getBoundingClientRect(),nx=(e.clientX-(dr.left+dr.width/2))/dr.width,ny=(e.clientY-(dr.top+dr.height/2))/dr.height;
+          demoShell.style.setProperty('--demo-tilt-y',(Math.max(-1,Math.min(1,nx))*2.1)+'deg');demoShell.style.setProperty('--demo-tilt-x',(Math.max(-1,Math.min(1,-ny))*1.45)+'deg');
+        }
+      },{passive:true});
+      qs('.hero').addEventListener('pointerleave',()=>{if(demoShell){demoShell.style.setProperty('--demo-tilt-x','0deg');demoShell.style.setProperty('--demo-tilt-y','0deg')}});
+      qsa('.system-stage').forEach(stage=>stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();stage.style.setProperty('--stage-x',((e.clientX-r.left)/r.width*100)+'%');stage.style.setProperty('--stage-y',((e.clientY-r.top)/r.height*100)+'%')},{passive:true}));
+    }
+    const desktopObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('desktop-live')}),{threshold:.42});
+    const desktopScene=qs('.desktop');if(desktopScene)desktopObserver.observe(desktopScene);
+
+    const modeData={
+      voice:{effect:'≋ Move right',cls:'voice',copy:'Directional voice guidance identifies the control you actually need, then keeps you oriented as you move through the same interface everyone else sees.'},
+      vision:{effect:'◎ Attach file',cls:'',copy:'Local magnification, contrast and target highlighting stay focused around the pointer instead of turning the entire application into a different experience.'},
+      motor:{effect:'',cls:'snap',copy:'Intent-aware snapping and larger effective targets reduce fine pointing demands while leaving the user in control of the movement and click.'}
+    };
+    qsa('.mode-tab').forEach(btn=>btn.addEventListener('click',()=>{
+      qsa('.mode-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+      const d=modeData[btn.dataset.mode],e=qs('.mode-effect');e.className='mode-effect '+d.cls;e.textContent=d.effect;qs('.mode-copy').textContent=d.copy;
+    }));
+
+    const hero=qs('.hero'),heroCopy=qs('.hero-copy'),demo=qs('.demo-wrap'),orbA=qs('.orb.a'),orbB=qs('.orb.b'),systemStages=qsa('.system-stage'),desktop=qs('.desktop'),frame=qs('.desktop-frame');
+    const titleZones=qsa('[data-page-title]');
+    let ticking=false,lastSectionTitle='';
+    function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+    function syncSectionTitle(){
+      if(!titleZones.length)return;
+      const marker=innerHeight*.38;
+      let active=titleZones[0];
+      for(const zone of titleZones){
+        const r=zone.getBoundingClientRect();
+        if(r.top<=marker&&r.bottom>marker){active=zone;break}
+        if(r.top<=marker)active=zone;
+      }
+      const next=active?.dataset.pageTitle||'GuideCursor — Assistive cursor guidance';
+      if(next!==lastSectionTitle){lastSectionTitle=next;window.GuideCursorTitle?.setBase(next)}
+    }
+    function onScroll(){
+      ticking=false;const y=scrollY, vh=innerHeight;
+      if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!matchMedia('(pointer:coarse)').matches&&innerWidth>700){
+        const hp=clamp(y/(hero.offsetHeight*.78),0,1);heroCopy.style.transform='translateY('+(hp*150)+'px)';heroCopy.style.opacity=1-hp*.72;demo.style.transform='translateY('+(-hp*72)+'px) scale('+(1-hp*.055)+')';orbA.style.transform='translateY('+(hp*150)+'px)';orbB.style.transform='translateY('+(-hp*90)+'px)';
+        qsa('.parallax-line').forEach(el=>{const r=el.getBoundingClientRect(),p=clamp((vh-r.top)/(vh+r.height),0,1),s=Number(el.dataset.shift||0);el.style.transform='translateX('+(s*(p-.5)*1.55)+'px)'});
+        const dr=desktop.getBoundingClientRect(),dp=clamp((vh-dr.top)/(vh*.95),0,1);frame.style.transform='translateY('+((1-dp)*95)+'px) scale('+(0.84+dp*.16)+') rotateX('+((1-dp)*9)+'deg)';
+      }else{
+        heroCopy.style.transform='';heroCopy.style.opacity='';demo.style.transform='';orbA.style.transform='';orbB.style.transform='';
+      }
+      syncSectionTitle();
+    }
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){systemStages.forEach(stage=>stage.classList.add('in-view'))}
+    else{
+      const systemObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('in-view')}),{threshold:.32,rootMargin:'0px 0px -8% 0px'});
+      systemStages.forEach(stage=>systemObserver.observe(stage));
+    }
+    addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(onScroll);ticking=true}},{passive:true});addEventListener('resize',onScroll);onScroll();
+  </script>
+  <script src="/legal-ui.js?v=%VITE_BUILD_ID%"></script>
+  <script src="/mobile-hardening.js?v=%VITE_BUILD_ID%"></script>
+</body>
+</html>
