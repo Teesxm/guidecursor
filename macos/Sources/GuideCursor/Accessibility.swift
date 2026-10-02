@@ -13,6 +13,8 @@ struct Control: Identifiable {
 struct Scan {
     let controls: [Control]
     let window: AXUIElement?
+    /// Scanned window (or sheet) frame in accessibility coordinates, read within the scan budget.
+    var windowFrame: CGRect? = nil
     let stats: ScanStats
 }
 /// Identity for AXUIElements using CFEqual, so distinct elements never collide.
@@ -129,6 +131,6 @@ enum Accessibility {
         }
         let stats = ScanStats.from(nodes: tree.nodes, indexed: indexed, limits: tree.limits, failedReads: tree.failedReads,
                                    seconds: Date().timeIntervalSince(started))
-        return Scan(controls: controls, window: window, stats: stats)
+        return Scan(controls: controls, window: window, windowFrame: windowFrame, stats: stats)
     }
 }

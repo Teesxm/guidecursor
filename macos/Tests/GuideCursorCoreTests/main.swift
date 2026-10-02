@@ -308,6 +308,175 @@ final class GuidanceTests {
             2: table(["AXVisibleRows": .elements([3])]), 3: row(20),
             20: table(["AXRows": .elements([21])]), 21: row(22), 22: text("Inner row")])), ["Inner row"])
     }
+    func testScreenFallbackIsOfferedOnlyOnCompleteAccessibilityEvidence() {
+        let complete = ScanStats(window: .found, labelledControls: 12, unlabelledInteractive: 3)
+        var partial = complete; partial.failedReads = 2
+        var named = complete; named.unlabelledInteractive = 0
+        XCTAssertEqual(ScreenFallback.decide(.noExposedControls(unlabelled: 3), stats: ScanStats(window: .found, unlabelledInteractive: 3)), .offerScreenImage(unlabelled: 3))
+        XCTAssertEqual(ScreenFallback.decide(.noExposedControls(unlabelled: 0), stats: partial), .retryAccessibility)
+        XCTAssertEqual(ScreenFallback.decide(.controlsNotFullyRead, stats: partial), .retryAccessibility)
+        XCTAssertEqual(ScreenFallback.decide(.noMatch(controls: 12), stats: complete), .offerScreenImage(unlabelled: 3))
+        XCTAssertEqual(ScreenFallback.decide(.noMatch(controls: 12), stats: partial), .retryAccessibility)
+        XCTAssertEqual(ScreenFallback.decide(.noMatch(controls: 12), stats: named), .rephrase)
+        XCTAssertEqual(ScreenFallback.decide(.modelChoseNone(controls: 12), stats: complete), .offerScreenImage(unlabelled: 3))
+        XCTAssertEqual(ScreenFallback.decide(.matches(2), stats: complete), .notNeeded)
+        XCTAssertEqual(ScreenFallback.decide(.unsearchableRequest, stats: complete), .rephrase)
+        XCTAssertEqual(ScreenFallback.decide(.appNotResponding, stats: ScanStats(window: .notResponding)), .retryAccessibility)
+        for diagnosis in [Diagnosis.permissionMissing, .appUnavailable, .noWindow] {
+            XCTAssertEqual(ScreenFallback.decide(diagnosis, stats: ScanStats(window: .noWindow)), .fixAccessFirst)
+        }
+        // End to end from the scanner: a genuinely empty window offers an image; a failed read does not.
+        func decision(_ tree: FakeTree) -> FallbackDecision {
+            let stats = scan(tree).1
+            return ScreenFallback.decide(Diagnostics.diagnose(trusted: true, stats: stats, request: "downloads", matches: 0), stats: stats)
+        }
+        XCTAssertEqual(decision(FakeTree([app: ["AXFocusedWindow": .element(1)], 1: window(children: [2]),
+            2: ["AXRole": .string("AXButton"), "frame": .frame(box)]])), .offerScreenImage(unlabelled: 1))
+        XCTAssertEqual(decision(FakeTree([app: ["AXFocusedWindow": .element(1)], 1: window(children: [2]),
+            2: ["AXRole": .string("AXGroup"), "frame": .frame(box), "AXChildren": .fail(.timeout)]])), .retryAccessibility)
+    }
+    func testCaptureGeometryMapsImagePixelsToScreenPoints() {
+        let window = CGRect(x: -800, y: 100, width: 400, height: 300)
+        let geometry = CaptureGeometry(windowFrame: window, imageSize: CGSize(width: 800, height: 600))!
+        XCTAssertEqual(geometry.scale, 2)
+        XCTAssertEqual(geometry.screenRect(imageRect: CGRect(x: 100, y: 50, width: 40, height: 20)), CGRect(x: -750, y: 125, width: 20, height: 10))
+        XCTAssertEqual(geometry.screenRect(imageRect: CGRect(x: 780, y: 590, width: 40, height: 20)), nil)
+        XCTAssertEqual(geometry.screenRect(imageRect: CGRect(x: 10, y: 10, width: 0, height: 20)), nil)
+        XCTAssertEqual(geometry.screenRect(imageRect: CGRect(x: CGFloat.nan, y: 10, width: 4, height: 4)), nil)
+        XCTAssertEqual(CaptureGeometry(windowFrame: window, imageSize: CGSize(width: 801, height: 600)) != nil, true)
+        XCTAssertEqual(CaptureGeometry(windowFrame: window, imageSize: CGSize(width: 800, height: 500)), nil)
+        XCTAssertEqual(CaptureGeometry(windowFrame: window, imageSize: CGSize(width: 4000, height: 3000)), nil)
+        XCTAssertEqual(CaptureGeometry(windowFrame: .zero, imageSize: CGSize(width: 800, height: 600)), nil)
+    }
+    func testWindowMatcherRefusesToGuess() {
+        let frame = CGRect(x: 100, y: 80, width: 600, height: 400)
+        let shifted = CGRect(x: 102, y: 81, width: 599, height: 401)
+        let windows = [
+            CaptureWindow(id: 1, pid: 7, frame: frame, onScreen: false),
+            CaptureWindow(id: 2, pid: 8, frame: frame),
+            CaptureWindow(id: 3, pid: 7, frame: frame, layer: 3),
+            CaptureWindow(id: 4, pid: 7, frame: shifted),
+            CaptureWindow(id: 5, pid: 7, frame: frame.offsetBy(dx: 30, dy: 0))
+        ]
+        XCTAssertEqual(WindowMatcher.match(pid: 7, accessibilityFrame: frame, in: windows), .match(windows[3]))
+        XCTAssertEqual(WindowMatcher.match(pid: 7, accessibilityFrame: frame, in: windows + [CaptureWindow(id: 6, pid: 7, frame: frame)]), .ambiguous(2))
+        XCTAssertEqual(WindowMatcher.match(pid: 9, accessibilityFrame: frame, in: windows), .notFound)
+        XCTAssertEqual(WindowMatcher.outputSize(points: CGSize(width: 1600, height: 1000), pixelScale: 2), CGSize(width: 2048, height: 1280))
+        XCTAssertEqual(WindowMatcher.outputSize(points: CGSize(width: 400, height: 300), pixelScale: 2), CGSize(width: 800, height: 600))
+    }
+    func testVisualProposalsAreBoundedAndNeverVerified() {
+        let geometry = CaptureGeometry(windowFrame: CGRect(x: 0, y: 0, width: 400, height: 300), imageSize: CGSize(width: 800, height: 600))!
+        let candidates = [
+            VisualCandidate(label: " Downloads ", imageRect: CGRect(x: 20, y: 40, width: 200, height: 40), confidence: 0.7),
+            VisualCandidate(label: "Search", imageRect: CGRect(x: 600, y: 20, width: 120, height: 40), confidence: 0.9),
+            VisualCandidate(label: "Low", imageRect: CGRect(x: 20, y: 100, width: 50, height: 20), confidence: 0.2),
+            VisualCandidate(label: "Outside", imageRect: CGRect(x: 790, y: 20, width: 50, height: 20), confidence: 0.9),
+            VisualCandidate(label: "Whole window", imageRect: CGRect(x: 0, y: 0, width: 800, height: 600), confidence: 0.9),
+            VisualCandidate(label: "Tiny", imageRect: CGRect(x: 5, y: 5, width: 2, height: 2), confidence: 0.9),
+            VisualCandidate(label: "Bad", imageRect: CGRect(x: 5, y: 5, width: 20, height: 20), confidence: 1.4),
+            VisualCandidate(label: "  ", imageRect: CGRect(x: 5, y: 5, width: 20, height: 20), confidence: 0.9)
+        ]
+        let targets = VisualProposals.validate(candidates, geometry: geometry)
+        XCTAssertEqual(targets.map(\.label), ["Search", "Downloads"])
+        XCTAssertEqual(targets.map(\.screenRect), [CGRect(x: 300, y: 10, width: 60, height: 20), CGRect(x: 10, y: 20, width: 100, height: 20)])
+        XCTAssertEqual(targets.allSatisfy { !$0.verified }, true)
+        XCTAssertEqual(VisualProposals.validate(Array(repeating: candidates[1], count: 9), geometry: geometry).count, 5)
+    }
+    func testEvaluationRequiresLabelAndOverlap() {
+        let a = CGRect(x: 0, y: 0, width: 10, height: 10)
+        XCTAssertEqual(VisualEvaluation.iou(a, a), 1)
+        XCTAssertEqual(VisualEvaluation.iou(a, a.offsetBy(dx: 20, dy: 0)), 0)
+        XCTAssertEqual(VisualEvaluation.iou(a, a.offsetBy(dx: 5, dy: 0)), 50.0 / 150.0)
+        let truth = [LabeledBox(label: "Downloads", rect: a), LabeledBox(label: "Search", rect: a.offsetBy(dx: 100, dy: 0))]
+        let result = VisualEvaluation.evaluate(predictions: [
+            LabeledBox(label: "downloads", rect: a.offsetBy(dx: 1, dy: 0)),       // correct
+            LabeledBox(label: "Close", rect: a.offsetBy(dx: 100, dy: 0)),         // right place, wrong label
+            LabeledBox(label: "Search", rect: a.offsetBy(dx: 300, dy: 0)),        // right label, wrong place
+            LabeledBox(label: "Downloads", rect: a)                               // duplicate of a matched truth
+        ], truth: truth)
+        XCTAssertEqual(result.truePositives, 1)
+        XCTAssertEqual(result.precision, 0.25)
+        XCTAssertEqual(result.recall, 0.5)
+    }
+    func testSyntheticScreenGroundTruthMatchesRenderedPixels() {
+        let controls = [SyntheticScreen.Control(label: "Downloads", rect: CGRect(x: 20, y: 40, width: 140, height: 28)),
+                        SyntheticScreen.Control(label: "Attach file", rect: CGRect(x: 240, y: 230, width: 120, height: 28))]
+        let rendered = SyntheticScreen.render(size: CGSize(width: 400, height: 300), scale: 2, controls: controls)!
+        XCTAssertEqual([rendered.image.width, rendered.image.height], [800, 600])
+        XCTAssertEqual(rendered.truth.map(\.rect), [CGRect(x: 40, y: 80, width: 280, height: 56), CGRect(x: 480, y: 460, width: 240, height: 56)])
+        // Read pixels back (top-left origin) and check each truth box is drawn where it says.
+        var pixels = [UInt8](repeating: 0, count: 800 * 600 * 4)
+        let context = CGContext(data: &pixels, width: 800, height: 600, bitsPerComponent: 8, bytesPerRow: 800 * 4,
+                                space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        context.draw(rendered.image, in: CGRect(x: 0, y: 0, width: 800, height: 600))
+        func isControl(_ x: Int, _ y: Int) -> Bool { let i = (y * 800 + x) * 4; return Int(pixels[i + 2]) > Int(pixels[i]) + 60 }
+        for box in rendered.truth {
+            XCTAssertEqual(isControl(Int(box.rect.maxX) - 4, Int(box.rect.minY) + 4), true)   // inside, clear of the text
+            XCTAssertEqual(isControl(Int(box.rect.maxX) + 4, Int(box.rect.midY)), false)      // just outside
+        }
+    }
+    func testSyntheticAnalyzerPathEndToEnd() async throws {
+        struct Echo: VisualAnalyzer {   // stands in for a future model; returns truth plus one bad box
+            let boxes: [LabeledBox]
+            func candidates(in image: CGImage, request: String) async throws -> [VisualCandidate] {
+                boxes.map { VisualCandidate(label: $0.label, imageRect: $0.rect.offsetBy(dx: 2, dy: 2), confidence: 0.8) }
+                    + [VisualCandidate(label: "Ghost", imageRect: CGRect(x: 900, y: 0, width: 40, height: 40), confidence: 0.99)]
+            }
+        }
+        let controls = [SyntheticScreen.Control(label: "Downloads", rect: CGRect(x: 20, y: 40, width: 140, height: 28))]
+        let rendered = SyntheticScreen.render(size: CGSize(width: 400, height: 300), scale: 2, controls: controls)!
+        let found = try await Echo(boxes: rendered.truth).candidates(in: rendered.image, request: "downloads")
+        let geometry = CaptureGeometry(windowFrame: CGRect(x: 500, y: 200, width: 400, height: 300),
+                                       imageSize: CGSize(width: rendered.image.width, height: rendered.image.height))!
+        let targets = VisualProposals.validate(found, geometry: geometry)
+        XCTAssertEqual(targets.map(\.label), ["Downloads"])
+        XCTAssertEqual(targets[0].screenRect, CGRect(x: 521, y: 241, width: 140, height: 28))
+        let score = VisualEvaluation.evaluate(predictions: found.map { LabeledBox(label: $0.label, rect: $0.imageRect) }, truth: rendered.truth)
+        XCTAssertEqual([score.truePositives, score.predictions, score.truths], [1, 2, 1])
+    }
+    func testCaptureOfferIsBoundToItsScan() {
+        let frame = CGRect(x: 100, y: 80, width: 600, height: 400)
+        XCTAssertEqual(CaptureOffer(decision: .retryAccessibility, pid: 7, request: "downloads", windowFrame: frame), nil)
+        XCTAssertEqual(CaptureOffer(decision: .offerScreenImage(unlabelled: 2), pid: 7, request: "downloads", windowFrame: nil), nil)
+        let offer = CaptureOffer(decision: .offerScreenImage(unlabelled: 2), pid: 7, request: " downloads ", windowFrame: frame)!
+        func now(pid: Int32 = 7, request: String = "downloads", same: Bool = true, frame current: CGRect? = frame) -> CaptureOffer.Observation {
+            CaptureOffer.Observation(pid: pid, request: request, sameWindow: same, windowFrame: current)
+        }
+        XCTAssertEqual(offer.isCurrent(now()), true)
+        XCTAssertEqual(offer.isCurrent(now(request: "downloads\n")), true)                  // whitespace only
+        XCTAssertEqual(offer.isCurrent(now(pid: 8)), false)                                 // another app
+        XCTAssertEqual(offer.isCurrent(now(request: "downloads folder")), false)            // request edited
+        XCTAssertEqual(offer.isCurrent(now(same: false)), false)                            // another window, same frame
+        XCTAssertEqual(offer.isCurrent(now(frame: frame.offsetBy(dx: 3, dy: 0))), false)    // window moved
+        XCTAssertEqual(offer.isCurrent(now(frame: nil)), false)                             // frame unreadable
+    }
+    func testBoundedWaitReturnsAtDeadlineAndDropsLateResult() async throws {
+        final class Late: @unchecked Sendable {
+            private let lock = NSLock(); private var stored: [Int] = []
+            func add(_ value: Int) { lock.withLock { stored.append(value) } }
+            var values: [Int] { lock.withLock { stored } }
+        }
+        let late = Late()
+        // Ignores cancellation, like a capture API without an abort: finishes after 1 s regardless.
+        let stubborn: @Sendable () async throws -> Int = {
+            await withCheckedContinuation { done in DispatchQueue.global().asyncAfter(deadline: .now() + 1) { done.resume(returning: 42) } }
+        }
+        let started = Date()
+        var outcome: Error?
+        do { _ = try await BoundedWait.run(seconds: 0.1, stubborn) { late.add($0) } }
+        catch { outcome = error }
+        let waited = Date().timeIntervalSince(started)
+        XCTAssertEqual(outcome as? BoundedWaitError, .timedOut)
+        XCTAssertEqual(waited < 0.5, true)
+        XCTAssertEqual(late.values, [])                       // nothing late yet: the wait really ended early
+        for _ in 0..<30 where late.values.isEmpty { try await Task.sleep(nanoseconds: 100_000_000) }
+        XCTAssertEqual(late.values, [42])                     // the late result went to the discard path only
+        // Normal completion and errors pass through unchanged.
+        let quick = try await BoundedWait.run(seconds: 2) { 7 }
+        XCTAssertEqual(quick, 7)
+        do { _ = try await BoundedWait.run(seconds: 2) { () async throws -> Int in throw CocoaError(.userCancelled) }; XCTAssertEqual(true, false) }
+        catch { XCTAssertEqual((error as? CocoaError)?.code, .userCancelled) }
+    }
 }
 
 let tests = GuidanceTests()
@@ -336,4 +505,19 @@ tests.testSupportedEmptyVisibleRowsHideRowsFromChildren()
 tests.testOnlySupportedVisibleRowsAreIndexed()
 tests.testNonRowTableChildrenSurviveWithEmptyVisibleRows()
 tests.testUnsupportedOrFailedVisibleRowsKeepAXRowsFallback()
-print("PASS: 25 core checks (\(assertions) assertions)")
+tests.testScreenFallbackIsOfferedOnlyOnCompleteAccessibilityEvidence()
+tests.testCaptureGeometryMapsImagePixelsToScreenPoints()
+tests.testWindowMatcherRefusesToGuess()
+tests.testVisualProposalsAreBoundedAndNeverVerified()
+tests.testEvaluationRequiresLabelAndOverlap()
+tests.testSyntheticScreenGroundTruthMatchesRenderedPixels()
+// Keep top-level code synchronous; run the one async check to completion before continuing.
+let asyncDone = DispatchSemaphore(value: 0)
+Task.detached {
+    try! await tests.testSyntheticAnalyzerPathEndToEnd()
+    try! await tests.testBoundedWaitReturnsAtDeadlineAndDropsLateResult()
+    asyncDone.signal()
+}
+asyncDone.wait()
+tests.testCaptureOfferIsBoundToItsScan()
+print("PASS: 34 core checks (\(assertions) assertions)")

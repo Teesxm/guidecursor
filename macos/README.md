@@ -12,7 +12,7 @@ From the repository root:
 
 The script compiles in the repository, but assembles, signs and zips the app in a temporary folder, verifies the signature of the bundle and of a freshly extracted ZIP copy, then installs both to `~/Library/Caches/nl.guidecursor.prototype/build/` (override with `GUIDECURSOR_OUT`, which must be outside Documents/Desktop/iCloud). It refuses to replace a copy that is running from that folder and never touches `~/Applications`. Do not copy the app back into Documents: the file provider adds Finder metadata within seconds, and strict signature checks then fail. Share `GuideCursor-macOS-prototype.zip` instead. The ZIP bytes differ between runs because of timestamps.
 
-In the app, select **Enable access**, then enable GuideCursor under **System Settings → Privacy & Security → Accessibility**. The user must grant this permission. If macOS does not list it, add the built app (path above) with the + button. Local ad-hoc builds may require renewing permission after rebuilding. No screen-recording, microphone or camera permission is needed for this milestone.
+In the app, select **Enable access**, then enable GuideCursor under **System Settings → Privacy & Security → Accessibility**. The user must grant this permission. If macOS does not list it, add the built app (path above) with the + button. Local ad-hoc builds may require renewing permission after rebuilding. Accessibility guidance needs no Screen Recording, microphone or camera permission. This build never requests Screen Recording.
 
 1. Open an ordinary app window such as Finder.
 2. Choose that application in GuideCursor.
@@ -54,9 +54,9 @@ Model replies may only nominate IDs from that scan. The user confirms the target
 
 ## Limits and next milestones
 
-This is a desktop foundation, not the completed course MVP. No automatic multi-step planning, screenshot fallback, voice input, pointer snapping, motor stabilization or live captions yet. Hearing remains TBD in the project draft. The first scope is visual guidance in a few selected desktop apps.
+This is a desktop foundation, not the completed course MVP. No automatic multi-step planning, screen-image recognition, voice input, pointer snapping, motor stabilization or live captions yet. Hearing remains TBD in the project draft. The first scope is visual guidance in a few selected desktop apps.
 
-Control discovery uses shared macOS accessibility roles and hierarchy, with no app-specific rules. It should transfer to other apps that expose their controls through the accessibility API, but coverage is not universal. Some applications omit accessibility labels or expose only part of their interface; screenshot/vision fallback is future work and would require Screen Recording permission. Duplicate labels require user selection. The app does not yet detect all occlusion, same-window content changes, or whether a click successfully completed an action. Movement guidance is not validated for blind users; conduct supervised testing before claiming accessibility outcomes. Relative-window regions distinguish duplicate labels but need validation with intended users.
+Control discovery uses shared macOS accessibility roles and hierarchy, with no app-specific rules. It should transfer to other apps that expose their controls through the accessibility API, but coverage is not universal. Some applications omit accessibility labels or expose only part of their interface; recognising controls in a screen image is future work (see below). Duplicate labels require user selection. The app does not yet detect all occlusion, same-window content changes, or whether a click successfully completed an action. Movement guidance is not validated for blind users; conduct supervised testing before claiming accessibility outcomes. Relative-window regions distinguish duplicate labels but need validation with intended users.
 
 Next: verify the native overlay and control discovery with permission on this Mac; test a local model; verify the optional macOS Zoom shortcut; complete and validate one multi-step desktop journey with synthetic data. Keep the working website as a presentation asset.
 
@@ -82,3 +82,17 @@ Quit any running GuideCursor first. Build with `./macos/scripts/build.sh`, open 
 5. One other app (e.g. Safari or Mail) → the visible name of a toolbar button. Copy the Scan details.
 
 Report for each: status text, Scan details line, and whether the outline/companion/speech appeared at the right place.
+
+## Screen-image fallback (groundwork only — not available to users)
+
+GuideCursor does not capture the screen and never asks for Screen Recording permission in this build. The permission will be requested only once a real visual-guidance path exists.
+
+The code contains groundwork for that path, unused by the app's interface:
+
+- **When to offer an image.** A decision based on accessibility evidence: only after a complete scan with no named controls, or no match while some controls are unnamed. Never after a partial or failed scan.
+- **Offer bound to its scan.** The app keeps such an offer privately and drops it when the app, request or scan changes. Any future capture must first re-read the selected process, request text, focused window element and frame, and refuse if they differ.
+- **Capture service.** ScreenCaptureKit (macOS 14+) captures only the matched window, without the cursor, at most 2048 px, in memory only.
+  - GuideCursor stops *waiting* after 5 s, but ScreenCaptureKit cannot abort a screenshot already in progress. One may finish later; that late image is released on arrival without being used.
+- **Offline evaluation tools.** Image-to-screen mapping, validation of proposed boxes (always marked unverified), a synthetic screen renderer with ground truth, and scoring.
+
+None of this establishes model accuracy or that live capture works; both are unverified.

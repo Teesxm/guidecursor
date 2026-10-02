@@ -7,7 +7,10 @@ import GuideCursorCore
 @MainActor final class Model: ObservableObject {
     @Published var trusted = AXIsProcessTrusted()
     @Published var appName = "Choose an application"
-    @Published var request = ""
+    @Published var request = "" {
+        // An offer belongs to the request it was scanned for; any edit needs a fresh scan.
+        didSet { if request != oldValue { screenOffer = nil } }
+    }
     @Published var modelName = ""
     @Published var useAI = false
     @Published var speech = true
@@ -20,6 +23,9 @@ import GuideCursorCore
     @Published var zoomShortcutConfirmed = false
     @Published var apps: [NSRunningApplication] = []
     @Published var selectedPID: Int32 = 0
+    /// Kept for the future visual-guidance path; not shown and never captured from in this build.
+    /// Cleared by stop() (app change, new scan) and by any request edit.
+    private(set) var screenOffer: CaptureOffer?
     private let overlay = Overlay()
     private let voice = AVSpeechSynthesizer()
     private let reader = DispatchQueue(label: "guidecursor.accessibility")
@@ -64,6 +70,7 @@ import GuideCursorCore
     func stop(message: String = "Guidance stopped.") {
         generation += 1; target = nil; window = nil; candidates = []; guiding = false; busy = false
         overlay.hide(); voice.stopSpeaking(at: .immediate); lastSpoken = ""; status = message
+        screenOffer = nil
     }
     func copyScanDetails() {
         NSPasteboard.general.clearContents()
@@ -110,6 +117,10 @@ import GuideCursorCore
                 } else {
                     self.status = Diagnostics.message(diagnosis, appName: self.appName, stats: result.stats)
                 }
+                // Edits during the scan already cleared the offer; do not attach this scan to a newer request.
+                self.screenOffer = self.request == query && self.selectedPID == pid
+                    ? CaptureOffer(decision: ScreenFallback.decide(diagnosis, stats: result.stats), pid: pid, request: query, windowFrame: result.windowFrame)
+                    : nil
             }
         }
     }
