@@ -96,3 +96,26 @@ The code contains groundwork for that path, unused by the app's interface:
 - **Offline evaluation tools.** Image-to-screen mapping, validation of proposed boxes (always marked unverified), a synthetic screen renderer with ground truth, and scoring.
 
 None of this establishes model accuracy or that live capture works; both are unverified.
+
+## Offline text location on generated screens (step 2 evaluation — not in the app)
+
+`VisionTextAnalyzer` uses Apple's built-in Vision text recognition (revision 3, no model download) to find visible words in an in-memory image. It returns pixel boxes, checked by the same validation path as any visual proposal. The app does not call it, does not capture the screen and does not show OCR boxes. Run the benchmark on generated screens only:
+
+```sh
+swift run -c release --package-path macos GuideCursorVisionBench 5            # add --lines to print OCR lines, --png DIR to save the generated screens
+swift run --package-path macos GuideCursorOCRChecks                          # opt-in real-OCR assertions (not in CI; results can vary by macOS version)
+```
+
+Measured on an Apple M4 (16 GB, macOS 26.6.2) on 6 generated screens and 51 requests. The set includes duplicate labels, a dark non-Retina screen with 11–12 pt text, a dense file list, and a screen where only opposite actions are visible ("Don't Save", "Don't Delete", "Save as PDF"). Three requests must return nothing ("Save", "Delete", "Folder"):
+
+| Level | Requests exactly right | Recall | Precision | Text-box IoU | Median per window image | First call in a new process |
+|---|---|---|---|---|---|---|
+| accurate | 49 / 51 | 0.959 | 1.000 | 0.844 | 47–66 ms (7 runs) | 137–474 ms |
+| fast | 39 / 51 | 0.755 | 1.000 | 0.810 | 5–7 ms | 6–22 ms (Vision already loaded) |
+
+**Limits.**
+- A text box is not a clickable control. It marks where words are drawn. The real hit area may be larger (a row or button), smaller, or absent (plain text).
+- **Visual text must have the same name as the request.** Every request word has to be in the label, and every label word in the request; only plural differences ("Download"/"Downloads") are allowed. "Save" therefore never matches "Don't Save" or "Save as PDF", "Delete" never matches "Don't Delete" or "Deleted", and "Folder" never matches "New Folder". Missing a match is the intended safe outcome. Accessibility label search keeps its broader ranking.
+- Vision sometimes misreads at full confidence: it read "Don't Save" as "Dont savi" and "Cancel" as "sance" on clean buttons.
+- The fast level failed on small, dark, non-Retina text (1 of 9 labels).
+- These are synthetic results only. They say nothing about accuracy on real apps, other languages, icons without text, or low contrast.

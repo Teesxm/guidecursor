@@ -50,39 +50,74 @@ public enum VisualEvaluation {
 /// Renders a synthetic window (no real screen content) with known control boxes, so a vision
 /// model can be evaluated without capturing anyone's screen. Rendering stays in memory.
 public enum SyntheticScreen {
+    public enum Style { case button, plain }
     public struct Control {
         public let label: String
         public let rect: CGRect   // points, top-left origin
-        public init(label: String, rect: CGRect) { self.label = label; self.rect = rect }
+        public let fontSize: CGFloat?
+        public let style: Style
+        public init(label: String, rect: CGRect, fontSize: CGFloat? = nil, style: Style = .button) {
+            self.label = label; self.rect = rect; self.fontSize = fontSize; self.style = style
+        }
     }
 
-    public static func render(size: CGSize, scale: CGFloat = 2, controls: [Control]) -> (image: CGImage, truth: [LabeledBox])? {
+    /// `truth`: control boxes in image pixels. `text`: boxes of the drawn label text in image pixels.
+    public static func render(size: CGSize, scale: CGFloat = 2, dark: Bool = false, controls: [Control])
+        -> (image: CGImage, truth: [LabeledBox], text: [LabeledBox])? {
         let width = Int((size.width * scale).rounded()), height = Int((size.height * scale).rounded())
         guard width > 0, height > 0, let context = CGContext(
             data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
             space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
         // Draw in top-left point coordinates.
         context.translateBy(x: 0, y: CGFloat(height)); context.scaleBy(x: scale, y: -scale)
-        context.setFillColor(CGColor(srgbRed: 0.96, green: 0.96, blue: 0.97, alpha: 1))
+        context.setFillColor(dark ? CGColor(srgbRed: 0.12, green: 0.12, blue: 0.14, alpha: 1) : CGColor(srgbRed: 0.96, green: 0.96, blue: 0.97, alpha: 1))
         context.fill(CGRect(origin: .zero, size: size))
-        var truth: [LabeledBox] = []
+        var truth: [LabeledBox] = [], text: [LabeledBox] = []
+        func pixels(_ r: CGRect) -> CGRect { CGRect(x: r.minX * scale, y: r.minY * scale, width: r.width * scale, height: r.height * scale) }
         for control in controls {
-            context.setFillColor(CGColor(srgbRed: 0.27, green: 0.25, blue: 0.62, alpha: 1))
-            context.fill(control.rect)
-            let font = CTFontCreateWithName("Helvetica" as CFString, min(14, control.rect.height * 0.6), nil)
-            let text = NSAttributedString(string: control.label, attributes: [
+            let ink: CGColor
+            if control.style == .button {
+                context.setFillColor(CGColor(srgbRed: 0.27, green: 0.25, blue: 0.62, alpha: 1))
+                context.fill(control.rect)
+                ink = CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)
+            } else {
+                ink = dark ? CGColor(srgbRed: 0.92, green: 0.92, blue: 0.94, alpha: 1) : CGColor(srgbRed: 0.13, green: 0.13, blue: 0.15, alpha: 1)
+            }
+            let font = CTFontCreateWithName("Helvetica" as CFString, control.fontSize ?? min(14, control.rect.height * 0.6), nil)
+            let line = CTLineCreateWithAttributedString(NSAttributedString(string: control.label, attributes: [
                 NSAttributedString.Key(kCTFontAttributeName as String): font,
-                NSAttributedString.Key(kCTForegroundColorAttributeName as String): CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1)])
-            let line = CTLineCreateWithAttributedString(text)
+                NSAttributedString.Key(kCTForegroundColorAttributeName as String): ink]))
+            var ascent: CGFloat = 0, descent: CGFloat = 0, leading: CGFloat = 0
+            let advance = CGFloat(CTLineGetTypographicBounds(line, &ascent, &descent, &leading))
+            // Vertically centre the text; the baseline is in top-left coordinates.
+            let baseline = control.rect.midY + (ascent - descent) / 2
+            let origin = control.rect.minX + 6
             context.saveGState()
-            // Text is drawn upright: flip locally around the control's baseline.
-            context.translateBy(x: control.rect.minX + 6, y: control.rect.midY + 5); context.scaleBy(x: 1, y: -1)
+            context.translateBy(x: origin, y: baseline); context.scaleBy(x: 1, y: -1)
             context.textPosition = .zero; CTLineDraw(line, context)
             context.restoreGState()
-            truth.append(LabeledBox(label: control.label, rect: CGRect(x: control.rect.minX * scale, y: control.rect.minY * scale,
-                                                                        width: control.rect.width * scale, height: control.rect.height * scale)))
+            truth.append(LabeledBox(label: control.label, rect: pixels(control.rect)))
+            text.append(LabeledBox(label: control.label, rect: pixels(CGRect(x: origin, y: baseline - ascent, width: advance, height: ascent + descent))))
         }
         guard let image = context.makeImage() else { return nil }
-        return (image, truth)
+        return (image, truth, text)
+    }
+}
+
+extension VisualEvaluation {
+    /// Guidance-oriented scoring: a prediction is a hit when its label matches and its centre lies
+    /// inside a not-yet-matched control of that label (the place a user would click).
+    public static func centreHits(predictions: [LabeledBox], controls: [LabeledBox]) -> EvaluationResult {
+        var unmatched = Array(controls.indices), overlaps: [Double] = []
+        for prediction in predictions {
+            let wanted = Guidance.terms(prediction.label)
+            let centre = CGPoint(x: prediction.rect.midX, y: prediction.rect.midY)
+            if let index = unmatched.first(where: { Guidance.terms(controls[$0].label) == wanted && controls[$0].rect.contains(centre) }) {
+                unmatched.removeAll { $0 == index }
+                overlaps.append(iou(prediction.rect, controls[index].rect))
+            }
+        }
+        return EvaluationResult(truePositives: overlaps.count, predictions: predictions.count, truths: controls.count,
+                                meanIoU: overlaps.isEmpty ? 0 : overlaps.reduce(0, +) / Double(overlaps.count))
     }
 }

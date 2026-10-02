@@ -477,6 +477,61 @@ final class GuidanceTests {
         do { _ = try await BoundedWait.run(seconds: 2) { () async throws -> Int in throw CocoaError(.userCancelled) }; XCTAssertEqual(true, false) }
         catch { XCTAssertEqual((error as? CocoaError)?.code, .userCancelled) }
     }
+    func testVisionCoordinatesAreFlippedToTopLeftPixels() {
+        // Vision: normalised, origin bottom-left. A box at the bottom-left corner ends at the image's last rows.
+        XCTAssertEqual(VisionGeometry.pixelRect(normalized: CGRect(x: 0, y: 0, width: 0.25, height: 0.1), width: 800, height: 600),
+                       CGRect(x: 0, y: 540, width: 200, height: 60))
+        XCTAssertEqual(VisionGeometry.pixelRect(normalized: CGRect(x: 0.5, y: 0.9, width: 0.5, height: 0.1), width: 800, height: 600),
+                       CGRect(x: 400, y: 0, width: 400, height: 60))
+        XCTAssertEqual(VisionGeometry.pixelRect(normalized: CGRect(x: 0.9, y: 0.5, width: 0.3, height: 0.1), width: 800, height: 600), nil)
+        XCTAssertEqual(VisionGeometry.pixelRect(normalized: CGRect(x: 0.1, y: 0.1, width: 0, height: 0.1), width: 800, height: 600), nil)
+        XCTAssertEqual(VisionGeometry.pixelRect(normalized: CGRect(x: 0.1, y: 0.1, width: 0.1, height: 0.1), width: 0, height: 600), nil)
+    }
+    func testMergedLineIsSplitIntoSegmentsAndDuplicatesStayAmbiguous() {
+        // One Vision line spanning three toolbar buttons: "Save   Don't Save   Save".
+        let h: CGFloat = 20
+        let line = RecognizedLine(text: "Save Don't Save Save", confidence: 1, words: [
+            RecognizedWord(text: "Save", rect: CGRect(x: 10, y: 0, width: 40, height: h)),
+            RecognizedWord(text: "Don't", rect: CGRect(x: 100, y: 0, width: 45, height: h)),
+            RecognizedWord(text: "Save", rect: CGRect(x: 150, y: 0, width: 40, height: h)),   // 5 px gap: same label
+            RecognizedWord(text: "Save", rect: CGRect(x: 260, y: 0, width: 40, height: h))])
+        let found = TextMatcher.candidates(lines: [line], request: "save")
+        XCTAssertEqual(found.map(\.label), ["Save", "Save"])            // "Don't Save" scores lower than exact "Save"
+        XCTAssertEqual(found.map(\.imageRect.minX), [10, 260])
+        XCTAssertEqual(TextMatcher.candidates(lines: [line], request: "don't save").map(\.label), ["Don't Save"])
+        XCTAssertEqual(TextMatcher.candidates(lines: [line], request: "upload").count, 0)
+        // Measured failure: Vision read "Don't Save" as "Dont savi". A partial match must not offer plain "Save".
+        let misread = RecognizedLine(text: "Save Dont savi", confidence: 1, words: [
+            RecognizedWord(text: "Save", rect: CGRect(x: 10, y: 0, width: 40, height: h)),
+            RecognizedWord(text: "Dont", rect: CGRect(x: 100, y: 0, width: 45, height: h)),
+            RecognizedWord(text: "savi", rect: CGRect(x: 150, y: 0, width: 40, height: h))])
+        XCTAssertEqual(TextMatcher.candidates(lines: [misread], request: "don't save").count, 0)
+    }
+    func testRealOCROnBlankImageReturnsNothing() async throws {
+        let blank = SyntheticScreen.render(size: CGSize(width: 300, height: 200), scale: 2, controls: [])!
+        XCTAssertEqual(try await VisionTextAnalyzer().recognize(blank.image).count, 0)
+        XCTAssertEqual(try await VisionTextAnalyzer(level: .fast).candidates(in: blank.image, request: "save").count, 0)
+    }
+    func testVisualMatchRequiresTheSameName() {
+        // Extra or different words can reverse or change the action; they must never match.
+        for (request, shown) in [("Save", "Don't Save"), ("Delete", "Don't Delete"), ("Save", "Save as PDF"),
+                                 ("Delete", "Deleted"), ("Send", "Do not send"), ("folder", "New Folder"), ("Save as PDF", "Save")] {
+            XCTAssertEqual(Guidance.sameName(request: request, label: shown), false)
+            let line = RecognizedLine(text: shown, confidence: 1, words: shown.split(separator: " ").enumerated().map { i, word in
+                RecognizedWord(text: String(word), rect: CGRect(x: 10 + CGFloat(i) * 50, y: 0, width: 45, height: 20)) })
+            XCTAssertEqual(TextMatcher.candidates(lines: [line], request: request).count, 0)
+        }
+        // Same name, allowing plural and filler words in the request.
+        XCTAssertEqual(Guidance.sameName(request: "Save", label: "Save"), true)
+        XCTAssertEqual(Guidance.sameName(request: "help me find the download button", label: "Downloads"), true)
+        XCTAssertEqual(Guidance.sameName(request: "don't save", label: "Don't Save"), true)
+        XCTAssertEqual(Guidance.sameName(request: "save as pdf", label: "Save as PDF"), true)
+        XCTAssertEqual(Guidance.sameName(request: "help center", label: "Help Center"), true)
+        let exact = RecognizedLine(text: "Save", confidence: 1, words: [RecognizedWord(text: "Save", rect: CGRect(x: 10, y: 0, width: 45, height: 20))])
+        XCTAssertEqual(TextMatcher.candidates(lines: [exact], request: "save").map(\.label), ["Save"])
+        // Accessibility search keeps its broader ranking: "Don't Save" still scores for "save" there.
+        XCTAssertEqual(Guidance.score(request: "save", label: "Don't Save") > 0, true)
+    }
 }
 
 let tests = GuidanceTests()
@@ -516,8 +571,12 @@ let asyncDone = DispatchSemaphore(value: 0)
 Task.detached {
     try! await tests.testSyntheticAnalyzerPathEndToEnd()
     try! await tests.testBoundedWaitReturnsAtDeadlineAndDropsLateResult()
+    try! await tests.testRealOCROnBlankImageReturnsNothing()
     asyncDone.signal()
 }
 asyncDone.wait()
 tests.testCaptureOfferIsBoundToItsScan()
-print("PASS: 34 core checks (\(assertions) assertions)")
+tests.testVisionCoordinatesAreFlippedToTopLeftPixels()
+tests.testMergedLineIsSplitIntoSegmentsAndDuplicatesStayAmbiguous()
+tests.testVisualMatchRequiresTheSameName()
+print("PASS: 38 core checks (\(assertions) assertions)")

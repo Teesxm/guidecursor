@@ -62,7 +62,7 @@ Root: Vite static HTML/CSS/JavaScript website, with retained React/TypeScript fi
 - `Sources/GuideCursorCore/Guidance.swift`: coordinate conversion, directions, simple label scoring, model ID validation.
 - `Sources/GuideCursorCore/Diagnostics.swift`: pure, tested scan diagnosis (permission / app quit / no window / not responding / no named controls / unsearchable request / no match / model chose none) plus incomplete-scan notes and a counts-only summary that never contains screen text.
 - `Sources/GuideCursorCore/TreeScan.swift`: pure traversal and window-fallback policy behind a `TreeReader` interface: error classification (absent vs failed), consistent window validation, bounded array reads, a deadline checked before each reader call (not a strict wall-clock cap; see the visibility-fix note), and supported AXVisibleRows treated as authoritative for rows in that table subtree. `Accessibility.swift` supplies the live AXUIElement reader; checks use an in-memory tree.
-- `Sources/GuideCursorCore/ScreenFallback.swift`: when to offer a screen image (from the AX diagnosis), image→screen geometry, AX↔capture window matching, output sizing, validation of visual proposals (always unverified), `VisualAnalyzer` interface. `VisualEvaluation.swift`: IoU/precision/recall and an in-memory synthetic screen renderer with ground truth.
+- `Sources/GuideCursorCore/ScreenFallback.swift`: when to offer a screen image (from the AX diagnosis), image→screen geometry, AX↔capture window matching, output sizing, validation of visual proposals (always unverified), `VisualAnalyzer` interface. `VisualEvaluation.swift`: IoU/precision/recall, centre-hit scoring and an in-memory synthetic screen renderer (buttons/plain text, light/dark, text ground truth). `TextRecognition.swift`: Vision OCR adapter (`VisionTextAnalyzer`), coordinate flip, gap-based segments, strict same-name matching (`Guidance.sameName`). `Sources/GuideCursorVisionBench`: offline benchmark executable on generated screens.
 - `Sources/GuideCursor/ScreenCapture.swift`: not called by the UI yet. Screen Recording preflight/request helpers and a scan-bound ScreenCaptureKit capture of the one scanned window (macOS 14+), memory only, with a bounded wait (the screenshot itself cannot be aborted).
 - `Sources/GuideCursorCore/ControlIndex.swift`: app-independent accessibility-tree index. It attaches visible text nested inside a row/cell/button to that interactive ancestor. This is a cross-app rule, not a Finder-specific selector.
 - `Tests/GuideCursorCoreTests/main.swift`: executable check harness; full XCTest is unavailable in this Mac's Command Line Tools.
@@ -219,3 +219,41 @@ Before accepting this increment, Codex asked Claude to remove the user-facing ca
 ## Codex acceptance of step 2 capture groundwork
 
 Codex reviewed Claude's corrected local changes and independently reran 34 core checks / 144 assertions, a release build with fresh ZIP extraction and strict signature verification, and `git diff --check`; all passed. The ordinary UI has no Screen Recording request or capture-only button. The generic fallback policy, in-memory capture service, scan-bound offer, bounded wait and synthetic vision evaluation tools are groundwork for a future visual guidance path. The bounded wait stops awaiting at its deadline; an underlying ScreenCaptureKit call may finish later, and its result is dropped. This is a caller wait limit, not a guaranteed abort of macOS capture. No real screenshot capture, model inference, UI mapping or visual target has been observed or shown to a user. See the current branch/PR checks for pushed CI evidence; do not call this screen recognition.
+
+## Step 2, offline text location — Claude, 2 October (local, uncommitted, awaiting Codex review)
+
+Baseline `cd53962`. Apple Vision text recognition (built in, revision 3, no download) is wrapped as `VisionTextAnalyzer` and evaluated **only on generated screens**. App sources are unchanged since `cd53962`, so there's no UI, no capture and no Screen Recording request. The app binary now links Vision through the core library but never calls it.
+
+Measured on an Apple M4 / 16 GB / macOS 26.6.2, 5 generated screens, 43 requests: accurate 41/43 exactly right, precision 1.000, median 47–63 ms per window image, first call 137–474 ms. Fast 33/43, about 5–7 ms, and it failed on small dark 1× text. Vision misread "Don't Save" and "Cancel" at confidence 1.0. Visual matches then required every request word. That was insufficient; it is superseded by the same-name rule below. Accessibility search scoring is unchanged.
+
+Checks: 39 / 173, including real-OCR checks. Four mutations (coordinate flip, gap split, coverage rule, duplicate resolution) each fail a check. Release build has no warnings; packaging to scratch and `git diff --check` pass.
+
+Risks:
+- CI now runs real OCR in the core checks on its macOS 14 runner; untested there.
+- Synthetic Helvetica screens overstate real-app accuracy.
+- Word boxes are not click targets.
+- Confidence is not trustworthy.
+
+Next: evaluate on public screenshots with hand-labelled ground truth, and design presentation of an unverified visual target (dashed outline plus a "check before clicking" wording) before any UI wiring.
+
+## Codex review of on-device OCR increment — pending safety correction
+
+Codex independently reran Claude's 39 checks / 173 assertions, offline Vision benchmark and release build/package verification; all passed locally. The accurate OCR benchmark found 41/43 synthetic labels and fast found 33/43 on this Apple M4. These are generated Helvetica screens, not real app coverage. No OCR UI or live capture has been connected.
+
+Before acceptance, Codex reproduced a matcher safety gap: when the only recognized label is “Don't Save,” a request for “Save” returns it as a candidate. The benchmark had exact “Save” buttons alongside it, hiding this case. OCR visual matching needs a generic conservative full-label rule and opposite-action regression cases. Required real-OCR checks may also vary by macOS version; keep the evaluation while ensuring the PR's macOS 14 gate is meaningful and stable. Follow-up prompt: `/Users/alberto/Documents/Codex/2026-10-01/b/outputs/Claude-ocr-review-corrections.md`. Changes remain local and uncommitted.
+
+## Visual matching safety correction — Claude, 2 October (local, uncommitted, awaiting Codex review)
+
+Fixed Codex's reproduced case ("Save" → "Don't Save"). Visual OCR matches now require the **same name**: every request word in the label and every label word in the request, with only plural differences allowed. Labels like "Don't Save", "Save as PDF", "Don't Delete", "Deleted" and "New Folder" never match "Save", "Delete" or "Folder". Accessibility label search is unchanged.
+
+The benchmark now has an opposite-actions-only screen and requests that must return nothing. Results on an Apple M4 / macOS 26.6.2, 51 requests: accurate 49/51 exactly right, precision 1.000, median 47–66 ms; fast 39/51, precision 1.000, about 5–7 ms. Restoring the old looser rule drops precision to 0.870 / 0.740.
+
+Tests are split:
+- **Required, deterministic:** `GuideCursorCoreChecks`, 38 / 177. It includes a blank-image real-Vision smoke check.
+- **Opt-in:** `swift run --package-path macos GuideCursorOCRChecks`, 3 / 20, real-OCR assertions that can vary by macOS version. Not in CI; CI has not run this increment.
+
+Still offline: no capture, no UI, no Screen Recording request, no guidance to OCR boxes.
+
+## Codex acceptance of offline Vision OCR increment
+
+Codex reviewed the corrected local matcher and independently reran the deterministic core suite (38 checks / 177 assertions), optional real-OCR integration suite (3 checks / 20 assertions), offline benchmark, release build with verified ZIP extraction, and `git diff --check`; all passed. On this Apple M4 with macOS 26.6.2, the updated six-screen synthetic benchmark reported 49/51 exact requests in accurate mode and 39/51 in fast mode, with zero extra suggestions in its opposite-action cases. Accuracy on real application screenshots is unknown. The conservative visual matcher rejects “Save” when only “Don't Save,” “Save as PDF” or another longer/different action is present. AX label search remains separate. Real OCR assertions that can vary across macOS versions are opt-in rather than part of the required CI gate. See the current branch/PR checks for pushed CI evidence. This increment is offline only: no screen capture, permission request, OCR box or visual guidance is exposed in the app UI.

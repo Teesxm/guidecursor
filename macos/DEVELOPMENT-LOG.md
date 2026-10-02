@@ -110,3 +110,45 @@ Codex reran everything (passing) and asked for three corrections; all were made.
 - **Offer tied to its scan.** An offer now records the process, request and window frame of its scan. It is cleared on stop, app change, any request edit, or a scan that finishes after the request changed. The capture service refuses unless a fresh observation shows the same process, request (ignoring surrounding whitespace), the same window element and a frame within 1 point.
 
 Verification: 34 core checks (144 assertions) pass with no compiler warnings. The checks cover offer invalidation and a deliberately uncancellable operation: the wait returns early, and the late result goes only to the discard path. Mutations that restore the task-group wait, ignore request edits or ignore window identity each fail a check. The release build, packaging with fresh-extraction verification and `git diff --check` pass. This session still lacks Screen Recording and Accessibility permission, so no live capture or timing was observed.
+
+## 2 October — on-device text location, offline evaluation (Claude, local, uncommitted)
+
+Direction: test whether Apple's built-in text recognition can locate visible labels for the screen fallback, measured on generated screens only.
+
+- **SDK check.** `VNRecognizeTextRequest` is available (macOS 10.15+; revision 3 from macOS 13, matching the app's minimum). It ran here at revision 3 with English and five other languages and no download.
+- **Probe finding.** Separate controls on one baseline came back as one merged line ("Downloads Attach file"). Per-word boxes from `boundingBox(for:)` are word-accurate at both levels.
+- **Adapter.** `VisionTextAnalyzer` runs Vision on a background queue and maps normalised bottom-left boxes to top-left image pixels. It drops blank, non-finite or out-of-image results. Each line is split into segments at gaps larger than 0.8 × word height, and segments go through the existing `VisualProposals` validation.
+- **A measured misread exposed a safety problem.** "Don't Save" was read as "Dont savi" at confidence 1.0, and the request then fell back to the plain "Save" buttons, which is the opposite action. Visual matches now need every word of the request, exactly or by stem. Accessibility label search is unchanged.
+- **Language correction measured, not assumed.** Turning it on did not change accurate-level results (41/43) and was slower, so it stays off. The benchmark has a flag to repeat the comparison.
+
+Results on an Apple M4, 16 GB, macOS 26.6.2 (build 25G83), 5 generated screens, 43 requests, after the coverage rule:
+
+| Level | Requests exactly right | Recall | Precision | Text-box IoU | Median per window image | First call in a new process |
+|---|---|---|---|---|---|---|
+| accurate | 41 / 43 | 0.955 | 1.000 | 0.840 | 47–63 ms (5 runs) | 137–474 ms |
+| fast | 33 / 43 | 0.773 | 1.000 | 0.814 | 5–7 ms | 6–22 ms (Vision already loaded) |
+
+Accurate misses: "Cancel" and "Don't Save" on the dialog. Both were misread by Vision at confidence 1.0 on a clean rendering, confirmed by viewing the generated PNG. Fast misses: 8 of 9 labels on the dark 1× screen with 11–12 pt text, "Don't Save", and "Résumé.pdf" (read as "Resume.pdf"). The single duplicate-label request ("Save" ×2, next to "Don't Save") returned exactly both Save buttons at both levels.
+
+Checks: 39 core checks (173 assertions). Real OCR checks cover locating labels on a Retina screen, including two buttons sharing a baseline, with mapping to screen points through `CaptureGeometry`; a blank image giving no results; and duplicates staying ambiguous. Pure checks cover the coordinate flip, segment splitting and the misread case. Mutations that remove the vertical flip, the gap split or the coverage rule, or that resolve duplicates by taking the first, each fail a check. Release build has no warnings; packaging with fresh-extraction verification and `git diff --check` pass.
+
+Limits: a word box is not a clickable target. Confidence 1.0 does not mean correct. Synthetic Helvetica screens are easier than real apps (icons, truncation, low contrast, overlapping text, other languages). Nothing is wired into the app.
+
+## 2 October — visual matching safety correction and test split (Claude, local, uncommitted)
+
+Codex reproduced an unsafe case with the matcher: with only "Don't Save" visible, a request for "Save" returned "Don't Save". Requiring every request word to be present still allowed labels with extra words that reverse or change the action. The earlier benchmark hid this because exact "Save" buttons always outscored it.
+
+- **Generic rule (`Guidance.sameName`, visual path only).** Every searchable request word must appear in the label, and every label word (except "the", "a", "an") must appear in the request as typed. Words are equal only if identical or differing by a plural "s"/"es". Missing a match is the intended outcome. Accessibility search keeps its broader scoring, and a check pins that.
+- **Benchmark.** Added a screen where only opposite actions are visible ("Don't Save", "Don't Delete", "Cancel", "Save as PDF", "Deleted items"), plus requests that must return nothing ("Save", "Delete", and "Folder" next to "New Folder"). Any suggestion for those lowers precision. Swapping in the old any-shared-word rule drops precision to 0.870 (accurate) and 0.740 (fast).
+- **Test split for CI portability.** OS-dependent OCR assertions (exact labels at exact places, duplicates, the opposite-actions screen) moved to the opt-in `GuideCursorOCRChecks`. The required core checks keep deterministic matching and geometry rules plus one real-Vision check that a blank image yields no text. CI has not run any of this yet.
+
+Results on an Apple M4, 16 GB, macOS 26.6.2 (25G83), 6 generated screens, 51 requests:
+
+| Level | Requests exactly right | Recall | Precision | Text-box IoU | Median per window image | First call in a new process |
+|---|---|---|---|---|---|---|
+| accurate | 49 / 51 | 0.959 | 1.000 | 0.844 | 47–66 ms (7 runs) | 137–474 ms |
+| fast | 39 / 51 | 0.755 | 1.000 | 0.810 | 5–7 ms | 6–22 ms (Vision already loaded) |
+
+Accurate misses are unchanged ("Cancel" and "Don't Save" misread on the dialog). Fast also misses both "Don't …" buttons on the new screen, 8 of 9 labels on the dark 1× screen, and "Résumé.pdf". There are no unsafe suggestions at either level.
+
+Checks: required core 38 checks / 177 assertions; opt-in OCR 3 checks / 20 assertions (passed on macOS 26.6.2). Mutations that allow extra label words (Codex's bug), treat any prefix as the same word, or fall back to any shared word each fail a required check. Release build has no warnings; packaging with fresh-extraction verification and `git diff --check` pass. App sources unchanged since `cd53962`.
