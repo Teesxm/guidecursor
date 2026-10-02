@@ -63,3 +63,11 @@ This repository was initialized from the latest GuideCursor website source that 
 The codebase is now intended to use **Teesxm/guidecursor as the shared source of truth** for future group work.
 
 > Deployment note: the existing Vercel production project was originally connected to the old repository. Its Git source should be reconnected to `Teesxm/guidecursor` so future merges to `main` deploy automatically from this repository.
+
+## Native macOS prototype
+
+The desktop MVP is being developed in [`macos/`](macos/README.md), alongside this concept website. It includes an Accessibility-based control finder, native cursor companion, highlighting and spoken guidance. See its README for setup, current limitations and validation status.
+
+```sh
+./macos/scripts/build.sh && open ~/Library/Caches/nl.guidecursor.prototype/build/GuideCursor.app
+```
