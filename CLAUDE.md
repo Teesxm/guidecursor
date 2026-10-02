@@ -269,3 +269,81 @@ Alberto reports that the installed GuideCursor says permission is missing while 
 Codex moved the non-running previous app from Applications to `/Users/alberto/Library/Caches/nl.guidecursor.prototype/backups/GuideCursor-previous.app`; the backup is preserved and should no longer be an ordinary Applications search result after Alfred refreshes. Current GuideCursor was running and was not replaced. A native computer-use attempt stalled and was aborted; no direct UI inspection succeeded.
 
 Alberto explicitly requested easier direct agent verification. Next Claude increment: a session-opt-in, private local diagnostic connection/report from the actual running app (permission state, build identity, redacted scan results, guidance health), deterministic native fixtures and selected-app checks, plus support for an existing stable signing identity. Prompt: `/Users/alberto/Documents/Codex/2026-10-01/b/outputs/Claude-next-task-live-diagnostics.md`. This must respect the app's own OS permissions, expose no general UI automation or network endpoint, and distinguish synthetic evidence from live observations. Pause further OCR/UI integration until this feedback loop is practical. The diagnostics connection has been specified, not yet implemented.
+
+## Development diagnostics — Claude, 2 October (local, uncommitted, awaiting Codex review)
+
+Baseline `ee29095` (accepted source `4f9c8bd`). OCR and visual work paused.
+
+**Bridge.** A session-only, opt-in, read-only diagnostics bridge served by the running app over a private Unix-domain socket (`~/Library/Application Support/nl.guidecursor.prototype/diagnostics/diag.sock`). Client: `swift run --package-path macos GuideCursorDiag status|scan|self-check|fixture`. Protocol, limits, report fields and the meaning of each code are in `macos/README.md` → Development diagnostics.
+
+**Files.**
+- Core: `DiagnosticsProtocol.swift` (protocol, gate, redacted reports, guidance health), `DiagnosticsSocket.swift` (server and client), `DiagnosticFixtures.swift`.
+- App: `DiagnosticsBridge.swift` (bridge and `BuildIdentity`); telemetry hooks in `Model.swift`; `Overlay.isVisible`; the collapsed UI section and `--print-build-identity` in `Application.swift`.
+- `Sources/GuideCursorDiag` client; `build.sh` identity stamping and `GUIDECURSOR_SIGN_IDENTITY`.
+
+**Checks.** 44 / 239 required; 3 / 20 OCR opt-in; seven diagnostics mutations caught. Release build has no warnings. Packaging was verified with `GUIDECURSOR_OUT` in a scratch folder; the shared cache, outputs ZIP and installed app were not replaced.
+
+**User-only actions remaining.**
+1. Quit GuideCursor, remove the stale Accessibility entry and add the exact installed app (ad hoc, so this repeats per build until a stable identity exists).
+2. Each launch: switch on the diagnostics toggle.
+3. Select the target app and type the request in GuideCursor.
+
+After that, Codex can repeat `status` / `scan` / `self-check` without asking. `accessibility_trusted` and a `permission_missing` diagnosis expose missing approval truthfully.
+
+**Unverified.** The bridge inside a running app (the opt-in click is deliberately not automatable), the Security-framework identity in a running app, identity signing with a real certificate, and whether approval persists across identity-signed rebuilds.
+
+**Incident.** I briefly launched the installed old build by passing it the new flag, and terminated that process at once (PID 62205). Nothing was modified.
+
+
+## Codex review of diagnostics increment — lifecycle corrections pending
+
+Codex independently passed the 44 required checks / 239 assertions, release packaging in `/tmp/guidecursor-codex-diag-review`, fresh ZIP extraction verification, build-identity JSON from that scratch binary, and `git diff --check`. No installed app, shared build cache or user-facing ZIP was replaced; the UI bridge remains unverified live.
+
+Two lifecycle faults were reproduced with the actual compiled core in `/tmp/gcdiag-codex-lifecycle/main.swift`: stopping and releasing a server during suspended handling leaks one accepted descriptor each cycle (3 baseline -> 4, 5, 6, 7 after four cycles), because weak response ownership skips finish(); completing an old scan after disable/re-enable clears a newer session's in-flight flag. Inspection also found that diagnostic admission does not consult model.busy, so ordinary Find/validation work is not excluded on the shared AX queue. Requested ownership-safe connection teardown, admission-scoped completion/underlying-work coordination, and protection of user work with app-used injectable lifecycle regressions. Optional selection checking and invalid CLI selection handling also need accurate behavior/documentation. Follow-up: `/Users/alberto/Documents/Codex/2026-10-01/b/outputs/Claude-diagnostics-review-corrections.md`. This increment remains local and uncommitted pending review; do not install or push it yet.
+
+## Diagnostics lifecycle corrections — Claude, 2 October (local, uncommitted, awaiting Codex review)
+
+All three Codex findings fixed, with regressions shown to fail against the faulty behaviour (details in the development log):
+- **Socket.** `Connection` objects own each accepted descriptor. The original file leaked 16 → 20 descriptors over four cycles; it now returns to baseline.
+- **Coordinator.** `DiagnosticsCoordinator` ties live AX work and its reservation to the admission. A timeout cancels the work but keeps the reservation until the work really ends.
+- **User work.** Model `busy || guiding` and selection changes refuse or preempt diagnostics, and cancelled scans skip or stop their AX reads.
+
+The client checks the selection by default (`status`, then `scan` with that generation); `--selection` is validated and `--no-selection-check` is explicit. Trust wording no longer implies which Settings entry was authorised.
+
+**Checks.** 50 / 272 required; release build has no warnings; packaging to a unique scratch `GUIDECURSOR_OUT` and `git diff --check` pass. Shared cache, outputs ZIP and installed app untouched.
+
+**Files this round.** `DiagnosticsSocket.swift`, `DiagnosticsProtocol.swift` (gate/coordinator), `TreeScan.swift` (cancellation), `Accessibility.swift`, `Model.swift`, `DiagnosticsBridge.swift`, `GuideCursorDiag/main.swift`, `Tests/GuideCursorCoreTests/main.swift`, `macos/README.md`, `macos/DEVELOPMENT-LOG.md`, this file.
+
+**Unverified live.** The bridge and coordinator hooks inside the running app.
+
+
+## Codex review of diagnostics lifecycle corrections — socket pathname ownership pending
+
+The 50 required checks / 272 assertions, scratch release build/package (including fresh ZIP extraction), and diff check pass independently. The accepted-connection ownership and shared admission coordinator resolve the earlier reproduced lifecycle faults. Nothing was installed or pushed.
+
+New blocker reproduced with the actual compiled core: a second DiagnosticsServer.start() correctly throws occupied, but its new deinit calls stop(), which unconditionally unlinks the first listener's pathname despite never having started. Likewise a repeated stop on old server A unlinks replacement B's socket. Both new connections fail afterwards. Reproducer: `/tmp/gcdiag-codex-owner-review/main.swift`. The occupied test checks only the error, and the subsequent shutdown test accepts a failed connection as success, hiding the breakage. Requested instance/path ownership-aware, idempotent teardown and regressions which prove the surviving listener answers and the shutdown request entered its handler. Also requested precise cancellation timing: checks occur between reader calls, some of which wrap two nominally 0.3 s native requests; queued user work may wait for the current reader call. Follow-up: `/Users/alberto/Documents/Codex/2026-10-01/b/outputs/Claude-diagnostics-socket-ownership-fix.md`. Current increment remains local pending this focused fix and review; live bridge still unverified.
+
+## Socket path ownership correction — Claude, 2 October (local, uncommitted, awaiting Codex review)
+
+`DiagnosticsServer` now unlinks only the exact socket file it bound (device and inode recorded at bind), and `stop()`/`deinit` are idempotent. A refused or old instance can no longer remove another listener's endpoint.
+
+The tests now cover:
+- a refused server's stop and release, after which the first listener still answers a fresh client;
+- stopping and releasing an old instance after a replacement has started;
+- a never-started instance being released;
+- the mid-request cut, now proven: the handler has started, the client is really connected, and the reply is empty while the handler is still running.
+
+Both new failure cases reproduce on the pre-fix source. Timing wording is corrected: cancellation applies at the next reader call; one call can be two native AX requests; queued user work may wait for the call in progress.
+
+Checks: 51 / 280 (three runs), release packaging to a unique scratch output, `git diff --check`.
+
+Files this round: `DiagnosticsSocket.swift`, `TreeScan.swift` (comment), `Model.swift` (comment), `Tests/GuideCursorCoreTests/main.swift`, `macos/README.md`, `macos/DEVELOPMENT-LOG.md`, this file.
+
+Live behaviour is still unverified.
+
+
+## Codex acceptance of session diagnostics — live check next
+
+Codex independently passed 51 required checks / 280 assertions and diff check, and reran the original socket ownership reproducer against the compiled core: the first listener stays reachable after a refused second start, and the replacement stays reachable after the old server stops again. Accepted connection ownership, admission-scoped AX completion, timeout reservation retention, user-work preemption and instance-owned socket teardown are now implemented. The remaining check/unlink race is acknowledged inside the private per-user directory. Cancellation checks occur between reader calls; a running call can wrap two native requests and may briefly delay queued user work.
+
+This increment is accepted for packaging and the first opt-in live session. The app reports its actual build identity and Accessibility trust and serves redacted counts/status through GuideCursorDiag. The running app's toggle/bridge, live AX matching, overlay and speech remain unverified. No screen-image/OCR guidance was enabled. Stable certificate signing is supported only for an already existing identity; none has been verified on this Mac. After the reviewed build is installed, Alberto must open the exact `/Users/alberto/Applications/GuideCursor.app`, enable Developer diagnostics for the session, and if needed re-add that exact app to Accessibility. Use the client status/self-check/fixture commands before a selected-app scan; distinguish synthetic from live evidence. Further feature work should follow this live check.

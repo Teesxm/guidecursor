@@ -119,3 +119,70 @@ Measured on an Apple M4 (16 GB, macOS 26.6.2) on 6 generated screens and 51 requ
 - Vision sometimes misreads at full confidence: it read "Don't Save" as "Dont savi" and "Cancel" as "sance" on clean buttons.
 - The fast level failed on small, dark, non-Retina text (1 of 9 labels).
 - These are synthetic results only. They say nothing about accuracy on real apps, other languages, icons without text, or low contrast.
+
+## Development diagnostics (opt-in, this session only)
+
+So that agents can check the running app without screenshots, GuideCursor can open a private, read-only diagnostics connection. It is served **by the running app itself**, so live results use that exact binary's Accessibility grant. Nothing else can grant or fake it.
+
+**Turning it on.** In GuideCursor, expand **Developer diagnostics** and switch on **Allow a local diagnostics connection for this session**. Switching it off, or quitting, closes the connection immediately. It is never on at launch.
+
+**Transport.** A Unix-domain socket at `~/Library/Application Support/nl.guidecursor.prototype/diagnostics/diag.sock`.
+- The directory is 0700 and the socket 0600. Connections from other users are refused, and there is no network listener.
+- One JSON line per request (up to 1 KB, at most 2 connections, 2 s read timeout) and one JSON line in reply. Unknown commands and fields are refused.
+
+**Client.**
+
+```sh
+swift run --package-path macos GuideCursorDiag status       # build identity, live AXIsProcessTrusted, selection, last scan, guidance state
+swift run --package-path macos GuideCursorDiag scan         # counts-only scan of the app already selected in GuideCursor (see selection checking below)
+swift run --package-path macos GuideCursorDiag self-check   # counts-only scan of GuideCursor's own window (live AX, known controls)
+swift run --package-path macos GuideCursorDiag fixture      # synthetic trees through this binary's scanner (no AX)
+```
+
+The same requests work with `nc -U`, for example `printf '{"v":1,"cmd":"status"}\n' | nc -U "$HOME/Library/Application Support/nl.guidecursor.prototype/diagnostics/diag.sock"`.
+
+**What the commands cannot do.** They never click, activate or switch apps, move the pointer, capture the screen, change settings, or change the selection or request. Each command is read-only on the selected app.
+
+**When a live scan is refused or dropped.** Live scans (`scan`, `self-check`) share the accessibility queue with the user's own work, and the user always comes first.
+- **Refused:** while guidance is active (`guidance_active`); while Find controls or target validation is running (`user_work_active`); while an earlier diagnostic's AX work is still running, even if its caller already timed out (`busy`); and more than once per second (`rate_limited`).
+- **Dropped:** if the user starts work after a scan was admitted, the scan is cancelled. If it has not started, it never reads anything; otherwise it stops at its next reader call. The reader call already in progress still completes, and one call can be two native AX requests (frame position and size, or list count and copy), each nominally limited by the 0.3 s messaging timeout. The user's own work queued behind it waits for that call, so a short delay remains possible. Its result is replaced by `preempted_by_user`. Switching diagnostics off drops results the same way. A caller stops waiting after 8 s (`timed_out`), but a new scan stays refused until the old AX work has ended.
+
+**Selection checking.** The app increases `selected.selection_generation` whenever the selected app or the request changes. By default the client first asks for `status` and sends the generation it saw, so the app answers `stale_selection` if anything changed in between, and also if it changes while the scan runs. `--selection N` checks against a specific generation (an invalid value is a usage error). `--no-selection-check` skips the check before the scan, but a change during the scan still drops the result.
+
+**What reports contain.** Codes, counts, timings and identity only:
+- build revision and dirty flag, cdhash, signature kind and designated requirement, bundle path and identifier;
+- `accessibility_trusted`, the selected app's bundle ID and PID;
+- the scan's window outcome, element and control counts, limits, duration, match count, diagnosis and fallback codes;
+- guidance state, refresh successes and failures, the last stop reason, and overlay and speech engine flags.
+
+They never contain the request text, window titles, control labels, document names, images or clipboard contents. Every scan is marked `evidence: live_ax_selected_app`, `live_ax_self` or `synthetic`. Engine flags are not proof that the user saw or heard guidance.
+
+**Reading the results.**
+
+| `accessibility_trusted` | `diagnosis` | What it means |
+|---|---|---|
+| false | `permission_missing` | macOS does not apply an Accessibility approval to this exact binary (see `build.cdhash`). If Settings shows an enabled GuideCursor entry, it is not being applied to this binary; which build or signature it was granted to cannot be determined from here. |
+| true | `no_window` | The selected app has no usable window. |
+| true | `app_not_responding` | The selected app did not answer accessibility requests in time. |
+| true | `controls_not_fully_read` | The scan was partial or had failed reads. |
+| true | `no_match` | A complete scan with named controls, but none matched the request. |
+| true | `matches` | Candidates were found. |
+
+**Build identity without opening the app.** `GuideCursor.app/Contents/MacOS/GuideCursor --print-build-identity` prints the identity JSON and exits. It omits trust, because macOS would attribute that check to the terminal. Builds older than this change do not know the flag and will start normally.
+
+**Still needs a person.** Each build or session needs these once:
+1. After an ad hoc rebuild, remove the old GuideCursor entry under Privacy & Security → Accessibility and add the new app (until a stable signing identity is used).
+2. Open GuideCursor and switch on the diagnostics toggle.
+3. Choose the target app and type the request in GuideCursor.
+
+After that, status, scans, self-checks and fixtures can be repeated without the user. Starting guidance, moving the pointer and judging whether the overlay or speech was perceived remain user actions.
+
+### Signing
+
+`build.sh` signs ad hoc by default (CI too). An ad hoc designated requirement is the build's cdhash, and the build date stamped into the bundle changes it on every build, so macOS may require re-adding the app under Accessibility after each rebuild. To sign with an existing, valid identity:
+
+```sh
+GUIDECURSOR_SIGN_IDENTITY="Apple Development: Name (TEAMID)" GUIDECURSOR_OUT=/tmp/gc-out ./macos/scripts/build.sh
+```
+
+The script refuses names not listed by `security find-identity -v -p codesigning`. It never creates identities or changes Keychain trust. It prints the signature and designated requirement used. Whether macOS keeps an Accessibility approval across identity-signed rebuilds has not been observed here, because no identity is installed.

@@ -111,10 +111,10 @@ enum Accessibility {
         var scanner = TreeScanner(reader: LiveReader(), budget: 1)
         return scanner.lookupWindow(app: AXUIElementCreateApplication(pid)).window
     }
-    static func scan(pid: pid_t) -> Scan {
+    static func scan(pid: pid_t, isCancelled: @escaping () -> Bool = { false }) -> Scan {
         _ = timeoutConfigured
         let started = Date()
-        var scanner = TreeScanner(reader: LiveReader(), budget: 3)
+        var scanner = TreeScanner(reader: LiveReader(), budget: 3, isCancelled: isCancelled)
         let tree = scanner.scan(app: AXUIElementCreateApplication(pid))
         guard let window = tree.window, tree.windowStatus == .found else {
             var stats = ScanStats(window: tree.windowStatus, failedReads: tree.failedReads, limits: tree.limits)

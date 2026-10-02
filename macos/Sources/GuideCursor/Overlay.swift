@@ -32,4 +32,6 @@ final class Overlay {
         text.stringValue = "\(label)\n\(direction)"; bubble.orderFrontRegardless()
     }
     func hide() { bubble.orderOut(nil); target.orderOut(nil) }
+    /// Whether either guidance panel is ordered on screen (engine state, not proof the user saw it).
+    var isVisible: Bool { bubble.isVisible || target.isVisible }
 }

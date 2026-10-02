@@ -1,8 +1,10 @@
 import AppKit
 import SwiftUI
+import GuideCursorCore
 
 struct Content: View {
     @ObservedObject var model: Model
+    @ObservedObject var diagnostics: DiagnosticsBridge
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("GuideCursor").font(.largeTitle.bold())
@@ -17,7 +19,7 @@ struct Content: View {
                 Picker("Application", selection: $model.selectedPID) {
                     Text("Choose an app").tag(Int32(0))
                     ForEach(model.apps, id: \.processIdentifier) { app in Text(app.localizedName ?? "App").tag(app.processIdentifier) }
-                }.disabled(model.busy || model.guiding).onChange(of: model.selectedPID) { _ in model.stop(message: "Application changed. Find controls in this app.") }
+                }.disabled(model.busy || model.guiding).onChange(of: model.selectedPID) { _ in model.stop(message: "Application changed. Find controls in this app.", reason: .appChanged) }
                 Button("Refresh") { model.refreshApps() }.disabled(model.busy || model.guiding)
             }
             TextField("What do you need? For example: find the search button", text: $model.request)
@@ -67,18 +69,30 @@ struct Content: View {
                     }
                 }
             }
+            DisclosureGroup("Developer diagnostics") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Build \(diagnostics.identity.compact)").font(.caption.monospaced()).textSelection(.enabled)
+                    Toggle("Allow a local diagnostics connection for this session", isOn: Binding(
+                        get: { diagnostics.enabled }, set: { diagnostics.setEnabled($0) }))
+                    Text(diagnostics.detail).font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Text("For development only. A command-line tool on this Mac, run as you, can read status and counts-only scans of the app selected above. It never clicks, moves the pointer, captures the screen, or reads your request text or control names. It is off again when GuideCursor quits.")
+                        .font(.caption).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+                }.padding(.top, 6)
+            }
             Text("Desktop prototype · You control every click. Optional Zoom uses your macOS settings. Snapping and screen-image recognition are not implemented in this milestone.").font(.caption).foregroundColor(.secondary)
         }.padding(24).frame(minWidth: 600, minHeight: 650)
     }
 }
 @MainActor final class Delegate: NSObject, NSApplicationDelegate {
     var model: Model!
+    var diagnostics: DiagnosticsBridge!
     var window: NSWindow!
     var item: NSStatusItem!
     func applicationDidFinishLaunching(_ notification: Notification) {
         model = Model()
+        diagnostics = DiagnosticsBridge(model: model)
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 650, height: 760), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "GuideCursor"; window.contentView = NSHostingView(rootView: Content(model: model)); window.center()
+        window.title = "GuideCursor"; window.contentView = NSHostingView(rootView: Content(model: model, diagnostics: diagnostics)); window.center()
         window.isReleasedWhenClosed = false
         let statusMenu = NSMenu(title: "GuideCursor")
         statusMenu.addItem(withTitle: "Show GuideCursor", action: #selector(show), keyEquivalent: "") .target = self
@@ -110,10 +124,17 @@ struct Content: View {
     @objc func show() { window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
     @objc func stop() { model.stop() }
     @objc func zoom() { model.toggleZoom() }
+    func applicationWillTerminate(_ notification: Notification) { diagnostics?.setEnabled(false) }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { show(); return true }
 }
 @main struct GuideCursorApp {
     @MainActor static func main() {
+        // Prints this binary's build identity and exits without starting the app. Accessibility trust is
+        // deliberately omitted: launched from a terminal, macOS would attribute the check to the terminal.
+        if CommandLine.arguments.contains("--print-build-identity") {
+            print(String(decoding: DiagnosticsProtocol.encode(BuildIdentity.current()), as: UTF8.self), terminator: "")
+            exit(0)
+        }
         let app = NSApplication.shared
         let delegate = Delegate()
         app.setActivationPolicy(.regular)

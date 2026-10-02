@@ -9,20 +9,33 @@ import GuideCursorCore
     @Published var appName = "Choose an application"
     @Published var request = "" {
         // An offer belongs to the request it was scanned for; any edit needs a fresh scan.
-        didSet { if request != oldValue { screenOffer = nil } }
+        didSet { if request != oldValue { screenOffer = nil; selectionGeneration += 1 } }
     }
     @Published var modelName = ""
     @Published var useAI = false
     @Published var speech = true
     @Published var candidates: [Control] = []
     @Published var status = "Choose an app, enter a control to find, then review the matches."
-    @Published var busy = false
+    @Published var busy = false { didSet { diagnostics.setUserWork(active: busy || guiding) } }
     /// Counts-only summary of the last scan (no labels or screen text), for troubleshooting.
     @Published var scanDetails = ""
-    @Published var guiding = false
+    @Published var guiding = false { didSet { diagnostics.setUserWork(active: busy || guiding) } }
     @Published var zoomShortcutConfirmed = false
     @Published var apps: [NSRunningApplication] = []
-    @Published var selectedPID: Int32 = 0
+    @Published var selectedPID: Int32 = 0 {
+        didSet { if selectedPID != oldValue { selectionGeneration += 1 } }
+    }
+    // Development diagnostics (read by DiagnosticsBridge; counts and codes only).
+    /// Changes whenever the selected app or request changes, so a remote scan can be tied to a selection.
+    private(set) var selectionGeneration = 0 { didSet { diagnostics.selectionChanged() } }
+    /// Shared with DiagnosticsBridge: user work here refuses or cancels diagnostic scans on the AX queue.
+    let diagnostics = DiagnosticsCoordinator()
+    private(set) var health = GuidanceHealth()
+    private(set) var lastScanReport: ScanReport?
+    private(set) var utterancesStarted = 0
+    var overlayVisible: Bool { overlay.isVisible }
+    var speakingNow: Bool { voice.isSpeaking }
+    var selectedApp: NSRunningApplication? { apps.first { $0.processIdentifier == selectedPID } }
     /// Kept for the future visual-guidance path; not shown and never captured from in this build.
     /// Cleared by stop() (app change, new scan) and by any request edit.
     private(set) var screenOffer: CaptureOffer?
@@ -51,7 +64,7 @@ import GuideCursorCore
                       let primary = NSScreen.screens.first else { return }
                 let p = NSEvent.mouseLocation
                 if target.rect.contains(CGPoint(x: p.x, y: primary.frame.height - p.y)) {
-                    self.stop(message: "You clicked near the target. Check the result, then find the next control in the updated window.")
+                    self.stop(message: "You clicked near the target. Check the result, then find the next control in the updated window.", reason: .clickedNearTarget)
                 }
             }
         }
@@ -67,7 +80,8 @@ import GuideCursorCore
         let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         trusted = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
     }
-    func stop(message: String = "Guidance stopped.") {
+    func stop(message: String = "Guidance stopped.", reason: GuidanceHealth.StopReason = .user) {
+        health.stopped(reason)
         generation += 1; target = nil; window = nil; candidates = []; guiding = false; busy = false
         overlay.hide(); voice.stopSpeaking(at: .immediate); lastSpoken = ""; status = message
         screenOffer = nil
@@ -77,7 +91,7 @@ import GuideCursorCore
         NSPasteboard.general.setString("GuideCursor scan details — " + scanDetails, forType: .string)
     }
     func find() {
-        stop(); candidates = []; scanDetails = ""
+        stop(reason: .newSearch); candidates = []; scanDetails = ""
         guard AXIsProcessTrusted() else { trusted = false; status = Diagnostics.message(.permissionMissing, appName: "", stats: ScanStats(window: .permissionDenied)); return }
         guard let app = apps.first(where: { $0.processIdentifier == selectedPID }) else { status = "Choose an open application."; return }
         guard !app.isTerminated else { status = Diagnostics.message(.appUnavailable, appName: app.localizedName ?? "That app", stats: ScanStats(window: .appUnavailable)); return }
@@ -111,6 +125,9 @@ import GuideCursorCore
                 let diagnosis = Diagnostics.diagnose(trusted: AXIsProcessTrusted(), stats: result.stats, request: query,
                                                      matches: self.candidates.count, usedModel: ai)
                 if diagnosis == .permissionMissing { self.trusted = false }
+                self.lastScanReport = ScanReport(evidence: .liveSelectedApp, trigger: .userFind, selectionGeneration: self.selectionGeneration,
+                                                 targetBundleId: app.bundleIdentifier, trusted: AXIsProcessTrusted(), stats: result.stats,
+                                                 request: query, matches: self.candidates.count)
                 if case .matches = diagnosis {
                     self.status = "Choose the intended control below. \(ai ? "Local AI suggestions" : "Label search — no AI used")."
                     if result.stats.incomplete { self.status += " " + Diagnostics.incompleteNote(result.stats) }
@@ -125,8 +142,9 @@ import GuideCursorCore
         }
     }
     func guide(_ control: Control) {
-        guard let app = NSRunningApplication(processIdentifier: selectedPID), !app.isTerminated else { stop(message: "That app has closed. Refresh the application list."); return }
-        guard let storedWindow = window else { stop(message: "The selected window or control changed. Find controls again before guiding."); return }
+        guard let app = NSRunningApplication(processIdentifier: selectedPID), !app.isTerminated else { stop(message: "That app has closed. Refresh the application list.", reason: .appClosed); return }
+        guard let storedWindow = window else { stop(message: "The selected window or control changed. Find controls again before guiding.", reason: .windowChanged); return }
+        health.validating()
         // Accessibility reads can block on the other app, so validate on the background queue.
         generation += 1; busy = true; status = "Checking \(control.label)…"
         let token = generation, pid = selectedPID
@@ -137,8 +155,8 @@ import GuideCursorCore
             Task { @MainActor [weak self] in
                 guard let self, self.generation == token else { return }
                 self.busy = false
-                guard valid else { self.stop(message: "The selected window or control changed. Find controls again before guiding."); return }
-                self.generation += 1; self.target = control; self.guiding = true; self.lastSpoken = ""
+                guard valid else { self.stop(message: "The selected window or control changed. Find controls again before guiding.", reason: .targetInvalid); return }
+                self.generation += 1; self.target = control; self.guiding = true; self.lastSpoken = ""; self.health.started()
                 self.status = "Guiding to \(control.label). You move and click. Stop with the menu bar or this window."
                 app.activate(options: [.activateIgnoringOtherApps])
             }
@@ -148,9 +166,9 @@ import GuideCursorCore
         pollNumber += 1
         if pollNumber % 6 == 0 { trusted = AXIsProcessTrusted() }
         guard guiding, let current = target else { return }
-        guard trusted else { stop(message: "Accessibility permission was removed. Guidance stopped."); return }
+        guard trusted else { stop(message: "Accessibility permission was removed. Guidance stopped.", reason: .permissionRemoved); return }
         guard NSWorkspace.shared.frontmostApplication?.processIdentifier == selectedPID else {
-            overlay.hide(); voice.stopSpeaking(at: .immediate); lastSpoken = ""; return
+            overlay.hide(); voice.stopSpeaking(at: .immediate); lastSpoken = ""; health.paused(); return
         }
         guard !checking else { return }
         checking = true
@@ -164,11 +182,13 @@ import GuideCursorCore
                 guard let self else { return }
                 self.checking = false
                 guard self.generation == token, self.guiding else { return }
-                guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { self.overlay.hide(); return }
-                guard sameWindow, enabled, let frame else { self.stop(message: "The window or control changed. Find the next control before continuing."); return }
-                guard let primary = NSScreen.screens.first else { return }
+                guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { self.overlay.hide(); self.health.paused(); return }
+                guard sameWindow else { self.health.refreshed(.windowChanged); self.stop(message: "The window or control changed. Find the next control before continuing.", reason: .windowChanged); return }
+                guard enabled, let frame else { self.health.refreshed(.targetInvalid); self.stop(message: "The window or control changed. Find the next control before continuing.", reason: .targetInvalid); return }
+                guard let primary = NSScreen.screens.first else { self.health.refreshed(.noScreen); return }
                 let rect = Guidance.appKitRect(frame, primaryHeight: primary.frame.height)
-                guard NSScreen.screens.contains(where: { $0.frame.intersects(rect) }) else { self.stop(message: "The target is off screen. Bring it into view and search again."); return }
+                guard NSScreen.screens.contains(where: { $0.frame.intersects(rect) }) else { self.health.refreshed(.offScreen); self.stop(message: "The target is off screen. Bring it into view and search again.", reason: .offScreen); return }
+                self.health.refreshed(.ok)
                 self.target = Control(id: current.id, label: current.label, role: current.role, region: current.region, element: current.element, rect: frame)
                 let p = NSEvent.mouseLocation
                 let instruction = Guidance.direction(pointer: CGPoint(x: p.x, y: primary.frame.height - p.y), target: frame)
@@ -176,9 +196,49 @@ import GuideCursorCore
                 if self.speech && instruction != self.lastSpoken && Date().timeIntervalSince(self.lastSpeechAt) > 1.5 {
                     self.voice.stopSpeaking(at: .immediate)
                     let utterance = AVSpeechUtterance(string: instruction)
-                    utterance.rate = 0.45; self.voice.speak(utterance)
+                    utterance.rate = 0.45; self.voice.speak(utterance); self.utterancesStarted += 1
                     self.lastSpoken = instruction; self.lastSpeechAt = Date()
                 }
+            }
+        }
+    }
+
+    // MARK: Development diagnostics (read-only; no UI state changes)
+
+    /// Starts the diagnostic scan of the already selected app. State is captured here on the main actor;
+    /// the work runs on the shared accessibility queue, is skipped if its ticket was cancelled before it
+    /// started (user work, selection change, diagnostics off, caller timeout) and stops at the next reader call
+    /// after that. User work queued behind it waits for the reader call in progress to finish.
+    func diagnosticScanWork() -> DiagnosticsCoordinator.LiveWork? {
+        guard let app = selectedApp, !app.isTerminated else { return nil }
+        let pid = selectedPID, query = request, generation = selectionGeneration, bundle = app.bundleIdentifier, reader = reader
+        return { ticket, done in
+            reader.async {
+                guard !ticket.isCancelled else { done(nil); return }
+                let result = Accessibility.scan(pid: pid, isCancelled: { ticket.isCancelled })
+                guard !ticket.isCancelled else { done(nil); return }
+                let matches = result.controls.filter { Guidance.score(request: query, label: $0.label) > 0 }.count
+                done(LiveScanOutcome(report: ScanReport(evidence: .liveSelectedApp, trigger: .diagnostics, selectionGeneration: generation,
+                                                        targetBundleId: bundle, trusted: AXIsProcessTrusted(), stats: result.stats,
+                                                        request: query, matches: matches)))
+            }
+        }
+    }
+
+    /// Same, for GuideCursor's own window: a live AX check whose expected controls are known constants.
+    func diagnosticSelfCheckWork() -> DiagnosticsCoordinator.LiveWork {
+        let generation = selectionGeneration, reader = reader, pid = ProcessInfo.processInfo.processIdentifier
+        let expected = ["Find controls", "Refresh", "Stop"]
+        return { ticket, done in
+            reader.async {
+                guard !ticket.isCancelled else { done(nil); return }
+                let result = Accessibility.scan(pid: pid, isCancelled: { ticket.isCancelled })
+                guard !ticket.isCancelled else { done(nil); return }
+                let labels = Set(result.controls.map(\.label))
+                done(LiveScanOutcome(report: ScanReport(evidence: .liveSelf, trigger: .diagnostics, selectionGeneration: generation,
+                                                        targetBundleId: Bundle.main.bundleIdentifier, trusted: AXIsProcessTrusted(),
+                                                        stats: result.stats, request: "", matches: nil),
+                                     expectedOwnControlsFound: expected.filter(labels.contains).count, expectedOwnControlsTotal: expected.count))
             }
         }
     }

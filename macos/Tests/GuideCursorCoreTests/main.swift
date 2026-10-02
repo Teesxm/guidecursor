@@ -52,6 +52,46 @@ func scan(_ tree: FakeTree, budget: TimeInterval = 3, maxElements: Int = 1200, c
         : ScanStats(window: result.windowStatus, failedReads: result.failedReads, limits: result.limits)
     return (result, stats)
 }
+
+func failure<T>(_ result: Result<T, DiagnosticsError>) -> DiagnosticsError? { if case .failure(let e) = result { return e }; return nil }
+/// Live diagnostic work held suspended until the test completes it, like a scan waiting on the AX queue.
+final class SuspendedWork: @unchecked Sendable {
+    private let lock = NSLock()
+    private var completion: (@Sendable (LiveScanOutcome?) -> Void)?
+    private var ticket: LiveScanTicket?
+    var work: DiagnosticsCoordinator.LiveWork { { ticket, done in self.lock.withLock { self.ticket = ticket; self.completion = done } } }
+    var started: Bool { lock.withLock { completion != nil } }
+    var cancelled: Bool { lock.withLock { ticket?.isCancelled ?? false } }
+    func complete(_ outcome: LiveScanOutcome?) { let done = lock.withLock { completion }; done?(outcome) }
+}
+final class TestClock: @unchecked Sendable {
+    private let lock = NSLock(); private var value = Date(timeIntervalSince1970: 5000)
+    var now: Date { lock.withLock { value } }
+    func advance(_ seconds: TimeInterval) { lock.withLock { value += seconds } }
+}
+let sampleOutcome = LiveScanOutcome(report: ScanReport(evidence: .liveSelectedApp, trigger: .diagnostics, selectionGeneration: 0, targetBundleId: nil,
+                                                       trusted: true, stats: ScanStats(window: .found, labelledControls: 1), request: "x", matches: 1))
+func waitUntil(_ condition: () -> Bool, seconds: TimeInterval = 3) async {
+    let deadline = Date() + seconds
+    while !condition() && Date() < deadline { try? await Task.sleep(nanoseconds: 10_000_000) }
+}
+/// Counts handler entries/exits so tests can act while a request is provably in progress.
+final class HandlerProbe: @unchecked Sendable {
+    private let lock = NSLock(); private var inCount = 0, outCount = 0
+    func enter() { lock.withLock { inCount += 1 } }
+    func exit() { lock.withLock { outCount += 1 } }
+    var entered: Int { lock.withLock { inCount } }
+    var exited: Int { lock.withLock { outCount } }
+}
+func openDescriptors() -> Int { (try? FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count) ?? -1 }
+/// Raw client that connects and sends a partial line, to hold a connection in the server's read phase.
+func connectRaw(_ path: String) -> Int32 {
+    var address = sockaddr_un(); address.sun_family = sa_family_t(AF_UNIX)
+    withUnsafeMutableBytes(of: &address.sun_path) { raw in let bytes = Array(path.utf8); raw.copyBytes(from: bytes); raw[bytes.count] = 0 }
+    let fd = socket(AF_UNIX, SOCK_STREAM, 0)
+    _ = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) } }
+    return fd
+}
 final class GuidanceTests {
     let target = CGRect(x: 100, y: 100, width: 40, height: 30)
     func testInsideTargetWaitsForUser() { XCTAssertEqual(Guidance.direction(pointer: CGPoint(x: 110, y: 110), target: target), "On target. Click when ready.") }
@@ -532,6 +572,325 @@ final class GuidanceTests {
         // Accessibility search keeps its broader ranking: "Don't Save" still scores for "save" there.
         XCTAssertEqual(Guidance.score(request: "save", label: "Don't Save") > 0, true)
     }
+    func testDiagnosticsProtocolAcceptsOnlyTheTinyCommandSet() {
+        func parse(_ text: String) -> Result<DiagnosticsRequest, DiagnosticsError> { DiagnosticsProtocol.parse(Data(text.utf8)) }
+        XCTAssertEqual(try? parse(#"{"v":1,"cmd":"status"}"#).get(), DiagnosticsRequest(command: .status, selection: nil))
+        XCTAssertEqual(try? parse(#"{"v":1,"cmd":"scan","selection":4}"#).get(), DiagnosticsRequest(command: .scan, selection: 4))
+        XCTAssertEqual(try? parse(#"{"v":1,"cmd":"self_check"}"#).get(), DiagnosticsRequest(command: .selfCheck, selection: nil))
+        func failure(_ text: String) -> DiagnosticsError? { if case .failure(let e) = parse(text) { return e }; return nil }
+        XCTAssertEqual(failure(#"{"v":1,"cmd":"click"}"#), .unknownCommand)
+        XCTAssertEqual(failure(#"{"v":1,"cmd":"eval","code":"x"}"#), .malformed)          // unknown fields are refused
+        XCTAssertEqual(failure(#"{"v":2,"cmd":"status"}"#), .unsupportedVersion)
+        XCTAssertEqual(failure(#"{"v":true,"cmd":"status"}"#), .malformed)
+        XCTAssertEqual(failure(#"{"v":1,"cmd":"status","selection":1}"#), .malformed)    // selection only for scan
+        XCTAssertEqual(failure(#"{"v":1,"cmd":"scan","selection":-1}"#), .malformed)
+        XCTAssertEqual(failure(#"["status"]"#), .malformed)
+        XCTAssertEqual(failure(String(repeating: " ", count: 1025)), .tooLarge)
+    }
+    func testDiagnosticsGateRequiresConsentAndLimitsLiveScans() {
+        var gate = DiagnosticsGate()
+        let scan = DiagnosticsRequest(command: .scan, selection: nil), status = DiagnosticsRequest(command: .status, selection: nil)
+        let t0 = Date(timeIntervalSince1970: 1000)
+        func admit(_ r: DiagnosticsRequest, _ t: Date, selected: Bool = true, guiding: Bool = false) -> Result<Admission, DiagnosticsError> {
+            gate.admit(r, now: t, hasSelection: selected, selectionGeneration: 3, guiding: guiding)
+        }
+        XCTAssertEqual(failure(admit(status, t0)), .disabled)
+        let first = gate.enable(now: t0)
+        XCTAssertEqual(failure(admit(status, t0)), nil)
+        XCTAssertEqual(failure(admit(scan, t0, selected: false)), .noSelection)
+        XCTAssertEqual(failure(admit(DiagnosticsRequest(command: .scan, selection: 2), t0)), .staleSelection)
+        XCTAssertEqual(failure(admit(scan, t0, guiding: true)), .guidanceActive)
+        gate.setUserWork(active: true)
+        XCTAssertEqual(failure(admit(scan, t0)), .userWorkActive)
+        gate.setUserWork(active: false)
+        guard case .success(let held) = admit(DiagnosticsRequest(command: .scan, selection: 3), t0) else { return XCTAssertEqual("admitted", "refused") }
+        XCTAssertEqual(failure(admit(scan, t0 + 2)), .busy)                 // one live scan at a time
+        gate.finishLiveWork(held)
+        XCTAssertEqual(failure(admit(scan, t0 + 0.5)), .rateLimited)
+        XCTAssertEqual(failure(admit(DiagnosticsRequest(command: .selfCheck, selection: nil), t0 + 1.5, selected: false)), nil)
+        gate.disable()
+        XCTAssertEqual(failure(admit(status, t0 + 3)), .disabled)
+        XCTAssertEqual(gate.enable(now: t0 + 4) != first, true)             // a new session id
+        XCTAssertEqual(gate.requests, 0)
+    }
+    func testDiagnosticReportsAreRedactedAndSeparateTheCauses() {
+        let tree = FakeTree([app: ["AXFocusedWindow": .element(1)],
+            1: window(children: [2, 4]).merging(["AXTitle": .string("Private Budget 2026.xlsx")]) { $1 },
+            2: ["AXRole": .string("AXRow"), "frame": .frame(box), "AXChildren": .elements([3])],
+            3: ["AXRole": .string("AXStaticText"), "AXValue": .string("Medical letter.pdf")],
+            4: ["AXRole": .string("AXButton"), "AXTitle": .string("Send to accountant"), "frame": .frame(box)]])
+        let stats = scan(tree).1
+        let report = ScanReport(evidence: .liveSelectedApp, trigger: .userFind, selectionGeneration: 7, targetBundleId: "com.example.app",
+                                trusted: true, stats: stats, request: "find my tax return", matches: 0)
+        let json = String(decoding: DiagnosticsProtocol.encode(report), as: UTF8.self)
+        for secret in ["Budget", "Medical", "accountant", "tax", "return"] { XCTAssertEqual(json.contains(secret), false) }
+        for key in ["\"named_controls\":2", "\"diagnosis\":\"no_match\"", "\"evidence\":\"live_ax_selected_app\"", "\"request_present\":true", "\"matches\":0"] {
+            XCTAssertEqual(json.contains(key), true)
+        }
+        // The causes Codex needs to tell apart without screenshots get different codes.
+        func code(_ stats: ScanStats, trusted: Bool = true, request: String = "downloads", matches: Int? = 0) -> String {
+            ScanReport(evidence: .liveSelectedApp, trigger: .diagnostics, selectionGeneration: 0, targetBundleId: nil,
+                       trusted: trusted, stats: stats, request: request, matches: matches).diagnosis
+        }
+        let complete = ScanStats(window: .found, elementsRead: 40, labelledControls: 12)
+        var partial = complete; partial.labelledControls = 0; partial.failedReads = 3
+        XCTAssertEqual(code(complete, trusted: false), "permission_missing")
+        XCTAssertEqual(code(ScanStats(window: .permissionDenied)), "permission_missing")
+        XCTAssertEqual(code(ScanStats(window: .noWindow)), "no_window")
+        XCTAssertEqual(code(partial), "controls_not_fully_read")
+        XCTAssertEqual(code(complete), "no_match")
+        XCTAssertEqual(code(complete, request: "", matches: nil), "no_request")
+        XCTAssertEqual(code(ScanStats(window: .noWindow), request: "", matches: nil), "no_window")
+    }
+    func testGuidanceHealthRecordsLifecycleAndRefreshes() {
+        var health = GuidanceHealth()
+        health.stopped(.newSearch)
+        XCTAssertEqual(health.lastStopReason, nil)                 // stopping while idle records nothing
+        health.validating(); health.started()
+        health.refreshed(.ok); health.refreshed(.ok); health.paused()
+        XCTAssertEqual(health.state, .pausedOtherApp)
+        health.refreshed(.ok)
+        XCTAssertEqual(health.state, .guiding)
+        health.refreshed(.windowChanged); health.stopped(.windowChanged)
+        XCTAssertEqual([health.refreshSuccesses, health.refreshFailures, health.guidanceStarts], [3, 1, 1])
+        XCTAssertEqual(health.lastRefresh, .windowChanged)
+        XCTAssertEqual(health.lastStopReason, .windowChanged)
+        XCTAssertEqual(health.state, .idle)
+    }
+    func testSyntheticDiagnosticFixturesPassInThisBinary() {
+        let report = DiagnosticFixtures.run()
+        XCTAssertEqual(report.passed, report.total)
+        XCTAssertEqual(Set(report.cases.map(\.observed)), ["matches", "no_match", "controls_not_fully_read", "no_window", "permission_missing", "app_not_responding"])
+        XCTAssertEqual(String(decoding: DiagnosticsProtocol.encode(report), as: UTF8.self).contains("\"evidence\":\"synthetic\""), true)
+    }
+    func testDiagnosticsSocketIsPrivateBoundedAndClosesInstantly() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("gcdiag-\(UUID().uuidString.prefix(8))").path
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let path = root + "/d/diag.sock"
+        let probe = HandlerProbe()
+        let server = DiagnosticsServer(path: path) { data in
+            if String(decoding: data, as: UTF8.self).contains("slow") { probe.enter(); try? await Task.sleep(nanoseconds: 1_500_000_000); probe.exit() }
+            switch DiagnosticsProtocol.parse(data) {
+            case .success(let request): return Data("{\"ok\":true,\"cmd\":\"\(request.command.rawValue)\"}\n".utf8)
+            case .failure(let error): return DiagnosticsProtocol.error(error, session: nil)
+            }
+        }
+        try server.start()
+        var info = stat()
+        lstat(path, &info); XCTAssertEqual(info.st_mode & 0o777, 0o600)
+        lstat(root + "/d", &info); XCTAssertEqual(info.st_mode & 0o777, 0o700)
+        func send(_ text: String) -> String { String(decoding: (try? DiagnosticsClient.send(Data(text.utf8), path: path)) ?? Data(), as: UTF8.self) }
+        XCTAssertEqual(send(#"{"v":1,"cmd":"status"}"#), "{\"ok\":true,\"cmd\":\"status\"}\n")
+        XCTAssertEqual(send(#"{"v":1,"cmd":"open_url"}"#).contains("unknown_command"), true)
+        XCTAssertEqual(send(String(repeating: "x", count: 4000)).contains("request_too_large"), true)
+        // A second server must not hijack a live socket, and must not remove it when it is released.
+        var refused: DiagnosticsServer? = DiagnosticsServer(path: path) { _ in Data() }
+        var occupied: DiagnosticsSocketError?
+        do { try refused?.start() } catch { occupied = error as? DiagnosticsSocketError }
+        XCTAssertEqual(occupied, .occupied)
+        refused?.stop(); refused = nil                                     // explicit stop and deinit
+        do { try DiagnosticsServer(path: path) { _ in Data() }.start() } catch {}   // temporary released at once
+        XCTAssertEqual(FileManager.default.fileExists(atPath: path), true)
+        XCTAssertEqual(send(#"{"v":1,"cmd":"status"}"#), "{\"ok\":true,\"cmd\":\"status\"}\n")   // still answers a fresh client
+        // Turning diagnostics off cuts a request whose handler is provably running; no reply is written.
+        let pending = Task.detached { try? DiagnosticsClient.send(Data(#"{"v":1,"cmd":"status","slow":1}"#.utf8), path: path) }
+        await waitUntil { probe.entered == 1 }
+        XCTAssertEqual(probe.entered, 1)                                   // the request reached the handler
+        let stoppedAt = Date()
+        server.stop()
+        let cut = await pending.value
+        XCTAssertEqual(cut != nil, true)                                   // it was connected (not a failed connect)…
+        XCTAssertEqual(cut?.isEmpty, true)                                 // …and was disconnected without a reply
+        XCTAssertEqual(Date().timeIntervalSince(stoppedAt) < 0.5, true)
+        XCTAssertEqual(probe.exited, 0)                                    // the handler was still running when cut
+        await waitUntil { probe.exited == 1 }                              // its owner closes the descriptor when it ends
+        XCTAssertEqual(FileManager.default.fileExists(atPath: path), false)
+        XCTAssertEqual((try? DiagnosticsClient.send(Data(#"{"v":1,"cmd":"status"}"#.utf8), path: path)) == nil, true)
+        // Refuses a directory other users can enter, and a non-socket file at the socket path.
+        let loose = root + "/loose"
+        try FileManager.default.createDirectory(atPath: loose, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o755])
+        var insecure: DiagnosticsSocketError?
+        do { try DiagnosticsServer(path: loose + "/diag.sock") { _ in Data() }.start() } catch { insecure = error as? DiagnosticsSocketError }
+        XCTAssertEqual(insecure, .insecureDirectory)
+        let plain = root + "/d/diag.sock"
+        FileManager.default.createFile(atPath: plain, contents: Data("x".utf8))
+        var notSocket: DiagnosticsSocketError?
+        do { try DiagnosticsServer(path: plain) { _ in Data() }.start() } catch { notSocket = error as? DiagnosticsSocketError }
+        XCTAssertEqual(notSocket, .notASocket)
+    }
+    func testOldScanCompletionNeverReleasesANewerReservation() async {
+        let clock = TestClock(), coordinator = DiagnosticsCoordinator(clock: { clock.now })
+        let scan = DiagnosticsRequest(command: .scan, selection: nil)
+        func admit() -> Result<Admission, DiagnosticsError> { coordinator.admit(scan, hasSelection: true, selectionGeneration: 1, guiding: false) }
+        _ = coordinator.enable()
+        guard case .success(let a) = admit() else { return XCTAssertEqual("A admitted", "refused") }
+        let workA = SuspendedWork()
+        let replyA = Task { await coordinator.runLive(a, waitLimit: 10, work: workA.work) }
+        await waitUntil { workA.started }
+        coordinator.disable(); _ = coordinator.enable()                 // toggle off and on: a new session
+        XCTAssertEqual(workA.cancelled, true)
+        clock.advance(2)
+        XCTAssertEqual(failure(admit()), .busy)                          // A's AX work has not ended yet
+        workA.complete(sampleOutcome)
+        XCTAssertEqual(failure(await replyA.value), .disabled)            // A's late result is not published
+        guard case .success(let b) = admit() else { return XCTAssertEqual("B admitted", "refused") }
+        let workB = SuspendedWork()
+        let replyB = Task { await coordinator.runLive(b, waitLimit: 10, work: workB.work) }
+        await waitUntil { workB.started }
+        coordinator.abandon(a)                                           // a stale admission cannot release B
+        clock.advance(2)
+        XCTAssertEqual(failure(admit()), .busy)
+        workB.complete(sampleOutcome)
+        XCTAssertEqual(failure(await replyB.value), nil)
+        XCTAssertEqual(coordinator.liveWorkPending, false)
+    }
+    func testTimedOutScanKeepsTheQueueReservedUntilItsWorkEnds() async {
+        let clock = TestClock(), coordinator = DiagnosticsCoordinator(clock: { clock.now })
+        let scan = DiagnosticsRequest(command: .scan, selection: nil)
+        func admit() -> Result<Admission, DiagnosticsError> { coordinator.admit(scan, hasSelection: true, selectionGeneration: 1, guiding: false) }
+        _ = coordinator.enable()
+        guard case .success(let a) = admit() else { return XCTAssertEqual("admitted", "refused") }
+        let work = SuspendedWork(), started = Date()
+        XCTAssertEqual(failure(await coordinator.runLive(a, waitLimit: 0.2, work: work.work)), .timedOut)
+        XCTAssertEqual(Date().timeIntervalSince(started) < 1, true)
+        XCTAssertEqual(work.cancelled, true)                             // the work is told to stop…
+        for _ in 0..<3 { clock.advance(2); XCTAssertEqual(failure(admit()), .busy) }   // …and repeated requests do not queue more AX work
+        work.complete(nil)
+        clock.advance(2)
+        XCTAssertEqual(failure(admit()), nil)
+    }
+    func testUserWorkRefusesAndPreemptsDiagnosticsOnTheSharedQueue() async {
+        let clock = TestClock(), coordinator = DiagnosticsCoordinator(clock: { clock.now })
+        let scan = DiagnosticsRequest(command: .scan, selection: nil)
+        func admit() -> Result<Admission, DiagnosticsError> { coordinator.admit(scan, hasSelection: true, selectionGeneration: 1, guiding: false) }
+        _ = coordinator.enable()
+        coordinator.setUserWork(active: true)                            // Find controls running
+        XCTAssertEqual(failure(admit()), .userWorkActive)
+        coordinator.setUserWork(active: false)
+        // Diagnostics admitted first and queued behind earlier work; then the user starts work.
+        final class Counter: @unchecked Sendable { let lock = NSLock(); var value = 0; func add() { lock.withLock { value += 1 } }; var count: Int { lock.withLock { value } } }
+        let queue = DispatchQueue(label: "test.shared-ax-queue"), blocker = DispatchSemaphore(value: 0), performed = Counter(), userRan = Counter()
+        queue.async { blocker.wait() }
+        guard case .success(let a) = admit() else { return XCTAssertEqual("admitted", "refused") }
+        let work: DiagnosticsCoordinator.LiveWork = { ticket, done in
+            queue.async { guard !ticket.isCancelled else { done(nil); return }; performed.add(); done(sampleOutcome) }
+        }
+        let reply = Task { await coordinator.runLive(a, waitLimit: 5, work: work) }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        coordinator.setUserWork(active: true)                            // returns at once; it never waits for diagnostics
+        queue.async { userRan.add() }                                    // the user's own scan
+        blocker.signal()
+        XCTAssertEqual(failure(await reply.value), .preempted)
+        XCTAssertEqual(performed.count, 0)                               // obsolete diagnostic AX work was skipped
+        await waitUntil { userRan.count == 1 }
+        XCTAssertEqual(userRan.count, 1)
+        coordinator.setUserWork(active: false)
+        // Work that already finished its AX reads is still not published if the user started meanwhile.
+        clock.advance(2)
+        guard case .success(let b) = admit() else { return XCTAssertEqual("admitted", "refused") }
+        let suspended = SuspendedWork()
+        let replyB = Task { await coordinator.runLive(b, waitLimit: 5, work: suspended.work) }
+        await waitUntil { suspended.started }
+        coordinator.setUserWork(active: true)
+        suspended.complete(sampleOutcome)
+        XCTAssertEqual(failure(await replyB.value), .preempted)
+    }
+    func testSelectionChangeDropsScanResultsButNotSelfChecks() async {
+        let clock = TestClock(), coordinator = DiagnosticsCoordinator(clock: { clock.now })
+        _ = coordinator.enable()
+        guard case .success(let a) = coordinator.admit(DiagnosticsRequest(command: .scan, selection: nil), hasSelection: true, selectionGeneration: 1, guiding: false)
+        else { return XCTAssertEqual("admitted", "refused") }
+        let work = SuspendedWork()
+        let reply = Task { await coordinator.runLive(a, waitLimit: 5, work: work.work) }
+        await waitUntil { work.started }
+        coordinator.selectionChanged()
+        XCTAssertEqual(work.cancelled, true)
+        work.complete(sampleOutcome)
+        XCTAssertEqual(failure(await reply.value), .staleSelection)
+        clock.advance(2)
+        guard case .success(let own) = coordinator.admit(DiagnosticsRequest(command: .selfCheck, selection: nil), hasSelection: false, selectionGeneration: 2, guiding: false)
+        else { return XCTAssertEqual("admitted", "refused") }
+        let selfWork = SuspendedWork()
+        let selfReply = Task { await coordinator.runLive(own, waitLimit: 5, work: selfWork.work) }
+        await waitUntil { selfWork.started }
+        coordinator.selectionChanged()                                   // irrelevant to GuideCursor's own window
+        XCTAssertEqual(selfWork.cancelled, false)
+        selfWork.complete(sampleOutcome)
+        XCTAssertEqual(failure(await selfReply.value), nil)
+        XCTAssertEqual(failure(coordinator.admit(DiagnosticsRequest(command: .selfCheck, selection: nil), hasSelection: false, selectionGeneration: 2, guiding: false)), .rateLimited)
+    }
+    func testScannerStopsBetweenReadsWhenCancelled() {
+        var nodes: [Int: [String: FakeValue]] = [app: ["AXFocusedWindow": .element(1)], 1: window(children: Array(1000..<1400))]
+        for id in 1000..<1400 { nodes[id] = ["AXRole": .string("AXButton"), "AXTitle": .string("B"), "frame": .frame(box)] }
+        let tree = FakeTree(nodes)
+        var scanner = TreeScanner(reader: tree, budget: 30, isCancelled: { tree.reads.count >= 40 })
+        let result = scanner.scan(app: app)
+        XCTAssertEqual(result.cancelled, true)
+        XCTAssertEqual(tree.reads.count, 40)                              // no read after cancellation was seen
+        XCTAssertEqual(result.limits.isEmpty, true)                       // cancellation is not reported as an app limit
+    }
+    func testReleasedServerClosesEveryAcceptedDescriptor() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("gcfd-\(UUID().uuidString.prefix(8))").path
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let path = root + "/d/diag.sock"
+        final class Probe: @unchecked Sendable {
+            let lock = NSLock(); var entered = 0, exited = 0
+            func enter() { lock.withLock { entered += 1 } }; func exit() { lock.withLock { exited += 1 } }
+            var counts: (Int, Int) { lock.withLock { (entered, exited) } }
+        }
+        let probe = Probe()
+        let slowHandler: DiagnosticsServer.Handler = { _ in probe.enter(); try? await Task.sleep(nanoseconds: 400_000_000); probe.exit(); return Data("{}\n".utf8) }
+        func cycle(_ n: Int) async throws {
+            // Released while the handler is suspended.
+            var server: DiagnosticsServer? = DiagnosticsServer(path: path, handler: slowHandler)
+            try server?.start()
+            let reply = Task.detached { try? DiagnosticsClient.send(Data(#"{"v":1,"cmd":"status"}"#.utf8), path: path) }
+            await waitUntil { probe.counts.0 == n }
+            server?.stop(); server = nil
+            XCTAssertEqual((await reply.value).map(\.isEmpty) ?? true, true)   // disconnected, no late reply
+            await waitUntil { probe.counts.1 == n }
+            // Released while the request is still being read (partial line, no newline).
+            var reading: DiagnosticsServer? = DiagnosticsServer(path: path, handler: slowHandler)
+            try reading?.start()
+            let raw = connectRaw(path)
+            _ = "{\"v\":1".withCString { write(raw, $0, 6) }
+            try await Task.sleep(nanoseconds: 150_000_000)
+            reading?.stop(); reading = nil
+            try await Task.sleep(nanoseconds: 150_000_000)
+            close(raw)
+        }
+        try await cycle(1)                                                 // warm-up: runtime-created descriptors
+        try await Task.sleep(nanoseconds: 200_000_000)
+        let baseline = openDescriptors()
+        for n in 2...5 { try await cycle(n) }
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(openDescriptors(), baseline)
+        // The path is reusable afterwards.
+        let fresh = DiagnosticsServer(path: path) { _ in Data("{\"ok\":true}\n".utf8) }
+        try fresh.start()
+        XCTAssertEqual(String(decoding: try DiagnosticsClient.send(Data(#"{"v":1,"cmd":"status"}"#.utf8), path: path), as: UTF8.self), "{\"ok\":true}\n")
+        fresh.stop()
+    }
+    func testStoppedOrRefusedServerNeverRemovesAnotherListener() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("gcown-\(UUID().uuidString.prefix(8))").path
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let path = root + "/d/diag.sock"
+        func answer(_ name: String) -> DiagnosticsServer.Handler { { _ in Data("{\"by\":\"\(name)\"}\n".utf8) } }
+        func ask() -> String { String(decoding: (try? DiagnosticsClient.send(Data(#"{"v":1,"cmd":"status"}"#.utf8), path: path)) ?? Data(), as: UTF8.self) }
+        var a: DiagnosticsServer? = DiagnosticsServer(path: path, handler: answer("a"))
+        try a?.start()
+        XCTAssertEqual(ask(), "{\"by\":\"a\"}\n")
+        a?.stop()
+        let b = DiagnosticsServer(path: path, handler: answer("b"))
+        try b.start()
+        a?.stop()                                                          // stopping the old instance again…
+        a = nil                                                            // …and releasing it
+        var never: DiagnosticsServer? = DiagnosticsServer(path: path, handler: answer("c"))   // never started
+        never?.stop(); never = nil
+        XCTAssertEqual(ask(), "{\"by\":\"b\"}\n")                     // the replacement is untouched
+        b.stop(); b.stop()                                                 // idempotent
+        XCTAssertEqual(FileManager.default.fileExists(atPath: path), false)
+    }
 }
 
 let tests = GuidanceTests()
@@ -572,6 +931,13 @@ Task.detached {
     try! await tests.testSyntheticAnalyzerPathEndToEnd()
     try! await tests.testBoundedWaitReturnsAtDeadlineAndDropsLateResult()
     try! await tests.testRealOCROnBlankImageReturnsNothing()
+    try! await tests.testDiagnosticsSocketIsPrivateBoundedAndClosesInstantly()
+    try! await tests.testReleasedServerClosesEveryAcceptedDescriptor()
+    try! await tests.testStoppedOrRefusedServerNeverRemovesAnotherListener()
+    await tests.testOldScanCompletionNeverReleasesANewerReservation()
+    await tests.testTimedOutScanKeepsTheQueueReservedUntilItsWorkEnds()
+    await tests.testUserWorkRefusesAndPreemptsDiagnosticsOnTheSharedQueue()
+    await tests.testSelectionChangeDropsScanResultsButNotSelfChecks()
     asyncDone.signal()
 }
 asyncDone.wait()
@@ -579,4 +945,10 @@ tests.testCaptureOfferIsBoundToItsScan()
 tests.testVisionCoordinatesAreFlippedToTopLeftPixels()
 tests.testMergedLineIsSplitIntoSegmentsAndDuplicatesStayAmbiguous()
 tests.testVisualMatchRequiresTheSameName()
-print("PASS: 38 core checks (\(assertions) assertions)")
+tests.testDiagnosticsProtocolAcceptsOnlyTheTinyCommandSet()
+tests.testDiagnosticsGateRequiresConsentAndLimitsLiveScans()
+tests.testDiagnosticReportsAreRedactedAndSeparateTheCauses()
+tests.testGuidanceHealthRecordsLifecycleAndRefreshes()
+tests.testSyntheticDiagnosticFixturesPassInThisBinary()
+tests.testScannerStopsBetweenReadsWhenCancelled()
+print("PASS: 51 core checks (\(assertions) assertions)")

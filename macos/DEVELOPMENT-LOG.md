@@ -152,3 +152,79 @@ Results on an Apple M4, 16 GB, macOS 26.6.2 (25G83), 6 generated screens, 51 req
 Accurate misses are unchanged ("Cancel" and "Don't Save" misread on the dialog). Fast also misses both "Don't …" buttons on the new screen, 8 of 9 labels on the dark 1× screen, and "Résumé.pdf". There are no unsafe suggestions at either level.
 
 Checks: required core 38 checks / 177 assertions; opt-in OCR 3 checks / 20 assertions (passed on macOS 26.6.2). Mutations that allow extra label words (Codex's bug), treat any prefix as the same word, or fall back to any shared word each fail a required check. Release build has no warnings; packaging with fresh-extraction verification and `git diff --check` pass. App sources unchanged since `cd53962`.
+
+## 2 October — development diagnostics connection and build identity (Claude, local, uncommitted)
+
+Direction: Alberto should not have to repeat tests and describe results. A stale ad hoc Accessibility grant was suspected but unprovable from outside the app. The design therefore runs diagnostics inside the app, using its own grant, behind a per-session opt-in.
+
+- **Connection.** Off at launch and switched on from a collapsed Developer diagnostics section. It is a Unix-domain socket in a 0700 per-user directory, with the socket at 0600. Each peer's uid is checked, and there is no network listener. Requests are a 1 KB JSON line; at most 2 connections; 2 s read timeout; unknown commands and fields refused. Switching off cuts open connections immediately and removes the socket.
+- **Commands.**
+  - `status`: build identity, live `AXIsProcessTrusted`, selection, last scan, guidance health, engine flags.
+  - `scan`: counts-only scan of the already selected app, tied to a selection generation.
+  - `self_check`: live scan of GuideCursor's own window, with known expected controls.
+  - `fixture`: synthetic trees through this binary's scanner.
+  - Scans are refused during guidance, while another is running, more often than once a second, or with a stale selection.
+- **Redaction by construction.** Report types hold only codes, counts, timings and identity. The request text is used to compute the diagnosis but is never stored.
+- **Build identity.** `build.sh` stamps the source revision, dirty flag, build date and requested signing into Info.plist. The app reads its real cdhash, signature kind and designated requirement through the Security framework. A compact indicator sits in the diagnostics section, and `--print-build-identity` prints the identity without starting the UI.
+- **Signing.** Optional `GUIDECURSOR_SIGN_IDENTITY` for an existing valid identity, checked up front. Ad hoc stays the default and is used in CI. The script prints the designated requirement used. No identity exists on this Mac, so identity signing was tested only for refusal of an unknown name.
+
+Verification: required core checks are 44 / 239. They cover protocol parsing (including JSON booleans not counting as integers, a real bug the socket test exposed), consent and limits, redaction with private strings, cause codes, guidance lifecycle, synthetic fixtures, and a real socket. The socket test checks the 0600/0700 modes, an occupied socket, insecure directories, non-socket files, oversize requests, and a cut within 1 s while a slow request is in flight. Seven mutations (unknown fields accepted, scans during guidance, no consent check, request text in reports, connections left open on stop, permissive directory, no socket chmod) each fail a check. The OCR opt-in checks still pass (3 / 20). The release build has no warnings; packaging to a scratch folder verifies, and `git diff --check` passes.
+
+Not verified live: the in-app toggle, socket and Security-framework identity inside a running app. This session cannot click the in-app opt-in, and it is deliberately not scriptable. The identity flag was verified on the scratch build.
+
+Incident: while checking the new flag I also ran the installed `~/Applications/GuideCursor.app` binary with it. That build predates the flag, so it started normally for a few seconds; I stopped exactly that process. Nothing was replaced or modified.
+
+
+## Codex review of diagnostics increment — lifecycle corrections pending
+
+Codex independently passed the 44 required checks / 239 assertions, release packaging in `/tmp/guidecursor-codex-diag-review`, fresh ZIP extraction verification, build-identity JSON from that scratch binary, and `git diff --check`. No installed app, shared build cache or user-facing ZIP was replaced; the UI bridge remains unverified live.
+
+Two lifecycle faults were reproduced with the actual compiled core in `/tmp/gcdiag-codex-lifecycle/main.swift`: stopping and releasing a server during suspended handling leaks one accepted descriptor each cycle (3 baseline -> 4, 5, 6, 7 after four cycles), because weak response ownership skips finish(); completing an old scan after disable/re-enable clears a newer session's in-flight flag. Inspection also found that diagnostic admission does not consult model.busy, so ordinary Find/validation work is not excluded on the shared AX queue. Requested ownership-safe connection teardown, admission-scoped completion/underlying-work coordination, and protection of user work with app-used injectable lifecycle regressions. Optional selection checking and invalid CLI selection handling also need accurate behavior/documentation. Follow-up: `/Users/alberto/Documents/Codex/2026-10-01/b/outputs/Claude-diagnostics-review-corrections.md`. This increment remains local and uncommitted pending review; do not install or push it yet.
+
+## 2 October — diagnostics lifecycle corrections after Codex review (Claude, local, uncommitted)
+
+Codex reproduced three faults. Each now has a regression, shown to fail against the faulty behaviour.
+
+1. **Descriptor leak when the server is released.** The reply path held the server weakly, so releasing the server right after `stop()` skipped closing the accepted socket.
+   - **Fix:** each accepted descriptor is owned by a `Connection` object with exactly one locked close. The reading thread and then the response task hold it, never the server. `stop()` only shuts connections down, so the peer is disconnected at once and no late reply is written. A late task cannot touch a closed or reused descriptor number.
+   - **Regression:** releases the server both while a handler is suspended and while a request is still being read, over four stop/release cycles plus a restart, and compares `/dev/fd` counts. Against the original socket file it failed with **16 → 20** descriptors after four cycles; it now returns to baseline.
+2. **An old scan clearing a newer reservation.** The bridge released the in-flight flag in an unconditional `defer`.
+   - **Fix:** the shared, lock-protected `DiagnosticsCoordinator` (used by the app) ties completion to the admission id. The reservation belongs to the underlying AX work, and only that work's real completion releases it. A caller timeout cancels the work's ticket but keeps the reservation, so repeated timed-out requests cannot pile work onto the serial queue.
+   - A result is published only if its session, user-work epoch and (for `scan`) selection epoch are unchanged.
+   - The scanner checks the ticket between reader calls and records `cancelled` separately from app limits.
+3. **User work on the shared queue.** Admission ignored Find and target validation.
+   - **Fix:** the Model reports `busy || guiding` and selection changes to the coordinator. User work refuses live diagnostics (`user_work_active`) and cancels an admitted one: it is skipped if still queued, stops at its next reader call if running, and answers `preempted_by_user`. Starting user work never waits on diagnostics, but a user scan queued behind a diagnostic reader call already in progress waits for that call (up to two native AX requests; see the correction below).
+
+**Also fixed.** The client now checks the selection by default: it reads `status` first and sends the observed generation, and invalid `--selection` text is a usage error. Checked against a throwaway local server and with argument-error exit codes. Trust wording no longer implies which old Settings entry was authorised.
+
+**Checks.** 50 required core checks / 272 assertions. New: four coordinator lifecycle checks with injected suspended work, a clock and a real serial queue; scanner cancellation; descriptor ownership. Mutations recreating each old behaviour (any completion clears the flag, a timeout releases the reservation, admission ignores user work, user work does not cancel queued diagnostics, stale results published) each fail a check. The release build has no warnings, packaging to a unique scratch folder with fresh-extraction verification passes, and `git diff --check` passes. OCR files were untouched, so the optional OCR suite was not rerun.
+
+**Still unverified live.** The in-app toggle, socket, coordinator hooks and Security-framework identity inside a running GuideCursor (the opt-in is deliberately not automatable), and how quickly a real scan stops after cancellation (see the correction below).
+
+
+## Codex review of diagnostics lifecycle corrections — socket pathname ownership pending
+
+The 50 required checks / 272 assertions, scratch release build/package (including fresh ZIP extraction), and diff check pass independently. The accepted-connection ownership and shared admission coordinator resolve the earlier reproduced lifecycle faults. Nothing was installed or pushed.
+
+New blocker reproduced with the actual compiled core: a second DiagnosticsServer.start() correctly throws occupied, but its new deinit calls stop(), which unconditionally unlinks the first listener's pathname despite never having started. Likewise a repeated stop on old server A unlinks replacement B's socket. Both new connections fail afterwards. Reproducer: `/tmp/gcdiag-codex-owner-review/main.swift`. The occupied test checks only the error, and the subsequent shutdown test accepts a failed connection as success, hiding the breakage. Requested instance/path ownership-aware, idempotent teardown and regressions which prove the surviving listener answers and the shutdown request entered its handler. Also requested precise cancellation timing: checks occur between reader calls, some of which wrap two nominally 0.3 s native requests; queued user work may wait for the current reader call. Follow-up: `/Users/alberto/Documents/Codex/2026-10-01/b/outputs/Claude-diagnostics-socket-ownership-fix.md`. Current increment remains local pending this focused fix and review; live bridge still unverified.
+
+## 2 October — socket path ownership and timing wording (Claude, local, uncommitted)
+
+Codex found that `deinit { stop() }` made teardown unsafe. `stop()` unlinked any user-owned socket at its path, even from an instance that never started or had already stopped: the `guard running` returned only from the lock closure. So a refused second server deleted the first listener's endpoint when it was released, and an old instance's second `stop()` deleted a replacement server's socket.
+
+- **Fix.** A server records the device and inode of the socket file it bound. `stop()` is idempotent and returns from the whole function unless this instance is running. It unlinks the path only if it is still that exact socket file. A failed start records nothing, so it can remove nothing. The check-then-unlink is not atomic; the window is tiny and confined to the user's private 0700 directory. Descriptor ownership and immediate disconnect are unchanged.
+- **Regressions.**
+  - After a refused server is stopped and released, and after a refused temporary is released, the first listener's file still exists and it answers a fresh client.
+  - A new test stops A, starts B at the same path, stops and releases A again, and releases a never-started instance; B still answers, and B's own double stop is harmless.
+  - The mid-request shutdown test now waits until the handler has provably started. It requires a real connection (a failed connect no longer counts as success), an empty reply within 0.5 s of stopping, and the handler still running at that moment. It then waits for the handler to finish, so the owner's late close doesn't skew later descriptor counts.
+  - On the pre-fix source, the suite fails at the refused-listener check (the socket file was gone). Run alone, the replacement test fails because B no longer answers. Both pass with the fix.
+- **Timing wording corrected.** Cancellation is checked between reader calls. A call in progress completes, and one live reader call can be two native AX requests (frame position and size; array count and copy), each nominally limited by the 0.3 s messaging timeout. A user scan queued behind a diagnostic reader call waits for it, so a short delay is possible. Measured live timing is still unavailable.
+
+Checks: 51 required core checks / 280 assertions, three consecutive passing runs. The release build has no warnings, packaging to a unique scratch output with fresh-extraction verification passes, and `git diff --check` passes. The OCR suite was not rerun (unchanged).
+
+
+## Codex acceptance of session diagnostics — live check next
+
+Codex independently passed 51 required checks / 280 assertions and diff check, and reran the original socket ownership reproducer against the compiled core: the first listener stays reachable after a refused second start, and the replacement stays reachable after the old server stops again. Accepted connection ownership, admission-scoped AX completion, timeout reservation retention, user-work preemption and instance-owned socket teardown are now implemented. The remaining check/unlink race is acknowledged inside the private per-user directory. Cancellation checks occur between reader calls; a running call can wrap two native requests and may briefly delay queued user work.
+
+This increment is accepted for packaging and the first opt-in live session. The app reports its actual build identity and Accessibility trust and serves redacted counts/status through GuideCursorDiag. The running app's toggle/bridge, live AX matching, overlay and speech remain unverified. No screen-image/OCR guidance was enabled. Stable certificate signing is supported only for an already existing identity; none has been verified on this Mac. After the reviewed build is installed, Alberto must open the exact `/Users/alberto/Applications/GuideCursor.app`, enable Developer diagnostics for the session, and if needed re-add that exact app to Accessibility. Use the client status/self-check/fixture commands before a selected-app scan; distinguish synthetic from live evidence. Further feature work should follow this live check.

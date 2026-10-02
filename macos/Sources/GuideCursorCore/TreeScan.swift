@@ -44,6 +44,8 @@ public struct TreeScanResult<Element> {
     public var elements: [Element] = []
     public var limits: Set<ScanLimit> = []
     public var failedReads = 0
+    /// Stopped because the caller cancelled (not a limit of the app being scanned).
+    public var cancelled = false
 }
 
 public struct TreeScanner<R: TreeReader> {
@@ -53,6 +55,7 @@ public struct TreeScanner<R: TreeReader> {
 
     let reader: R
     let clock: () -> Date
+    let isCancelled: () -> Bool
     let deadline: Date
     let maxElements: Int
     let maxDepth: Int
@@ -60,8 +63,9 @@ public struct TreeScanner<R: TreeReader> {
     private var expired = false
     private var permissionLost = false
 
-    public init(reader: R, budget: TimeInterval, maxElements: Int = 1200, maxDepth: Int = 30, clock: @escaping () -> Date = Date.init) {
-        self.reader = reader; self.clock = clock; self.deadline = clock().addingTimeInterval(budget)
+    public init(reader: R, budget: TimeInterval, maxElements: Int = 1200, maxDepth: Int = 30, clock: @escaping () -> Date = Date.init,
+                isCancelled: @escaping () -> Bool = { false }) {
+        self.reader = reader; self.clock = clock; self.isCancelled = isCancelled; self.deadline = clock().addingTimeInterval(budget)
         self.maxElements = maxElements; self.maxDepth = maxDepth
         self.result = TreeScanResult(window: nil, windowStatus: .noWindow)
     }
@@ -70,7 +74,11 @@ public struct TreeScanner<R: TreeReader> {
     /// deadline still runs to completion; on the live reader one call can be two native AX
     /// requests (frame: position + size; elements: count + copy), each limited by the messaging timeout.
     private mutating func read<T>(_ operation: (R) -> Read<T>) -> Read<T>? {
-        guard !expired, clock() < deadline else { expired = true; result.limits.insert(.timeLimit); return nil }
+        guard !expired else { return nil }
+        // Cancellation is checked between reader calls. A call already in progress still completes, and one
+        // live reader call can be two native AX requests (frame: position + size; arrays: count + copy).
+        if isCancelled() { expired = true; result.cancelled = true; return nil }
+        guard clock() < deadline else { expired = true; result.limits.insert(.timeLimit); return nil }
         let value = operation(reader)
         if case .failed(let failure) = value {
             result.failedReads += 1
