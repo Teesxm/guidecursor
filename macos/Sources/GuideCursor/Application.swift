@@ -44,6 +44,15 @@ struct Content: View {
                 Button("Stop") { model.stop() }.keyboardShortcut(.escape)
             }
             Text(model.status).font(.callout).fixedSize(horizontal: false, vertical: true)
+            if !model.scanDetails.isEmpty {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Scan details: \(model.scanDetails)").font(.caption).foregroundColor(.secondary).textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                    Button("Copy") { model.copyScanDetails() }.font(.caption)
+                        .accessibilityLabel("Copy scan details. Counts only, no screen text.")
+                }
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(model.candidates) { control in
@@ -53,7 +62,7 @@ struct Content: View {
                                 Text("\(control.role.replacingOccurrences(of: "AX", with: "")) · \(control.region)").font(.caption).foregroundColor(.secondary)
                             }
                             Spacer()
-                            Button("Guide me") { model.guide(control) }.accessibilityLabel("Guide me to \(control.label), \(control.region)")
+                            Button("Guide me") { model.guide(control) }.disabled(model.busy).accessibilityLabel("Guide me to \(control.label), \(control.region)")
                         }.padding(10).background(Color.primary.opacity(0.05)).cornerRadius(8)
                     }
                 }

@@ -45,6 +45,11 @@ public enum ControlIndex {
         return String(text.prefix(160))
     }
 
+    /// Enabled, on-screen nodes with an interactive role, labelled or not. Used for diagnostics counts.
+    public static func interactiveIDs(in nodes: [ControlNode]) -> Set<Int> {
+        Set(nodes.filter { directRoles.contains($0.role) && $0.enabled && $0.frame != nil }.map(\.id))
+    }
+
     public static func candidates(in nodes: [ControlNode]) -> [IndexedControl] {
         let byID = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
         var labels: [Int: String] = [:]

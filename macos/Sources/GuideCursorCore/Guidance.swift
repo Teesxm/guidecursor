@@ -30,7 +30,14 @@ public enum Guidance {
     public static func score(request: String, label: String) -> Int {
         let wanted = terms(request), actual = terms(label)
         guard !wanted.isEmpty else { return 0 }
-        return wanted.intersection(actual).count * 10 + (wanted == actual ? 5 : 0)
+        // Exact words score highest; a shared stem ("download" / "Downloads") scores lower.
+        let partial = wanted.subtracting(actual).filter { word in
+            actual.contains { other in
+                let (short, long) = word.count <= other.count ? (word, other) : (other, word)
+                return short.count >= 4 && long.hasPrefix(short)
+            }
+        }
+        return wanted.intersection(actual).count * 10 + partial.count * 6 + (wanted == actual ? 5 : 0)
     }
     public static func validatedIDs(_ ids: [Int], allowed: Set<Int>) -> [Int] {
         var seen = Set<Int>()

@@ -69,5 +69,5 @@ The codebase is now intended to use **Teesxm/guidecursor as the shared source of
 The desktop MVP is being developed in [`macos/`](macos/README.md), alongside this concept website. It includes an Accessibility-based control finder, native cursor companion, highlighting and spoken guidance. See its README for setup, current limitations and validation status.
 
 ```sh
-./macos/scripts/build.sh && open macos/build/GuideCursor.app
+./macos/scripts/build.sh && open ~/Library/Caches/nl.guidecursor.prototype/build/GuideCursor.app
 ```

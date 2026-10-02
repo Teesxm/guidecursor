@@ -14,6 +14,8 @@ import GuideCursorCore
     @Published var candidates: [Control] = []
     @Published var status = "Choose an app, enter a control to find, then review the matches."
     @Published var busy = false
+    /// Counts-only summary of the last scan (no labels or screen text), for troubleshooting.
+    @Published var scanDetails = ""
     @Published var guiding = false
     @Published var zoomShortcutConfirmed = false
     @Published var apps: [NSRunningApplication] = []
@@ -63,11 +65,17 @@ import GuideCursorCore
         generation += 1; target = nil; window = nil; candidates = []; guiding = false; busy = false
         overlay.hide(); voice.stopSpeaking(at: .immediate); lastSpoken = ""; status = message
     }
+    func copyScanDetails() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("GuideCursor scan details — " + scanDetails, forType: .string)
+    }
     func find() {
-        stop(); candidates = []
-        guard AXIsProcessTrusted() else { status = "Enable GuideCursor in System Settings → Privacy & Security → Accessibility, then retry."; return }
+        stop(); candidates = []; scanDetails = ""
+        guard AXIsProcessTrusted() else { trusted = false; status = Diagnostics.message(.permissionMissing, appName: "", stats: ScanStats(window: .permissionDenied)); return }
         guard let app = apps.first(where: { $0.processIdentifier == selectedPID }) else { status = "Choose an open application."; return }
+        guard !app.isTerminated else { status = Diagnostics.message(.appUnavailable, appName: app.localizedName ?? "That app", stats: ScanStats(window: .appUnavailable)); return }
         guard !request.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { status = "Enter the control or task you need help with."; return }
+        guard useAI || !Guidance.terms(request).isEmpty else { status = Diagnostics.message(.unsearchableRequest, appName: "", stats: ScanStats(window: .found)); return }
         guard !useAI || !modelName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { status = "Enter the name of a downloaded local Ollama model."; return }
         busy = true; appName = app.localizedName ?? "Application"; status = "Reading controls in \(appName)…"
         let token = generation, pid = selectedPID, query = request, ai = useAI, model = modelName
@@ -76,8 +84,9 @@ import GuideCursorCore
             Task { @MainActor [weak self] in
                 guard let self, self.generation == token else { return }
                 self.window = result.window
-                if result.controls.isEmpty { self.busy = false; self.status = "No labelled controls found. Open a normal window in the selected app. Some apps do not expose their controls."; return }
-                if ai {
+                self.scanDetails = Diagnostics.summary(result.stats, appName: self.appName)
+                let usable = result.stats.window == .found && !result.controls.isEmpty
+                if usable && ai {
                     self.status = "Asking your local model to suggest targets…"
                     do {
                         let ids = try await Ollama.select(request: query, controls: result.controls, model: model)
@@ -87,24 +96,42 @@ import GuideCursorCore
                         guard self.generation == token else { return }
                         self.busy = false; self.status = "Local AI failed: \(error.localizedDescription) You can switch to label search."; return
                     }
-                } else {
+                } else if usable {
                     self.candidates = result.controls.filter { Guidance.score(request: query, label: $0.label) > 0 }
                         .sorted { Guidance.score(request: query, label: $0.label) > Guidance.score(request: query, label: $1.label) }.prefix(12).map { $0 }
                 }
                 self.busy = false
-                self.status = self.candidates.isEmpty ? "No match. Try the control's visible name, or another app window." : "Choose the intended control below. \(ai ? "Local AI suggestions" : "Label search — no AI used")."
-                if result.limited { self.status += " Only part of the window could be read; a smaller window may help." }
+                let diagnosis = Diagnostics.diagnose(trusted: AXIsProcessTrusted(), stats: result.stats, request: query,
+                                                     matches: self.candidates.count, usedModel: ai)
+                if diagnosis == .permissionMissing { self.trusted = false }
+                if case .matches = diagnosis {
+                    self.status = "Choose the intended control below. \(ai ? "Local AI suggestions" : "Label search — no AI used")."
+                    if result.stats.incomplete { self.status += " " + Diagnostics.incompleteNote(result.stats) }
+                } else {
+                    self.status = Diagnostics.message(diagnosis, appName: self.appName, stats: result.stats)
+                }
             }
         }
     }
     func guide(_ control: Control) {
         guard let app = NSRunningApplication(processIdentifier: selectedPID), !app.isTerminated else { stop(message: "That app has closed. Refresh the application list."); return }
-        guard let storedWindow = window, let activeWindow = Accessibility.focusedWindow(selectedPID), CFEqual(storedWindow, activeWindow), Accessibility.enabled(control.element), Accessibility.rect(control.element) != nil else {
-            stop(message: "The selected window or control changed. Find controls again before guiding.")
-            return
+        guard let storedWindow = window else { stop(message: "The selected window or control changed. Find controls again before guiding."); return }
+        // Accessibility reads can block on the other app, so validate on the background queue.
+        generation += 1; busy = true; status = "Checking \(control.label)…"
+        let token = generation, pid = selectedPID
+        reader.async {
+            let activeWindow = Accessibility.focusedWindow(pid)
+            let valid = activeWindow.map { CFEqual(storedWindow, $0) } == true
+                && Accessibility.enabled(control.element) && Accessibility.rect(control.element) != nil
+            Task { @MainActor [weak self] in
+                guard let self, self.generation == token else { return }
+                self.busy = false
+                guard valid else { self.stop(message: "The selected window or control changed. Find controls again before guiding."); return }
+                self.generation += 1; self.target = control; self.guiding = true; self.lastSpoken = ""
+                self.status = "Guiding to \(control.label). You move and click. Stop with the menu bar or this window."
+                app.activate(options: [.activateIgnoringOtherApps])
+            }
         }
-        generation += 1; target = control; guiding = true; lastSpoken = ""; status = "Guiding to \(control.label). You move and click. Stop with the menu bar or this window."
-        app.activate(options: [.activateIgnoringOtherApps])
     }
     private func tick() {
         pollNumber += 1

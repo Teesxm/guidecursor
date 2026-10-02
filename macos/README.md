@@ -7,10 +7,12 @@ This is the native desktop component of GuideCursor. The existing website stays 
 From the repository root:
 
 ```sh
-./macos/scripts/build.sh && open macos/build/GuideCursor.app
+./macos/scripts/build.sh && open ~/Library/Caches/nl.guidecursor.prototype/build/GuideCursor.app
 ```
 
-In the app, select **Enable access**, then enable GuideCursor under **System Settings → Privacy & Security → Accessibility**. The user must grant this permission. If macOS does not list it, add `macos/build/GuideCursor.app` with the + button. Local ad-hoc builds may require renewing permission after rebuilding. No screen-recording, microphone or camera permission is needed for this milestone.
+The script compiles in the repository, but assembles, signs and zips the app in a temporary folder, verifies the signature of the bundle and of a freshly extracted ZIP copy, then installs both to `~/Library/Caches/nl.guidecursor.prototype/build/` (override with `GUIDECURSOR_OUT`, which must be outside Documents/Desktop/iCloud). It refuses to replace a copy that is running from that folder and never touches `~/Applications`. Do not copy the app back into Documents: the file provider adds Finder metadata within seconds, and strict signature checks then fail. Share `GuideCursor-macOS-prototype.zip` instead. The ZIP bytes differ between runs because of timestamps.
+
+In the app, select **Enable access**, then enable GuideCursor under **System Settings → Privacy & Security → Accessibility**. The user must grant this permission. If macOS does not list it, add the built app (path above) with the + button. Local ad-hoc builds may require renewing permission after rebuilding. No screen-recording, microphone or camera permission is needed for this milestone.
 
 1. Open an ordinary app window such as Finder.
 2. Choose that application in GuideCursor.
@@ -19,6 +21,8 @@ In the app, select **Enable access**, then enable GuideCursor under **System Set
 5. The chosen app comes forward. A click-through outline marks the actual control; a companion follows your cursor with movement directions. Speech can be disabled.
 6. Move and click yourself. If a click near the target is detected, guidance stops and asks you to inspect the result. It does not claim the action succeeded. Search again for the next step or new window.
 7. Stop at any time from GuideCursor's window (Escape) or its **GC** menu-bar menu. Quit with Command-Q while GuideCursor is active.
+
+If nothing is found, the status line names the first cause to fix: missing or outdated Accessibility permission, the app has quit, no open window, the app did not respond in time, the window exposes no named controls, the request has no searchable words, or no named control matched. If the scan stopped early (element, time or depth limit, or failed reads) that is stated, because the control may exist but was not read; when nothing named was read from a partial scan, GuideCursor says the window could not be fully read rather than that the app exposes no controls. A **Scan details** line shows counts only (elements read, named/unnamed controls by role, duration, stop reasons) and can be copied for troubleshooting; it never includes labels or other screen text. Nothing is logged to disk.
 
 Switching applications hides the guidance. A changed window, unavailable control, disabled control or off-screen target stops it. The prototype does not perform clicks or move the system pointer.
 
@@ -63,6 +67,18 @@ swift run --package-path macos GuideCursorCoreChecks
 ./macos/scripts/build.sh
 ```
 
-Core checks cover pointer directions, multi-display coordinate conversion, target regions, no-match handling, rejecting invented model IDs, and generic accessibility-tree cases for nested row text and labelled buttons. Permission-dependent integration, speech quality and different applications require live testing. A successful build does not establish those behaviors.
+Core checks cover pointer directions, multi-display coordinate conversion, target regions, no-match and shared-stem matching (“download” finds “Downloads”), rejecting invented model IDs, generic accessibility-tree cases for nested row text and labelled buttons, diagnosis ordering, incomplete-scan messages, and the rule that diagnostics contain no screen text. Permission-dependent integration, speech quality and different applications require live testing. A successful build does not establish those behaviors.
 
 API references: [Apple accessibility attributes](https://developer.apple.com/documentation/applicationservices/1462085-axuielementcopyattributevalue), [NSPanel](https://developer.apple.com/documentation/appkit/nspanel), [click-through windows](https://developer.apple.com/documentation/appkit/nswindow/ignoresmouseevents), [Ollama chat API](https://docs.ollama.com/api/chat).
+
+### One-session live check (requires a person with Accessibility permission granted)
+
+Quit any running GuideCursor first. Build with `./macos/scripts/build.sh`, open the built app (path above), and renew its Accessibility entry if macOS shows it as off (ad-hoc rebuilds can invalidate the old entry). Then, using synthetic/public content:
+
+1. Finder window showing the sidebar → request `downloads`, then `download`. Expect a Row candidate “Downloads”; choose **Guide me**, move the pointer to it and click yourself. Copy the Scan details.
+2. Minimise all Finder windows (or close them) → `downloads`. Expect the “no open window” message, not “No match”.
+3. Finder window → `find the button`. Expect “no searchable words”.
+4. Finder window → `zzzz`. Expect “No match among N named controls”.
+5. One other app (e.g. Safari or Mail) → the visible name of a toolbar button. Copy the Scan details.
+
+Report for each: status text, Scan details line, and whether the outline/companion/speech appeared at the right place.
