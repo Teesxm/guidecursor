@@ -47,11 +47,11 @@
     .listen-status{display:flex;align-items:center;gap:9px;margin-top:12px;padding:10px 11px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(255,255,255,.035)}.listen-status[hidden]{display:none!important}.listen-status>i{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.28)}.listen-status strong{display:block;font-size:9px}.listen-status span{display:block;margin-top:3px;color:rgba(255,255,255,.43);font-size:8px;line-height:1.45}.listen-status.listening{border-color:rgba(160,241,213,.22);background:rgba(160,241,213,.065)}.listen-status.listening>i{background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08);animation:listenPulse 1s ease-in-out infinite}
     .guide-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}.guide-actions button{height:35px;padding:0 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:rgba(255,255,255,.62);font-size:8px;font-weight:700}.guide-actions button:hover{background:rgba(255,255,255,.05);color:#fff}.guide-actions .primary{background:#fff;color:#111116}.guide-actions button[hidden]{display:none!important}
     .cursor-companion{position:fixed;z-index:200;display:flex;gap:7px;align-items:flex-start;pointer-events:none;opacity:0;transition:opacity .12s ease;filter:drop-shadow(0 10px 24px rgba(0,0,0,.22))}.cursor-companion.show{opacity:1}.cursor-companion.flip{flex-direction:row-reverse}.cursor-dot{width:28px;height:28px;border-radius:9px;background:var(--indigo);color:#fff;display:grid;place-items:center;font-size:14px;box-shadow:0 0 0 6px rgba(103,88,244,.09)}.cursor-bubble{width:185px;padding:10px 11px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:rgba(17,17,22,.95);color:#fff;backdrop-filter:blur(15px)}.cursor-bubble small{display:block;color:var(--mint);font:500 7px "DM Mono",monospace;letter-spacing:.1em}.cursor-bubble strong{display:block;margin-top:3px;font-size:10px}.cursor-bubble span{display:block;margin-top:3px;color:rgba(255,255,255,.45);font-size:8px;line-height:1.4}
-    .guide-target{position:relative!important;z-index:60!important}.lowvision .guide-target:after{content:"";position:absolute!important;inset:-8px!important;border:2px solid var(--indigo)!important;border-radius:inherit!important;pointer-events:none!important;box-shadow:0 0 0 5px rgba(103,88,244,.055),0 0 30px rgba(103,88,244,.16)!important;animation:pulse 1.3s ease-in-out infinite!important}.lowvision .guide-target.ready:after{border-color:var(--mint)!important;box-shadow:0 0 0 10px rgba(160,241,213,.1),0 0 40px rgba(160,241,213,.22)!important}.blind .guide-target:after{display:none!important}
+    .guide-target{position:relative!important;z-index:85!important;transition:transform .16s ease,box-shadow .22s ease,background .22s ease!important}.lowvision .guide-target:after{content:"";position:absolute!important;inset:-9px!important;border:2px solid rgba(103,88,244,.72)!important;border-radius:inherit!important;pointer-events:none!important;box-shadow:0 0 0 5px rgba(103,88,244,.06),0 0 32px rgba(103,88,244,.18)!important;animation:targetPulse 1.45s ease-in-out infinite!important}.lowvision .guide-target.near{transform:scale(1.018)!important;box-shadow:0 10px 34px rgba(103,88,244,.14)!important}.lowvision .guide-target.ready:after{border-color:var(--mint)!important;box-shadow:0 0 0 10px rgba(160,241,213,.11),0 0 44px rgba(160,241,213,.26)!important;animation:targetReady .78s ease-in-out infinite!important}.blind .guide-target:after{display:none!important}
     .blind .cursor-dot{background:#111116;box-shadow:0 0 0 6px rgba(160,241,213,.08);border:1px solid rgba(160,241,213,.3)}.blind .cursor-bubble{border-color:rgba(160,241,213,.16)}
     .wrong-flash{animation:wrongFlash .55s ease}.completion{display:none;margin-top:14px;padding:14px;border:1px solid rgba(160,241,213,.16);border-radius:13px;background:rgba(160,241,213,.075)}.completion.show{display:block}.completion strong{display:block;color:var(--mint);font-size:11px}.completion p{margin:6px 0 0;color:rgba(255,255,255,.5);font-size:8px;line-height:1.55}
     .sr-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-    @keyframes pulse{0%,100%{opacity:.55;transform:scale(.985)}50%{opacity:1;transform:scale(1.035)}}@keyframes listenPulse{0%,100%{opacity:.5;transform:scale(.82)}50%{opacity:1;transform:scale(1.18)}}@keyframes wrongFlash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 4px rgba(242,143,134,.16)}}@media(max-width:950px){html,body{overflow:auto}.shell{min-height:100%;height:auto}.workspace{grid-template-columns:1fr;min-height:calc(100vh - 70px)}.desktop-wrap{height:650px}.guidance{min-height:430px}.mode-switch button{min-width:75px}.mail-window{left:3%;width:94%}.finder{left:8%;width:84%}}@media(max-width:650px){.topbar{padding:0 10px;gap:9px}.demo-label{display:none}.mode-switch{margin-left:auto}.mode-switch button{min-width:62px;padding:0 7px}.top-action.reset{display:none}.workspace{padding:8px}.desktop-wrap{height:570px;border-radius:16px}.mail-window{top:7%;height:78%;min-height:430px}.mail-grid{grid-template-columns:95px 1fr}.mail-side{padding:10px 5px}.compose{padding:11px}.finder{left:3%;width:94%;top:11%;height:70%;min-height:400px}.finder-grid{grid-template-columns:95px 1fr}.file-head,.file-row{grid-template-columns:minmax(0,1fr) 55px}.file-head span:last-child,.file-row span:last-child{display:none}.cursor-companion{display:none}.guidance{border-radius:16px}.guide-inner{padding:18px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+    @keyframes targetPulse{0%,100%{opacity:.58;transform:scale(.985)}50%{opacity:1;transform:scale(1.035)}}@keyframes targetReady{0%,100%{transform:scale(.98);opacity:.65}50%{transform:scale(1.03);opacity:1}}@keyframes listenPulse{0%,100%{opacity:.5;transform:scale(.82)}50%{opacity:1;transform:scale(1.18)}}@keyframes wrongFlash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 4px rgba(242,143,134,.16)}}@media(max-width:950px){html,body{overflow:auto}.shell{min-height:100%;height:auto}.workspace{grid-template-columns:1fr;min-height:calc(100vh - 70px)}.desktop-wrap{height:650px}.guidance{min-height:430px}.mode-switch button{min-width:75px}.mail-window{left:3%;width:94%}.finder{left:8%;width:84%}}@media(max-width:650px){.topbar{padding:0 10px;gap:9px}.demo-label{display:none}.mode-switch{margin-left:auto}.mode-switch button{min-width:62px;padding:0 7px}.top-action.reset{display:none}.workspace{padding:8px}.desktop-wrap{height:570px;border-radius:16px}.mail-window{top:7%;height:78%;min-height:430px}.mail-grid{grid-template-columns:95px 1fr}.mail-side{padding:10px 5px}.compose{padding:11px}.finder{left:3%;width:94%;top:11%;height:70%;min-height:400px}.finder-grid{grid-template-columns:95px 1fr}.file-head,.file-row{grid-template-columns:minmax(0,1fr) 55px}.file-head span:last-child,.file-row span:last-child{display:none}.cursor-companion{display:none}.guidance{border-radius:16px}.guide-inner{padding:18px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
   </style>
 </head>
 <body class="lowvision">
@@ -174,6 +174,7 @@
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
     let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',wasReady=false,lastTone='',lastToneAt=0;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
+    let directionSpeechEnabled=false,pendingDirection='',speechKind='';
     const cvFiles=['CV_Terence_2026.pdf','CV_Terence_Old.pdf','CV_Design.pdf'];
     const choiceLetters=['A','B','C'];
 
@@ -219,16 +220,28 @@
         }
       },delay);
     }
-    function speak(text,{interrupt=true,onend=null}={}){
+    function speak(text,{interrupt=true,onend=null,kind='general'}={}){
       if(mode!=='blind'||!text){if(typeof onend==='function')setTimeout(onend,0);return}
       stopListening({quiet:true});
       if(!audioOn||!('speechSynthesis'in window)){if(typeof onend==='function')setTimeout(onend,0);return}
       if(interrupt)speechSynthesis.cancel();
+      speechKind=kind;
       const u=new SpeechSynthesisUtterance(text),v=voice||pickVoice();if(v)u.voice=v;
       u.lang=v?.lang||'en-GB';u.rate=.96;u.pitch=1;u.volume=1;
-      u.onend=()=>{if(typeof onend==='function')onend()};
-      u.onerror=()=>{if(typeof onend==='function')onend()};
+      u.onend=()=>{speechKind='';if(typeof onend==='function')onend()};
+      u.onerror=()=>{speechKind='';if(typeof onend==='function')onend()};
       speechSynthesis.speak(u);sr.textContent=text;
+    }
+    function enableDirectionSpeech(){
+      directionSpeechEnabled=true;
+      const next=pendingDirection;pendingDirection='';
+      if(next&&next!=='Target reached'){lastDirection=next;speak(next,{interrupt:true,kind:'direction'})}
+    }
+    function speakDirectionChange(dir){
+      if(mode!=='blind'||!audioOn||!dir||dir==='Target reached')return;
+      if(dir===lastDirection)return;
+      if(!directionSpeechEnabled||speechKind==='action'){pendingDirection=dir;return}
+      lastDirection=dir;speak(dir,{interrupt:true,kind:'direction'});
     }
     function tone(direction,dist=240){
       if(mode!=='blind'||!audioOn)return;
@@ -254,7 +267,7 @@
     }
 
     function clearTarget(){
-      if(target)target.classList.remove('guide-target','ready');target=null;companion.classList.remove('show');wasReady=false;lastDirection='';lastTone='';
+      if(target)target.classList.remove('guide-target','near','ready');target=null;companion.classList.remove('show');wasReady=false;lastDirection='';lastTone='';pendingDirection='';directionSpeechEnabled=false;
     }
     function setTarget(el){
       clearTarget();target=el;if(target)target.classList.add('guide-target');queue();
@@ -277,20 +290,21 @@
         stopListening({quiet:true});setListenStatus('idle');
         if('speechSynthesis'in window)speechSynthesis.cancel();
       }
-      lastDirection='';wasReady=false;queue();
+      lastDirection='';pendingDirection='';directionSpeechEnabled=false;wasReady=false;queue();
       if(announce&&mode==='blind')announcePhase();
     }
     function announcePhase(){
       if(mode!=='blind')return;
-      if(phase==='request')speak('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{onend:()=>startListening('goal')});
-      if(phase==='attach')speak('Attach button. Move your pointer toward Attach.');
+      pendingDirection='';directionSpeechEnabled=false;
+      if(phase==='request')speak('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',onend:()=>startListening('goal')});
+      if(phase==='attach')speak('Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.',{kind:'action',onend:enableDirectionSpeech});
       if(phase==='choose'){
         const options=cvFiles.map((f,i)=>'Option '+choiceLetters[i]+'. '+f.replaceAll('_',' ')).join('. ');
-        speak('I found several files containing C V. '+options+'. Which C V do you mean? You can say A, B, C, first one, second one, third one, or the file name.',{onend:()=>startListening('choice')});
+        speak('I found several files containing C V. '+options+'. Which C V do you mean? You can say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
       }
-      if(phase==='file')speak(chosenFile.replaceAll('_',' ')+'. Move your pointer to that file and click it.');
-      if(phase==='open')speak('Open button. Move your pointer to Open and click it.');
-      if(phase==='done')speak('Attachment complete. '+selectedFile.replaceAll('_',' ')+' is attached to the email.');
+      if(phase==='file')speak('Choice received. '+chosenFile.replaceAll('_',' ')+' is the target. Move your pointer toward that file and click it when I confirm you have reached it.',{kind:'action',onend:enableDirectionSpeech});
+      if(phase==='open')speak('File selected. Open is now the verified target. Move your pointer toward Open and click it when I confirm you have reached it.',{kind:'action',onend:enableDirectionSpeech});
+      if(phase==='done')speak('Attachment complete. '+selectedFile.replaceAll('_',' ')+' is attached to the email.',{kind:'completion'});
     }
 
     function startGoal(raw){
@@ -344,9 +358,9 @@
       raf=0;if(!target||phase==='choose'||phase==='request'||phase==='done')return;
       const r=target.getBoundingClientRect(),vw=innerWidth,vh=innerHeight;
       const nx=Math.max(r.left,Math.min(r.right,pointer.x)),ny=Math.max(r.top,Math.min(r.bottom,pointer.y)),dx=nx-pointer.x,dy=ny-pointer.y,dist=Math.hypot(dx,dy);
-      const ready=pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom;
+      const ready=pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom,near=dist<205;
       const dir=ready?'Target reached':directionName(dx,dy),detail=ready?'Click once when you are ready.':dist<70?'Almost there.':dist<170?'You are close.':'Move toward the verified target.';
-      target.classList.toggle('ready',ready);cursorDirection.textContent=dir;cursorDetail.textContent=detail;
+      target.classList.toggle('near',near);target.classList.toggle('ready',ready);cursorDirection.textContent=dir;cursorDetail.textContent=detail;
 
       if(pointer.seen){
         const w=220,flip=pointer.x>vw-w-45;companion.classList.toggle('flip',flip);companion.classList.add('show');
@@ -355,9 +369,10 @@
 
       if(mode==='blind'){
         if(ready&&!wasReady){
-          lastDirection='Target reached';speak(targetLabel()+'. Target reached. Click once.');successTone();
-        }else if(!ready&&dir!==lastDirection){
-          lastDirection=dir;speak(dir);tone(dir,dist);
+          directionSpeechEnabled=true;pendingDirection='';lastDirection='Target reached';
+          speak(targetLabel()+'. Target found. Click once.',{interrupt:true,kind:'target'});successTone();
+        }else if(!ready){
+          speakDirectionChange(dir);tone(dir,dist);
         }
       }
       wasReady=ready;
@@ -369,7 +384,7 @@
       if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.');
     }
     function reset(){
-      stopListening({quiet:true});noSpeechRetries=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
+      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';speechKind='';clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
     }
 
     submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
