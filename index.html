@@ -381,24 +381,46 @@
       if(!('speechSynthesis'in window))return null;
       const voices=speechSynthesis.getVoices();
       const english=voices.filter(v=>/^en([-_]|$)/i.test(v.lang||''));
-      voice=english.find(v=>/Samantha|Daniel|Google UK|Microsoft (Sonia|Ryan)|Natural/i.test(v.name||''))||
-        english.find(v=>/^en-GB/i.test(v.lang||''))||english.find(v=>/^en-US/i.test(v.lang||''))||english[0]||voices[0]||null;
+      const local=english.filter(v=>v.localService===true||/Samantha|Daniel|Alex|Karen|Moira|Tessa|Fiona|com\.apple/i.test((v.name||'')+' '+(v.voiceURI||'')));
+      voice=local.find(v=>/Samantha|Daniel|Alex/i.test(v.name||''))||
+        local.find(v=>/^en-GB/i.test(v.lang||''))||
+        local.find(v=>/^en-US/i.test(v.lang||''))||
+        local[0]||null;
       return voice;
     }
     if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',pickVoice)}
 
     function setAudioStatus(text){audioStatus.textContent=text}
-    function speak(text,{interrupt=true}={}){
+    let speechAttempt=0,activeSpeech=null;
+    function speak(text,{interrupt=true,retry=true}={}){
       if(mode!=='blind'||!audioOn||!text)return;
       if(!('speechSynthesis'in window)){setAudioStatus('Audio unavailable');return}
+      const attempt=++speechAttempt;
       try{
         if(interrupt)speechSynthesis.cancel();
+        speechSynthesis.resume?.();
         const u=new SpeechSynthesisUtterance(text);
-        const v=voice||pickVoice(); if(v)u.voice=v;
+        const v=voice||pickVoice();if(v)u.voice=v;
         u.lang=v?.lang||'en-GB';u.rate=.96;u.pitch=1;u.volume=1;
-        u.onstart=()=>setAudioStatus('Speaking');u.onend=()=>setAudioStatus('Audio ready');u.onerror=()=>setAudioStatus('Try repeat');
+        activeSpeech=u;let started=false;
+        u.onstart=()=>{if(attempt!==speechAttempt)return;started=true;setAudioStatus('Speaking')};
+        u.onend=()=>{if(attempt!==speechAttempt)return;activeSpeech=null;setAudioStatus('Audio ready')};
+        u.onerror=()=>{if(attempt!==speechAttempt)return;activeSpeech=null;setAudioStatus('Try repeat')};
         speechSynthesis.speak(u);
-      }catch(_){setAudioStatus('Try repeat')}
+        if(retry)setTimeout(()=>{
+          if(attempt!==speechAttempt||started)return;
+          try{
+            speechSynthesis.cancel();speechSynthesis.resume?.();
+            const fallback=new SpeechSynthesisUtterance(text);
+            fallback.lang='en-US';fallback.rate=.96;fallback.pitch=1;fallback.volume=1;
+            activeSpeech=fallback;
+            fallback.onstart=()=>{if(attempt===speechAttempt)setAudioStatus('Speaking')};
+            fallback.onend=()=>{if(attempt===speechAttempt){activeSpeech=null;setAudioStatus('Audio ready')}};
+            fallback.onerror=()=>{if(attempt===speechAttempt){activeSpeech=null;setAudioStatus('Speech unavailable')}};
+            speechSynthesis.speak(fallback);
+          }catch(_){setAudioStatus('Speech unavailable')}
+        },550);
+      }catch(_){setAudioStatus('Speech unavailable')}
     }
 
     function speakDirection(direction){
@@ -544,8 +566,9 @@
       picker.hidden=true;document.body.classList.remove('gc-live-picker-open');
       mode=nextMode;active=true;complete=false;audioOn=true;lastSpokenDirection='';wasReady=false;window.__gcActive=true;
       document.body.classList.add('gc-live-active');panel.hidden=false;companion.hidden=false;
-      updateModeUI();activateTask(0,{scroll:true,announce:false});
-      if(mode==='blind')setTimeout(()=>speak('Blind guidance selected. '+currentTask().voice),420);
+      updateModeUI();
+      if(mode==='blind')speak('Blind guidance selected. '+currentTask().voice,{interrupt:true});
+      activateTask(0,{scroll:true,announce:false});
     }
     function stop(){
       active=false;complete=false;lastSpokenDirection='';wasReady=false;window.__gcActive=false;document.body.classList.remove('gc-live-active');delete document.body.dataset.gcLiveMode;
