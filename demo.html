@@ -242,7 +242,7 @@
         if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
       }catch(_){}
     }
-    let speechDebugEvent='idle',speechWaitTimer=0;
+    let speechDebugEvent='idle',speechWaitTimer=0,currentSpeechStarted=false,recoveryCount=0;
     function updateSpeechDebug(event=speechDebugEvent){
       speechDebugEvent=event;
       if(!audioDebugText||!('speechSynthesis'in window))return;
@@ -255,6 +255,8 @@
         'paused: '+String(synth.paused),
         'queue: '+speechQueue.length,
         'busy: '+String(speechBusy),
+        'started: '+String(currentSpeechStarted),
+        'recoveries: '+String(recoveryCount),
         'mic: '+(isListening?'listening':'idle')
       ].join('\n');
     }
@@ -263,7 +265,7 @@
       speechStartTimer=0;speechEndTimer=0;speechWaitTimer=0;
     }
     function stopSpeech(){
-      speechSeq++;clearSpeechTimers();speechQueue=[];speechBusy=false;currentUtterance=null;
+      speechSeq++;clearSpeechTimers();speechQueue=[];speechBusy=false;currentSpeechStarted=false;currentUtterance=null;
       try{window.speechSynthesis?.cancel()}catch(_){}
       updateSpeechDebug('stopped');
     }
@@ -272,43 +274,76 @@
       if(speechBusy||!speechQueue.length)return;
       const next=speechQueue.shift();startSpeech(next);
     }
-    function makeUtterance(item,seq){
+    function recoverZombie(item,oldSeq){
+      if(oldSeq!==speechSeq)return;
+      recoveryCount++;
+      setFeedback('Recovering voice','Chrome reported speech as active but never started it. Resetting that utterance once.');
+      updateSpeechDebug('recovering zombie utterance');
+      const synth=window.speechSynthesis;
+      const retryItem={...item,recovered:true};
+      const retrySeq=++speechSeq;
+      clearSpeechTimers();currentUtterance=null;currentSpeechStarted=false;speechBusy=true;
+      speechQueue=speechQueue.filter(x=>x.kind!=='direction');
+      try{synth.cancel()}catch(_){}
+      setTimeout(()=>{
+        if(retrySeq!==speechSeq||mode!=='blind'||!audioOn)return;
+        try{
+          if(synth.paused)synth.resume();
+          makeUtterance(retryItem,retrySeq,true);
+        }catch(_){
+          speechBusy=false;setFeedback('Voice unavailable','The speech engine could not restart. Directional tones remain active.');updateSpeechDebug('recovery exception');flushSpeechQueue();
+        }
+      },300);
+    }
+    function makeUtterance(item,seq,isRecovery=false){
       const synth=window.speechSynthesis,u=new SpeechSynthesisUtterance(item.text);
       u.lang='en-US';u.rate=.95;u.pitch=1;u.volume=1;
-      currentUtterance=u;
+      currentUtterance=u;currentSpeechStarted=false;
       let finished=false;
       const finish=()=>{
         if(finished||seq!==speechSeq)return;finished=true;
         clearSpeechTimers();if(currentUtterance===u)currentUtterance=null;
-        speechBusy=false;updateSpeechDebug('ended');
+        speechBusy=false;currentSpeechStarted=false;updateSpeechDebug('ended');
         if(typeof item.onend==='function')item.onend();
         flushSpeechQueue();
       };
-      u.onstart=()=>{if(seq!==speechSeq)return;sr.textContent=item.text;setFeedback('Speaking',item.text);updateSpeechDebug('started')};
+      u.onstart=()=>{if(seq!==speechSeq)return;currentSpeechStarted=true;sr.textContent=item.text;setFeedback('Speaking',item.text);updateSpeechDebug(isRecovery?'started after recovery':'started')};
       u.onend=finish;
       u.onerror=e=>{
         if(seq!==speechSeq)return;
-        setFeedback('Voice error',String(e?.error||'unknown'));
-        updateSpeechDebug('error: '+(e?.error||'unknown'));
+        const err=e?.error||'unknown';
+        if(err==='canceled'&&isRecovery){updateSpeechDebug('recovery cancel ignored');return}
+        setFeedback('Voice error',String(err));
+        updateSpeechDebug('error: '+err);
         finish();
       };
-      updateSpeechDebug('queued: '+item.kind);
+      updateSpeechDebug((isRecovery?'retry queued: ':'queued: ')+item.kind);
       synth.speak(u);
       speechWaitTimer=setTimeout(()=>{
-        if(finished||seq!==speechSeq)return;
-        updateSpeechDebug(synth.speaking?'speaking without start event':'waiting for browser TTS');
-        if(!synth.speaking)setFeedback('Voice queued','Chrome has not started the utterance yet. It has not been cancelled.');
-      },1500);
+        if(finished||seq!==speechSeq||currentSpeechStarted)return;
+        if(synth.speaking&&!isRecovery){
+          recoverZombie(item,seq);
+          return;
+        }
+        if(synth.speaking&&isRecovery){
+          setFeedback('Voice unavailable','Chrome still reports a stuck speech session after recovery. Directional tones remain active.');
+          updateSpeechDebug('zombie persisted after recovery');
+          finish();
+          return;
+        }
+        updateSpeechDebug(synth.pending?'waiting in browser queue':'waiting for browser TTS');
+        if(!synth.speaking)setFeedback('Voice queued','Chrome has not started the utterance yet.');
+      },1400);
     }
     function startSpeech(item){
       if(mode!=='blind'||!audioOn||!item?.text){if(typeof item?.onend==='function')item.onend();return}
       if(!('speechSynthesis'in window)){if(typeof item.onend==='function')item.onend();return}
-      clearSpeechTimers();speechBusy=true;const seq=++speechSeq;
+      clearSpeechTimers();speechBusy=true;currentSpeechStarted=false;const seq=++speechSeq;
       try{
         if(window.speechSynthesis.paused)window.speechSynthesis.resume();
-        makeUtterance(item,seq);
+        makeUtterance(item,seq,false);
       }catch(_){
-        speechBusy=false;updateSpeechDebug('exception');
+        speechBusy=false;currentSpeechStarted=false;updateSpeechDebug('exception');
         if(typeof item.onend==='function')item.onend();flushSpeechQueue();
       }
     }
@@ -316,9 +351,15 @@
       if(mode!=='blind'||!audioOn||!text){if(typeof onend==='function')onend();return}
       const item={text,kind,onend};
       if(kind==='direction')speechQueue=speechQueue.filter(x=>x.kind!=='direction');
-      if(kind==='target')speechQueue=speechQueue.filter(x=>x.kind!=='direction'&&x.kind!=='target');
+      else if(kind==='target')speechQueue=speechQueue.filter(x=>x.kind!=='direction'&&x.kind!=='target');
+      else if(kind==='task'||kind==='question')speechQueue=speechQueue.filter(x=>x.kind!==kind);
       if(speechBusy){
         if(kind==='target')speechQueue.unshift(item);else speechQueue.push(item);
+        if(speechQueue.length>4){
+          const directions=speechQueue.filter(x=>x.kind==='direction');
+          speechQueue=speechQueue.filter(x=>x.kind!=='direction').slice(-3);
+          if(directions.length)speechQueue.push(directions[directions.length-1]);
+        }
         updateSpeechDebug('queued behind speech: '+kind);
         return;
       }
