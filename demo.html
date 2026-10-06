@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111116" />
+  <meta name="description" content="Full GuideCursor Mail demo: attach a CV using verified pointer guidance on macOS." />
+  <meta name="guidecursor-build" content="%VITE_BUILD_ID%" />
+  <title>Full Mail Demo — GuideCursor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=%VITE_BUILD_ID%" />
+  <script src="/tab-title.js?v=%VITE_BUILD_ID%"></script>
+  <link rel="stylesheet" href="/update-guard.css?v=%VITE_BUILD_ID%" />
+  <script src="/update-guard.js?v=%VITE_BUILD_ID%"></script>
+  <style>
+    :root{--paper:#f4f2ed;--paper2:#eae7e0;--ink:#111116;--muted:#716d75;--line:rgba(17,17,22,.11);--indigo:#6758f4;--indigo2:#8c81ff;--mint:#a0f1d5;--danger:#f28f86;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:#111116}
+    *{box-sizing:border-box}html,body{margin:0;min-width:320px;height:100%;overflow:hidden;background:#111116;color:var(--ink)}button,input{font:inherit;color:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}::selection{background:var(--indigo);color:#fff}
+    .shell{height:100%;display:grid;grid-template-rows:70px 1fr;background:radial-gradient(circle at 77% 0,rgba(103,88,244,.22),transparent 27%),linear-gradient(180deg,#17161e,#0e0e13)}
+    .topbar{position:relative;z-index:80;display:flex;align-items:center;gap:16px;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(16,16,22,.84);backdrop-filter:blur(18px);color:#fff}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:760;font-size:18px;letter-spacing:-.04em}.brand b{color:var(--indigo2)}.mark{position:relative;width:34px;height:34px;border-radius:10px;background:#fff;color:#111116;display:grid;place-items:center}.mark i{position:absolute;right:6px;top:6px;width:6px;height:6px;border-radius:50%;background:var(--mint)}
+    .demo-label{padding-left:14px;border-left:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.46);font:500 8px "DM Mono",monospace;letter-spacing:.11em;text-transform:uppercase}
+    .top-spacer{flex:1}.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(255,255,255,.025)}
+    .mode-switch button{min-width:90px;height:33px;border:0;border-radius:8px;background:transparent;color:rgba(255,255,255,.44);font-size:9px;font-weight:700}.mode-switch button.active{background:rgba(103,88,244,.28);color:#fff;box-shadow:inset 0 0 0 1px rgba(140,129,255,.2)}
+    .top-action{height:38px;padding:0 12px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);font-size:9px;font-weight:700}.top-action:hover{background:rgba(255,255,255,.08);color:#fff}.exit{background:#fff;color:#111116;border-color:#fff}
+    .workspace{position:relative;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;padding:14px}
+    .desktop-wrap{position:relative;min-width:0;min-height:0;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.09);background:linear-gradient(145deg,#dfe7f3,#cfd9e7 45%,#e5ddd4);box-shadow:0 32px 90px rgba(0,0,0,.34)}
+    .desktop-bg{position:absolute;inset:0;background:radial-gradient(circle at 28% 32%,rgba(255,255,255,.72),transparent 28%),radial-gradient(circle at 75% 25%,rgba(103,88,244,.17),transparent 27%),linear-gradient(145deg,#d7e3f2,#e9dfd6 67%,#cfd8e8)}
+    .menu-bar{position:absolute;z-index:4;left:0;right:0;top:0;height:28px;padding:0 12px;display:flex;align-items:center;gap:16px;background:rgba(250,250,252,.72);backdrop-filter:blur(18px);border-bottom:1px solid rgba(17,17,22,.08);font-size:8px;color:#59565f}.menu-bar strong{font-weight:800;color:#111116}.menu-right{margin-left:auto;display:flex;gap:10px;color:#76727a}
+    .dock{position:absolute;z-index:3;bottom:14px;left:50%;transform:translateX(-50%);height:53px;padding:7px 10px;display:flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.58);border-radius:17px;background:rgba(248,248,250,.55);backdrop-filter:blur(20px);box-shadow:0 10px 28px rgba(31,24,72,.12)}.dock i{width:37px;height:37px;border-radius:11px;background:#fff;display:grid;place-items:center;font-style:normal;font-size:15px;box-shadow:0 4px 14px rgba(31,24,72,.08)}.dock i.mail-icon{background:linear-gradient(145deg,#4f9cff,#246fe9);color:#fff}.dock i.finder-icon{background:linear-gradient(90deg,#8bd5ff 50%,#bfe9ff 50%);color:#244e6b}
+    .mail-window{position:absolute;z-index:10;left:7%;top:8%;width:86%;height:79%;min-height:500px;border:1px solid rgba(17,17,22,.13);border-radius:17px;overflow:hidden;background:#f8f7f4;box-shadow:0 28px 70px rgba(40,46,67,.24)}
+    .window-bar{height:40px;padding:0 13px;display:flex;align-items:center;gap:7px;background:#e8e5df;border-bottom:1px solid #d7d3cb}.traffic{display:flex;gap:6px}.traffic i{width:10px;height:10px;border-radius:50%;display:block}.traffic i:nth-child(1){background:#ee6a5f}.traffic i:nth-child(2){background:#f4bd4f}.traffic i:nth-child(3){background:#61c454}.window-title{position:absolute;left:50%;transform:translateX(-50%);font-size:8px;color:#77737b;font-weight:700}
+    .mail-grid{display:grid;grid-template-columns:168px 1fr;height:calc(100% - 40px)}.mail-side{padding:15px 10px;background:#eeece7;border-right:1px solid #dad6cf}.mail-side strong{display:block;padding:5px 8px 13px;font-size:10px}.mail-side span{display:block;padding:8px 9px;border-radius:8px;color:#77737b;font-size:8px}.mail-side span.active{background:#dce9f8;color:#315f92}
+    .compose{position:relative;min-width:0;padding:15px 18px}.toolbar{display:flex;align-items:center;gap:7px}.tool{height:31px;padding:0 10px;border:1px solid #d8d4cd;border-radius:8px;background:#fff;color:#646069;font-size:8px;font-weight:700}.tool.icon{width:32px;padding:0}.tool.attach{margin-left:auto;min-width:96px;display:flex;align-items:center;justify-content:center;gap:7px}
+    .fields{margin-top:14px;border-top:1px solid #dfdcd5}.field{height:35px;border-bottom:1px solid #e2dfd9;display:flex;align-items:center;gap:10px;color:#8d8991;font-size:8px}.field b{width:45px;color:#6d6971}.bodycopy{padding-top:19px;font-size:10px;line-height:1.65;color:#67636b}.bodycopy strong{display:block;margin-bottom:9px;color:#111116;font-size:11px}.attachment-chip{display:none;width:max-content;max-width:100%;margin-top:17px;padding:9px 11px;border:1px solid #d9d5ce;border-radius:9px;background:#fff;font-size:8px;color:#514d55;box-shadow:0 5px 16px rgba(31,24,72,.05)}.attachment-chip.show{display:flex;align-items:center;gap:7px}.attachment-chip i{width:22px;height:22px;border-radius:6px;background:#e9eef8;display:grid;place-items:center;font-style:normal;color:#596d8d}
+    .finder{position:absolute;z-index:25;left:15%;top:14%;width:70%;height:65%;min-height:430px;border:1px solid rgba(17,17,22,.16);border-radius:17px;overflow:hidden;background:#f8f7f4;box-shadow:0 35px 90px rgba(27,28,42,.34);opacity:0;pointer-events:none;transform:translateY(14px) scale(.985);transition:.28s ease}.finder.open{opacity:1;pointer-events:auto;transform:none}
+    .finder-grid{display:grid;grid-template-columns:145px 1fr;height:calc(100% - 40px)}.finder-side{padding:13px 9px;background:#ece9e4;border-right:1px solid #d9d5ce}.finder-side strong{display:block;padding:4px 8px 11px;font-size:9px}.finder-side span{display:block;padding:7px 8px;border-radius:7px;color:#77737b;font-size:8px}.finder-side span.active{background:#dce9f8;color:#315f92}
+    .finder-main{display:grid;grid-template-rows:1fr 54px;min-width:0}.file-list{padding:14px 16px;overflow:auto}.file-head,.file-row{display:grid;grid-template-columns:minmax(0,1fr) 78px 70px;gap:10px;align-items:center}.file-head{height:30px;padding:0 9px;border-bottom:1px solid #dedbd4;color:#aaa6ad;font:500 7px "DM Mono",monospace;text-transform:uppercase;letter-spacing:.05em}.file-row{position:relative;width:100%;height:43px;margin-top:4px;padding:0 9px;border:1px solid transparent;border-radius:8px;background:transparent;text-align:left;font-size:8px;color:#5f5b63}.file-row:hover{background:#efede8}.file-row.selected{background:#dce9f8;border-color:#b7cee8}.file-name{display:flex;align-items:center;gap:8px;font-weight:700;color:#343039}.file-icon{width:23px;height:27px;border-radius:5px 5px 4px 4px;background:#fff;border:1px solid #d8d4cd;display:grid;place-items:center;color:#7a7680;font-size:6px}.file-meta{color:#969299}
+    .finder-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:9px 13px;border-top:1px solid #dedbd4;background:#efede8}.finder-actions button{min-width:74px;height:34px;border:1px solid #d2cec7;border-radius:8px;background:#fff;font-size:8px;font-weight:700}.finder-actions .open-btn{background:#3278e3;color:#fff;border-color:#3278e3}.finder-actions .open-btn:disabled{opacity:.45;cursor:default}
+    .guidance{position:relative;min-height:0;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:linear-gradient(155deg,rgba(29,28,37,.97),rgba(14,14,19,.99));color:#fff;box-shadow:0 28px 70px rgba(0,0,0,.3);overflow:auto}
+    .guide-glow{position:absolute;width:330px;height:330px;right:-190px;top:-210px;border-radius:50%;background:radial-gradient(circle,rgba(103,88,244,.4),transparent 68%);pointer-events:none}.guide-inner{position:relative;padding:22px}.guide-brand{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:750}.guide-brand i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.07)}.progress{margin-left:auto;padding:6px 8px;border:1px solid rgba(255,255,255,.09);border-radius:999px;color:rgba(255,255,255,.48);font:500 8px "DM Mono",monospace}
+    .guide-head{display:flex;align-items:center}.mode-note{margin-top:18px;padding:9px 10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03);color:rgba(255,255,255,.48);font-size:8px;line-height:1.5}.mode-note b{color:var(--mint)}
+    .guide-task{margin-top:18px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:15px;background:rgba(255,255,255,.035)}.guide-task small{display:block;color:var(--mint);font:500 8px "DM Mono",monospace;letter-spacing:.11em;text-transform:uppercase}.guide-task h2{margin:9px 0 7px;font-size:23px;letter-spacing:-.045em}.guide-task p{margin:0;color:rgba(255,255,255,.5);font-size:10px;line-height:1.62}
+    .request-box{margin-top:13px}.request-row{display:flex;gap:7px}.request-row input{min-width:0;flex:1;height:42px;padding:0 11px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.05);color:#fff;outline:none;font-size:9px}.request-row input:focus{border-color:rgba(160,241,213,.28);box-shadow:0 0 0 4px rgba(160,241,213,.04)}.request-row button{flex:0 0 auto;height:42px;padding:0 11px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;font-size:9px;font-weight:700}.request-row .send{background:#fff;color:#111116}.example{width:100%;height:37px;margin-top:7px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:transparent;color:rgba(255,255,255,.48);font-size:8px}.example:hover{background:rgba(255,255,255,.04);color:#fff}
+    .choice-list{display:grid;gap:7px;margin-top:13px}.choice{padding:11px;border:1px solid rgba(255,255,255,.09);border-radius:10px;background:rgba(255,255,255,.035);color:#fff;text-align:left}.choice:hover{border-color:rgba(160,241,213,.25);background:rgba(160,241,213,.06)}.choice strong{display:block;font-size:9px}.choice span{display:block;margin-top:3px;color:rgba(255,255,255,.4);font-size:7px}
+    .feedback{display:flex;align-items:flex-start;gap:9px;margin-top:12px;padding:10px 11px;border-radius:11px;background:rgba(160,241,213,.055);border:1px solid rgba(160,241,213,.12)}.feedback i{flex:0 0 auto;width:7px;height:7px;margin-top:2px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.06)}.feedback strong{display:block;font-size:9px}.feedback span{display:block;margin-top:3px;color:rgba(255,255,255,.43);font-size:8px;line-height:1.5}
+    .guide-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}.guide-actions button{height:35px;padding:0 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:rgba(255,255,255,.62);font-size:8px;font-weight:700}.guide-actions button:hover{background:rgba(255,255,255,.05);color:#fff}.guide-actions .primary{background:#fff;color:#111116}.guide-actions button[hidden]{display:none!important}
+    .cursor-companion{position:fixed;z-index:200;display:flex;gap:7px;align-items:flex-start;pointer-events:none;opacity:0;transition:opacity .12s ease;filter:drop-shadow(0 10px 24px rgba(0,0,0,.22))}.cursor-companion.show{opacity:1}.cursor-companion.flip{flex-direction:row-reverse}.cursor-dot{width:28px;height:28px;border-radius:9px;background:var(--indigo);color:#fff;display:grid;place-items:center;font-size:14px;box-shadow:0 0 0 6px rgba(103,88,244,.09)}.cursor-bubble{width:185px;padding:10px 11px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:rgba(17,17,22,.95);color:#fff;backdrop-filter:blur(15px)}.cursor-bubble small{display:block;color:var(--mint);font:500 7px "DM Mono",monospace;letter-spacing:.1em}.cursor-bubble strong{display:block;margin-top:3px;font-size:10px}.cursor-bubble span{display:block;margin-top:3px;color:rgba(255,255,255,.45);font-size:8px;line-height:1.4}
+    .arrow-layer{position:fixed;z-index:180;inset:0;pointer-events:none;overflow:visible}.arrow-line{stroke:var(--indigo);stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(103,88,244,.28));opacity:0;transition:opacity .12s ease}.arrow-line.show{opacity:1}
+    .guide-target{position:relative!important;z-index:60!important}.lowvision .guide-target:after{content:"";position:absolute!important;inset:-8px!important;border:2px solid var(--indigo)!important;border-radius:inherit!important;pointer-events:none!important;box-shadow:0 0 0 5px rgba(103,88,244,.055),0 0 30px rgba(103,88,244,.16)!important;animation:pulse 1.3s ease-in-out infinite!important}.lowvision .guide-target.ready:after{border-color:var(--mint)!important;box-shadow:0 0 0 10px rgba(160,241,213,.1),0 0 40px rgba(160,241,213,.22)!important}.blind .guide-target:after{display:none!important}
+    .blind .arrow-line{display:none}.blind .cursor-dot{background:#111116;box-shadow:0 0 0 6px rgba(160,241,213,.08);border:1px solid rgba(160,241,213,.3)}.blind .cursor-bubble{border-color:rgba(160,241,213,.16)}
+    .wrong-flash{animation:wrongFlash .55s ease}.completion{display:none;margin-top:14px;padding:14px;border:1px solid rgba(160,241,213,.16);border-radius:13px;background:rgba(160,241,213,.075)}.completion.show{display:block}.completion strong{display:block;color:var(--mint);font-size:11px}.completion p{margin:6px 0 0;color:rgba(255,255,255,.5);font-size:8px;line-height:1.55}
+    .sr-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+    @keyframes pulse{0%,100%{opacity:.55;transform:scale(.985)}50%{opacity:1;transform:scale(1.035)}}@keyframes wrongFlash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 4px rgba(242,143,134,.16)}}@media(max-width:950px){html,body{overflow:auto}.shell{min-height:100%;height:auto}.workspace{grid-template-columns:1fr;min-height:calc(100vh - 70px)}.desktop-wrap{height:650px}.guidance{min-height:430px}.mode-switch button{min-width:75px}.mail-window{left:3%;width:94%}.finder{left:8%;width:84%}}@media(max-width:650px){.topbar{padding:0 10px;gap:9px}.demo-label{display:none}.mode-switch{margin-left:auto}.mode-switch button{min-width:62px;padding:0 7px}.top-action.reset{display:none}.workspace{padding:8px}.desktop-wrap{height:570px;border-radius:16px}.mail-window{top:7%;height:78%;min-height:430px}.mail-grid{grid-template-columns:95px 1fr}.mail-side{padding:10px 5px}.compose{padding:11px}.finder{left:3%;width:94%;top:11%;height:70%;min-height:400px}.finder-grid{grid-template-columns:95px 1fr}.file-head,.file-row{grid-template-columns:minmax(0,1fr) 55px}.file-head span:last-child,.file-row span:last-child{display:none}.dock{display:none}.cursor-companion{display:none}.guidance{border-radius:16px}.guide-inner{padding:18px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+  </style>
+</head>
+<body class="lowvision">
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="mark">↖<i></i></span><span>Guide<b>Cursor</b></span></a>
+      <span class="demo-label">Full Mail journey</span>
+      <span class="top-spacer"></span>
+      <div class="mode-switch" role="group" aria-label="Guidance mode">
+        <button type="button" class="active" data-mode="lowvision">Low vision</button>
+        <button type="button" data-mode="blind">Blind</button>
+      </div>
+      <button type="button" class="top-action reset" id="reset">Restart</button>
+      <a class="top-action exit" href="/">Exit demo</a>
+    </header>
+
+    <main class="workspace">
+      <section class="desktop-wrap" id="desktop" aria-label="Simulated macOS desktop">
+        <div class="desktop-bg"></div>
+        <div class="menu-bar"><strong>Mail</strong><span>File</span><span>Edit</span><span>View</span><span>Mailbox</span><span>Message</span><span>Format</span><span>Window</span><span>Help</span><span class="menu-right"><span>Wi-Fi</span><span>100%</span><span>10:42</span></span></div>
+
+        <div class="mail-window" id="mail-window">
+          <div class="window-bar"><div class="traffic"><i></i><i></i><i></i></div><span class="window-title">New Message</span></div>
+          <div class="mail-grid">
+            <aside class="mail-side"><strong>Mail</strong><span class="active">Draft</span><span>Inbox</span><span>Sent</span><span>Archive</span><span>Trash</span></aside>
+            <div class="compose">
+              <div class="toolbar">
+                <button class="tool icon" type="button" data-wrong>↶</button>
+                <button class="tool icon" type="button" data-wrong>↷</button>
+                <button class="tool" type="button" data-wrong>Format</button>
+                <button class="tool attach" type="button" id="attach-btn">⌕ Attach</button>
+              </div>
+              <div class="fields"><div class="field"><b>To</b> hiring@example.com</div><div class="field"><b>Subject</b> Application</div></div>
+              <div class="bodycopy"><strong>Hi Alex,</strong>Please find my CV attached.<br><br>Best,<br>Terence</div>
+              <div class="attachment-chip" id="attachment-chip"><i>PDF</i><span id="attached-name"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="finder" id="finder" aria-hidden="true">
+          <div class="window-bar"><div class="traffic"><i></i><i></i><i></i></div><span class="window-title">Choose a file</span></div>
+          <div class="finder-grid">
+            <aside class="finder-side"><strong>Favorites</strong><span class="active">Documents</span><span>Desktop</span><span>Downloads</span><span>Applications</span></aside>
+            <div class="finder-main">
+              <div class="file-list">
+                <div class="file-head"><span>Name</span><span>Kind</span><span>Modified</span></div>
+                <button class="file-row" type="button" data-file="CV_Terence_2026.pdf"><span class="file-name"><i class="file-icon">PDF</i>CV_Terence_2026.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Today</span></button>
+                <button class="file-row" type="button" data-file="CV_Terence_Old.pdf"><span class="file-name"><i class="file-icon">PDF</i>CV_Terence_Old.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Aug 18</span></button>
+                <button class="file-row" type="button" data-file="CV_Design.pdf"><span class="file-name"><i class="file-icon">PDF</i>CV_Design.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Jul 03</span></button>
+                <button class="file-row" type="button" data-file="Cover_Letter.pdf"><span class="file-name"><i class="file-icon">PDF</i>Cover_Letter.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Today</span></button>
+              </div>
+              <div class="finder-actions"><button type="button" data-wrong>Cancel</button><button type="button" class="open-btn" id="open-btn" disabled>Open</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dock" aria-hidden="true"><i class="finder-icon">◫</i><i class="mail-icon">✉</i><i>⌘</i><i>◉</i></div>
+      </section>
+
+      <aside class="guidance">
+        <div class="guide-glow"></div>
+        <div class="guide-inner">
+          <div class="guide-head"><span class="guide-brand"><i></i> GuideCursor</span><span class="progress" id="progress">Start</span></div>
+          <div class="mode-note" id="mode-note"><b>Low-vision guidance</b> uses an outline and pointer-to-target arrow. You still move the pointer and make every click.</div>
+          <div class="guide-task">
+            <small id="step-label">Ready</small>
+            <h2 id="step-title">What do you want to do?</h2>
+            <p id="step-copy">Say or type a goal. Try the same request from the GuideCursor example.</p>
+
+            <div class="request-box" id="request-box">
+              <div class="request-row">
+                <input id="goal-input" autocomplete="off" value="" placeholder="e.g. attach my CV" aria-label="What do you want to do?">
+                <button type="button" id="mic-btn">♪ Speak</button>
+                <button type="button" class="send" id="goal-submit">Go</button>
+              </div>
+              <button type="button" class="example" id="use-example">Use example: “attach my CV”</button>
+            </div>
+
+            <div class="choice-list" id="choice-list" hidden></div>
+
+            <div class="feedback" id="feedback">
+              <i></i><div><strong id="feedback-title">Waiting for your goal</strong><span id="feedback-copy">GuideCursor does not act until you ask.</span></div>
+            </div>
+          </div>
+
+          <div class="guide-actions">
+            <button type="button" id="audio-toggle" aria-pressed="true" hidden>♪ Audio on</button>
+            <button type="button" id="repeat" hidden>↻ Repeat</button>
+            <button type="button" class="primary" id="replay" hidden>Replay demo</button>
+          </div>
+
+          <div class="completion" id="completion"><strong>Attachment complete.</strong><p id="completion-copy"></p></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <svg class="arrow-layer" id="arrow-layer" width="100%" height="100%" aria-hidden="true">
+    <defs><marker id="arrow-head" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6758f4"/></marker></defs>
+    <line class="arrow-line" id="arrow-line" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrow-head)"></line>
+  </svg>
+
+  <div class="cursor-companion" id="cursor-companion" aria-hidden="true">
+    <span class="cursor-dot">↖</span>
+    <div class="cursor-bubble"><small id="cursor-mode">GUIDECURSOR · LOW VISION</small><strong id="cursor-direction">Move toward the target</strong><span id="cursor-detail">You move. GuideCursor guides.</span></div>
+  </div>
+
+  <div class="sr-status" id="sr-status" aria-live="assertive"></div>
+
+  <script>
+  (() => {
+    window.GuideCursorTitle?.setBase('Full Mail Demo — GuideCursor');
+    const qs=(s,r=document)=>r.querySelector(s),qsa=(s,r=document)=>[...r.querySelectorAll(s)];
+    const body=document.body, finder=qs('#finder'), attach=qs('#attach-btn'), openBtn=qs('#open-btn'),
+      chip=qs('#attachment-chip'), attachedName=qs('#attached-name'), progress=qs('#progress'),
+      stepLabel=qs('#step-label'), stepTitle=qs('#step-title'), stepCopy=qs('#step-copy'),
+      requestBox=qs('#request-box'), input=qs('#goal-input'), mic=qs('#mic-btn'), submit=qs('#goal-submit'),
+      useExample=qs('#use-example'), choiceList=qs('#choice-list'), feedbackTitle=qs('#feedback-title'),
+      feedbackCopy=qs('#feedback-copy'), audioToggle=qs('#audio-toggle'), repeat=qs('#repeat'),
+      replay=qs('#replay'), completion=qs('#completion'), completionCopy=qs('#completion-copy'),
+      companion=qs('#cursor-companion'), cursorMode=qs('#cursor-mode'), cursorDirection=qs('#cursor-direction'),
+      cursorDetail=qs('#cursor-detail'), line=qs('#arrow-line'), sr=qs('#sr-status'), modeNote=qs('#mode-note');
+
+    let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
+    let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',wasReady=false,lastTone='',lastToneAt=0;
+    const cvFiles=['CV_Terence_2026.pdf','CV_Terence_Old.pdf','CV_Design.pdf'];
+
+    function pickVoice(){
+      if(!('speechSynthesis'in window))return null;
+      const voices=speechSynthesis.getVoices(),english=voices.filter(v=>/^en([-_]|$)/i.test(v.lang||''));
+      voice=english.find(v=>/Samantha|Daniel|Google UK|Microsoft (Sonia|Ryan)|Natural/i.test(v.name||''))||
+        english.find(v=>/^en-GB/i.test(v.lang||''))||english.find(v=>/^en-US/i.test(v.lang||''))||english[0]||voices[0]||null;
+      return voice;
+    }
+    if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',pickVoice)}
+
+    function speak(text,{interrupt=true}={}){
+      if(mode!=='blind'||!audioOn||!text||!('speechSynthesis'in window))return;
+      if(interrupt)speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(text),v=voice||pickVoice();if(v)u.voice=v;
+      u.lang=v?.lang||'en-GB';u.rate=.96;u.pitch=1;u.volume=1;speechSynthesis.speak(u);
+      sr.textContent=text;
+    }
+    function tone(direction,dist=240){
+      if(mode!=='blind'||!audioOn)return;
+      const now=performance.now();if(direction===lastTone&&now-lastToneAt<600)return;if(now-lastToneAt<330)return;
+      lastTone=direction;lastToneAt=now;
+      try{
+        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+        const ac=audioCtx,t=ac.currentTime,osc=ac.createOscillator(),gain=ac.createGain(),pan=ac.createStereoPanner?ac.createStereoPanner():null;
+        let hz=470,p=0;if(/left/i.test(direction))p=-.78;if(/right/i.test(direction))p=.78;if(/up/i.test(direction))hz=700;if(/down/i.test(direction))hz=340;
+        osc.type='sine';osc.frequency.value=hz;const level=Math.max(.018,Math.min(.055,.055-(Math.min(dist,350)/350)*.032));
+        gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(level,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+.13);
+        if(pan){pan.pan.value=p;osc.connect(gain);gain.connect(pan);pan.connect(ac.destination)}else{osc.connect(gain);gain.connect(ac.destination)}
+        osc.start(t);osc.stop(t+.14);
+      }catch(_){}
+    }
+    function successTone(){
+      if(mode!=='blind'||!audioOn)return;
+      try{
+        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+        const ac=audioCtx,t=ac.currentTime,g=ac.createGain();g.connect(ac.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.045,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+.28);
+        [620,880].forEach((hz,i)=>{const o=ac.createOscillator();o.frequency.value=hz;o.connect(g);o.start(t+i*.09);o.stop(t+.18+i*.09)});
+      }catch(_){}
+    }
+
+    function clearTarget(){
+      if(target)target.classList.remove('guide-target','ready');target=null;line.classList.remove('show');companion.classList.remove('show');wasReady=false;lastDirection='';lastTone='';
+    }
+    function setTarget(el){
+      clearTarget();target=el;if(target)target.classList.add('guide-target');queue();
+    }
+    function targetLabel(){
+      if(target===attach)return 'Attach';
+      if(target===openBtn)return 'Open';
+      if(target?.dataset.file)return target.dataset.file;
+      return 'Target';
+    }
+    function setFeedback(title,copy){feedbackTitle.textContent=title;feedbackCopy.textContent=copy}
+    function setGuide(label,title,copyText){stepLabel.textContent=label;stepTitle.textContent=title;stepCopy.textContent=copyText}
+    function setMode(next,{announce=true}={}){
+      mode=next;body.classList.toggle('lowvision',mode==='lowvision');body.classList.toggle('blind',mode==='blind');
+      qsa('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+      cursorMode.textContent='GUIDECURSOR · '+(mode==='blind'?'BLIND':'LOW VISION');
+      audioToggle.hidden=mode!=='blind';repeat.hidden=mode!=='blind';
+      modeNote.innerHTML=mode==='blind'?'<b>Blind guidance</b> uses spoken labels and directional audio. The visual outline and arrow are removed. You still move the pointer and make every click.':'<b>Low-vision guidance</b> uses an outline and pointer-to-target arrow. You still move the pointer and make every click.';
+      if(mode!=='blind'&&'speechSynthesis'in window)speechSynthesis.cancel();
+      lastDirection='';wasReady=false;queue();
+      if(announce&&mode==='blind')announcePhase();
+    }
+    function announcePhase(){
+      if(mode!=='blind')return;
+      if(phase==='request')speak('GuideCursor ready. Say or type what you want to do.');
+      if(phase==='attach')speak('Attach button. Move your pointer toward Attach.');
+      if(phase==='choose')speak('I found several files containing C V. '+cvFiles.map((f,i)=>(i+1)+'. '+f.replaceAll('_',' ')).join('. ')+'. Which one do you mean?');
+      if(phase==='file')speak(chosenFile.replaceAll('_',' ')+'. Move your pointer to that file and click it.');
+      if(phase==='open')speak('Open button. Move your pointer to Open and click it.');
+      if(phase==='done')speak('Attachment complete. '+selectedFile.replaceAll('_',' ')+' is attached to the email.');
+    }
+
+    function startGoal(raw){
+      const goal=(raw||'').trim();input.value=goal;
+      if(!/attach|add|include/i.test(goal)||!/cv|file|document/i.test(goal)){
+        setFeedback('I need a clearer goal','Try “attach my CV” for this demo.');
+        if(mode==='blind')speak('I need a clearer goal. Try: attach my C V.');
+        return;
+      }
+      phase='attach';progress.textContent='1 / 4';requestBox.hidden=true;choiceList.hidden=true;setGuide('Step 01','Find Attach','GuideCursor has mapped your goal to the Attach button and verified that the control exists in this Mail window.');
+      setFeedback('Verified target','Move your pointer to Attach, then click it. GuideCursor will not click for you.');
+      setTarget(attach);attach.focus({preventScroll:true});if(mode==='blind')announcePhase();
+    }
+
+    function openFinder(){
+      clearTarget();phase='choose';progress.textContent='2 / 4';finder.classList.add('open');finder.setAttribute('aria-hidden','false');
+      setGuide('Step 02','Which CV do you mean?','Several files contain “CV”, so GuideCursor asks you to choose instead of guessing.');
+      setFeedback('Clarification needed','Choose which CV you mean. Choosing here tells GuideCursor your intent; it does not select the file in Finder.');
+      choiceList.innerHTML=cvFiles.map(f=>'<button class="choice" type="button" data-choice="'+f+'"><strong>'+f+'</strong><span>Use this as the intended file</span></button>').join('');
+      choiceList.hidden=false;choiceList.querySelectorAll('[data-choice]').forEach(b=>b.addEventListener('click',()=>chooseFile(b.dataset.choice)));if(mode==='blind')announcePhase();
+    }
+    function chooseFile(file){
+      chosenFile=file;choiceList.hidden=true;phase='file';progress.textContent='3 / 4';
+      setGuide('Step 03','Select '+file,'You chose the intended file. GuideCursor now guides you to that file row so you can select it yourself.');
+      setFeedback('Intent confirmed','Move to the highlighted file and click it.');
+      const row=qs('[data-file="'+CSS.escape(file)+'"]');setTarget(row);if(mode==='blind')announcePhase();
+    }
+    function selectFile(row){
+      selectedFile=row.dataset.file;qsa('.file-row').forEach(r=>r.classList.toggle('selected',r===row));openBtn.disabled=false;clearTarget();phase='open';progress.textContent='4 / 4';
+      setGuide('Step 04','Open the selected file','GuideCursor re-read the file-selection window and verified the Open button.');
+      setFeedback('Verified target','Move to Open and click it. GuideCursor will not press it for you.');
+      setTarget(openBtn);if(mode==='blind')announcePhase();
+    }
+    function attachFile(){
+      clearTarget();finder.classList.remove('open');finder.setAttribute('aria-hidden','true');chip.classList.add('show');attachedName.textContent=selectedFile;
+      phase='done';progress.textContent='Complete';setGuide('Complete','CV attached','The file is attached. GuideCursor identified and guided each step, but every choice and click was yours.');
+      setFeedback('You completed the task','GuideCursor never selected a file, clicked a button or confirmed an action on your behalf.');
+      completion.classList.add('show');completionCopy.textContent=selectedFile+' is now attached to the draft email. You kept control of the entire interaction.';replay.hidden=false;successTone();if(mode==='blind')announcePhase();
+    }
+
+    function directionName(dx,dy){
+      const ax=Math.abs(dx),ay=Math.abs(dy);if(ax<2&&ay<2)return 'Target reached';
+      if(ax>ay*1.35)return dx>0?'Move right':'Move left';if(ay>ax*1.35)return dy>0?'Move down':'Move up';
+      return (dy>0?'Move down':'Move up')+(dx>0?'-right':'-left');
+    }
+    function queue(){if(!raf)raf=requestAnimationFrame(render)}
+    function render(){
+      raf=0;if(!target||phase==='choose'||phase==='request'||phase==='done')return;
+      const r=target.getBoundingClientRect(),vw=innerWidth,vh=innerHeight;
+      const nx=Math.max(r.left,Math.min(r.right,pointer.x)),ny=Math.max(r.top,Math.min(r.bottom,pointer.y)),dx=nx-pointer.x,dy=ny-pointer.y,dist=Math.hypot(dx,dy);
+      const ready=pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom;
+      const dir=ready?'Target reached':directionName(dx,dy),detail=ready?'Click once when you are ready.':dist<70?'Almost there.':dist<170?'You are close.':'Move toward the verified target.';
+      target.classList.toggle('ready',ready);cursorDirection.textContent=dir;cursorDetail.textContent=detail;
+
+      if(mode==='lowvision'&&pointer.seen){
+        line.setAttribute('x1',pointer.x);line.setAttribute('y1',pointer.y);line.setAttribute('x2',nx);line.setAttribute('y2',ny);line.classList.add('show');
+      }else line.classList.remove('show');
+
+      if(pointer.seen){
+        const w=220,flip=pointer.x>vw-w-45;companion.classList.toggle('flip',flip);companion.classList.add('show');
+        companion.style.left=Math.max(8,Math.min(vw-w-30,pointer.x+(flip?-210:18)))+'px';companion.style.top=Math.max(80,Math.min(vh-95,pointer.y+18))+'px';
+      }
+
+      if(mode==='blind'){
+        if(ready&&!wasReady){
+          lastDirection='Target reached';speak(targetLabel()+'. Target reached. Click once.');successTone();
+        }else if(!ready&&dir!==lastDirection){
+          lastDirection=dir;speak(dir);tone(dir,dist);
+        }
+      }
+      wasReady=ready;
+    }
+
+    function wrongClick(el){
+      if(phase==='request'||phase==='choose'||phase==='done')return;
+      el.classList.remove('wrong-flash');void el.offsetWidth;el.classList.add('wrong-flash');setFeedback('That is not the verified target','GuideCursor has not chosen that control for this step.');
+      if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.');
+    }
+    function reset(){
+      clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
+    }
+
+    submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
+    attach.addEventListener('click',()=>{if(phase==='attach'&&target===attach)openFinder();else wrongClick(attach)});
+    qsa('.file-row').forEach(row=>row.addEventListener('click',()=>{if(phase==='file'&&row.dataset.file===chosenFile)selectFile(row);else wrongClick(row)}));
+    openBtn.addEventListener('click',()=>{if(phase==='open'&&!openBtn.disabled)attachFile();else wrongClick(openBtn)});
+    qsa('[data-wrong]').forEach(el=>el.addEventListener('click',()=>wrongClick(el)));
+    qsa('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+    qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
+    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();else{lastDirection='';wasReady=false;announcePhase()}});
+    repeat.addEventListener('click',announcePhase);
+    addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',queue);
+
+    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(SpeechRecognition){
+      const recognition=new SpeechRecognition();recognition.lang='en-GB';recognition.interimResults=false;recognition.maxAlternatives=1;
+      mic.addEventListener('click',()=>{try{mic.textContent='Listening…';recognition.start()}catch(_){}});
+      recognition.onresult=e=>{const text=e.results?.[0]?.[0]?.transcript||'';input.value=text;mic.textContent='♪ Speak';startGoal(text)};
+      recognition.onerror=()=>{mic.textContent='♪ Speak';setFeedback('Microphone unavailable','Type “attach my CV” or use the example button instead.')};recognition.onend=()=>{mic.textContent='♪ Speak'};
+    }else mic.addEventListener('click',()=>setFeedback('Voice input is not available in this browser','Type “attach my CV” or use the example button instead.'));
+
+    reset();
+  })();
+  </script>
+</body>
+</html>

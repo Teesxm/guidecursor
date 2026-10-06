@@ -50,6 +50,10 @@
     {
       "source": "/prototype",
       "destination": "/downloads.html"
+    },
+    {
+      "source": "/demo",
+      "destination": "/demo.html"
     }
   ],
   "headers": [
@@ -199,6 +203,24 @@
     },
     {
       "source": "/prototype",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/demo",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/demo.html",
       "headers": [
         {
           "key": "Cache-Control",

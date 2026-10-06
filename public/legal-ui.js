@@ -41,7 +41,7 @@
           </div>
           <div class="gc-footer-links">
             <div class="gc-footer-col"><small>Product</small><a href="/#product">Product</a><a href="/#how">How it works</a><a href="/scope">Capabilities</a><a href="/funding">For workplaces</a><a href="/prototype">macOS preview</a></div>
-            <div class="gc-footer-col"><small>Explore</small><a href="/#demo">Try the interactive preview</a><a href="/#research">Research</a><a href="/help">Help Center</a><a href="/security">Security & Trust</a><a href="/accessibility">Accessibility</a></div>
+            <div class="gc-footer-col"><small>Explore</small><a href="/#demo">Try the interactive preview</a><a href="/demo">Full Mail demo</a><a href="/#research">Research</a><a href="/help">Help Center</a><a href="/security">Security & Trust</a><a href="/accessibility">Accessibility</a></div>
             <div class="gc-footer-col"><small>Legal</small><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/cookies">Cookie policy</a><button type="button" data-open-cookie-settings>Cookie settings</button></div>
           </div>
         </div>
