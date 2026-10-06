@@ -309,7 +309,7 @@
     let mode='vision',step=0;
     const steps=[
       {app:'Mail · New message',title:'Application email',sub:'GuideCursor has verified the next control in the live window.',a:'Recipient',av:'hiring@example.com',target:'Attach',meta:'Verified',b:'Send',bv:'not yet',vision:'Move up-right to Attach.',blind:'Attach. Move up and right.',copy:'The target has been checked against the current Mail window. You make the click.'},
-      {app:'Finder · Open file',title:'Choose a file',sub:'Several files contain “CV”, so GuideCursor asks instead of guessing.',a:'CV_2025.pdf',av:'PDF',target:'CV_Terence.pdf',meta:'Your choice',b:'CV_old.pdf',bv:'PDF',vision:'Move down to CV_Terence.pdf.',blind:'CV Terence PDF. Move down.',copy:'If several candidates are plausible, GuideCursor describes them and waits for your choice.'},
+      {app:'Finder · Open file',title:'Choose a file',sub:'Several files contain “CV”, so GuideCursor asks instead of guessing.',a:'CV_2025.pdf',av:'PDF',target:'CV_2026.pdf',meta:'Your choice',b:'CV_old.pdf',bv:'PDF',vision:'Move down to CV_2026.pdf.',blind:'CV 2026 PDF. Move down.',copy:'If several candidates are plausible, GuideCursor describes them and waits for your choice.'},
       {app:'Finder · Open file',title:'Ready to attach',sub:'The chosen file is selected. GuideCursor re-reads the window and verifies Open.',a:'Cancel',av:'',target:'Open',meta:'Verified',b:'New Folder',bv:'',vision:'Move right to Open.',blind:'Open button. Move right.',copy:'GuideCursor never presses Open. The user completes the final action.'}
     ];
     function setRow(el,label,value){el.childNodes[0].nodeValue=label+' ';el.querySelector('span').textContent=value}
