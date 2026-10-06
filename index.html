@@ -400,7 +400,7 @@
     if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',pickVoice)}
 
     function setAudioStatus(text){audioStatus.textContent=text}
-    let speechDebugEvent='idle',speechWaitTimer=0;
+    let speechDebugEvent='idle',speechWaitTimer=0,currentSpeechStarted=false,recoveryCount=0;
     function updateSpeechDebug(event=speechDebugEvent){
       speechDebugEvent=event;
       if(!debugText||!('speechSynthesis'in window))return;
@@ -413,7 +413,9 @@
         'pending: '+String(synth.pending),
         'paused: '+String(synth.paused),
         'queue: '+speechQueue.length,
-        'busy: '+String(speechBusy)
+        'busy: '+String(speechBusy),
+        'started: '+String(currentSpeechStarted),
+        'recoveries: '+String(recoveryCount)
       ].join('\n');
     }
     function clearSpeechTimers(){
@@ -421,7 +423,7 @@
       speechStartTimer=0;speechEndTimer=0;speechWaitTimer=0;
     }
     function stopSpeech(){
-      speechSeq++;clearSpeechTimers();speechQueue=[];speechBusy=false;currentUtterance=null;
+      speechSeq++;clearSpeechTimers();speechQueue=[];speechBusy=false;currentSpeechStarted=false;currentUtterance=null;
       try{window.speechSynthesis?.cancel()}catch(_){}
       updateSpeechDebug('stopped');
     }
@@ -430,43 +432,76 @@
       if(speechBusy||!speechQueue.length)return;
       const next=speechQueue.shift();startSpeech(next);
     }
-    function makeUtterance(item,seq){
+    function recoverZombie(item,oldSeq){
+      if(oldSeq!==speechSeq)return;
+      recoveryCount++;
+      updateSpeechDebug('recovering zombie utterance');
+      setAudioStatus('Recovering voice');
+      const synth=window.speechSynthesis;
+      const retryItem={...item,recovered:true};
+      const retrySeq=++speechSeq;
+      clearSpeechTimers();currentUtterance=null;currentSpeechStarted=false;speechBusy=true;
+      speechQueue=speechQueue.filter(x=>x.kind!=='direction');
+      try{synth.cancel()}catch(_){}
+      setTimeout(()=>{
+        if(retrySeq!==speechSeq||mode!=='blind'||!audioOn)return;
+        try{
+          if(synth.paused)synth.resume();
+          makeUtterance(retryItem,retrySeq,true);
+        }catch(_){
+          speechBusy=false;setAudioStatus('Voice unavailable');updateSpeechDebug('recovery exception');flushSpeechQueue();
+        }
+      },300);
+    }
+    function makeUtterance(item,seq,isRecovery=false){
       const synth=window.speechSynthesis,u=new SpeechSynthesisUtterance(item.text);
       u.lang='en-US';u.rate=.95;u.pitch=1;u.volume=1;
-      currentUtterance=u;
+      currentUtterance=u;currentSpeechStarted=false;
       let finished=false;
       const finish=()=>{
         if(finished||seq!==speechSeq)return;finished=true;
         clearSpeechTimers();if(currentUtterance===u)currentUtterance=null;
-        speechBusy=false;setAudioStatus('Voice ready');updateSpeechDebug('ended');
+        speechBusy=false;currentSpeechStarted=false;setAudioStatus('Voice ready');updateSpeechDebug('ended');
         if(typeof item.onend==='function')item.onend();
         flushSpeechQueue();
       };
-      u.onstart=()=>{if(seq!==speechSeq)return;setAudioStatus('Speaking');updateSpeechDebug('started')};
+      u.onstart=()=>{if(seq!==speechSeq)return;currentSpeechStarted=true;setAudioStatus('Speaking');updateSpeechDebug(isRecovery?'started after recovery':'started')};
       u.onend=finish;
       u.onerror=e=>{
         if(seq!==speechSeq)return;
-        setAudioStatus('Voice error: '+(e?.error||'unknown'));
-        updateSpeechDebug('error: '+(e?.error||'unknown'));
+        const err=e?.error||'unknown';
+        if(err==='canceled'&&isRecovery){updateSpeechDebug('recovery cancel ignored');return}
+        setAudioStatus('Voice error: '+err);
+        updateSpeechDebug('error: '+err);
         finish();
       };
-      updateSpeechDebug('queued: '+item.kind);
+      updateSpeechDebug((isRecovery?'retry queued: ':'queued: ')+item.kind);
       synth.speak(u);
       speechWaitTimer=setTimeout(()=>{
-        if(finished||seq!==speechSeq)return;
-        updateSpeechDebug(synth.speaking?'speaking without start event':'waiting for browser TTS');
-        setAudioStatus(synth.speaking?'Speaking':'Voice queued');
-      },1500);
+        if(finished||seq!==speechSeq||currentSpeechStarted)return;
+        if(synth.speaking&&!isRecovery){
+          recoverZombie(item,seq);
+          return;
+        }
+        if(synth.speaking&&isRecovery){
+          setAudioStatus('Voice unavailable');
+          updateSpeechDebug('zombie persisted after recovery');
+          finish();
+          return;
+        }
+        updateSpeechDebug(synth.pending?'waiting in browser queue':'waiting for browser TTS');
+        setAudioStatus('Voice queued');
+      },1400);
     }
     function startSpeech(item){
       if(mode!=='blind'||!audioOn||!item?.text){if(typeof item?.onend==='function')item.onend();return}
       if(!('speechSynthesis'in window)){setAudioStatus('Voice unavailable');if(typeof item.onend==='function')item.onend();return}
-      clearSpeechTimers();speechBusy=true;const seq=++speechSeq;
+      clearSpeechTimers();speechBusy=true;currentSpeechStarted=false;const seq=++speechSeq;
       try{
         if(window.speechSynthesis.paused)window.speechSynthesis.resume();
-        makeUtterance(item,seq);
+        makeUtterance(item,seq,false);
       }catch(_){
-        speechBusy=false;setAudioStatus('Voice unavailable');updateSpeechDebug('exception');
+        speechBusy=false;currentSpeechStarted=false;setAudioStatus('Voice unavailable');updateSpeechDebug('exception');
         if(typeof item.onend==='function')item.onend();flushSpeechQueue();
       }
     }
@@ -475,8 +510,14 @@
       const item={text,kind,onend};
       if(kind==='direction')speechQueue=speechQueue.filter(x=>x.kind!=='direction');
       else if(kind==='target')speechQueue=speechQueue.filter(x=>x.kind!=='direction'&&x.kind!=='target');
+      else if(kind==='task'||kind==='question')speechQueue=speechQueue.filter(x=>x.kind!==kind);
       if(speechBusy){
         if(kind==='target')speechQueue.unshift(item);else speechQueue.push(item);
+        if(speechQueue.length>4){
+          const directions=speechQueue.filter(x=>x.kind==='direction');
+          speechQueue=speechQueue.filter(x=>x.kind!=='direction').slice(-3);
+          if(directions.length)speechQueue.push(directions[directions.length-1]);
+        }
         updateSpeechDebug('queued behind speech: '+kind);
         return;
       }
