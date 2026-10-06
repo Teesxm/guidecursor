@@ -38,10 +38,63 @@
     @media(max-width:1000px){.hero-inner{grid-template-columns:1fr}.hero-visual{min-height:500px}.stakeholders{grid-template-columns:1fr 1fr}.stake{border-right:0;border-bottom:1px solid var(--line)}.problem-grid,.funding-grid,.research-grid{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr 1fr}.demo-shell{grid-template-columns:1fr}.demo-side{display:grid;grid-template-columns:1fr 1fr;gap:18px}.journey{margin-top:0}.section-head{grid-template-columns:1fr;gap:12px}}
     @media(max-width:700px){.nav-wrap{padding:0 10px}.brand span:last-child{display:none}.nav-links a:not(.cta){display:none}.hero{padding:135px 14px 76px;min-height:auto}.hero h1{font-size:57px}.hero-visual{min-height:410px}.mac{transform:none}.mail{height:330px;grid-template-columns:92px 1fr}.side{padding:10px 6px}.compose{padding:12px}.hero-fact{left:0;bottom:-3px}.stakeholders{grid-template-columns:1fr;width:calc(100% - 20px)}.section{padding:76px 14px}.problem-grid,.mode-grid,.process-grid,.scope-grid,.test-grid,.funding-grid,.research-grid{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.demo-side{grid-template-columns:1fr}.demo-stage{min-height:610px}.app-window{margin:11px;min-height:490px}.stage-mail{grid-template-columns:86px 1fr;min-height:450px}.assist-panel{left:13px;right:13px;width:auto}.final{padding:0 14px 76px}.final-inner{padding:29px 21px;align-items:flex-start;flex-direction:column}.final h2{font-size:34px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.attach.target:before,.control-row.target:after,.pointer,.sound-dots i{animation:none!important}}
+  
+    /* Live real-pointer GuideCursor demo, adapted from the earlier site. */
+    .gc-live-picker[hidden],.gc-live-companion[hidden],.gc-live-panel[hidden]{display:none!important}
+    .gc-live-picker{position:fixed;inset:0;z-index:10040;display:grid;place-items:center;padding:24px;background:rgba(9,9,13,.72);backdrop-filter:blur(20px) saturate(120%);animation:gcLiveFade .26s ease both}
+    .gc-live-card{position:relative;width:min(760px,100%);overflow:hidden;padding:34px;border:1px solid rgba(255,255,255,.13);border-radius:28px;background:linear-gradient(150deg,rgba(27,26,35,.985),rgba(14,14,19,.995));color:#fff;box-shadow:0 45px 130px rgba(0,0,0,.48),0 0 70px rgba(103,88,244,.12);animation:gcLiveRise .46s cubic-bezier(.22,1,.36,1) both}
+    .gc-live-card:before{content:"";position:absolute;width:430px;height:430px;right:-210px;top:-260px;border-radius:50%;background:radial-gradient(circle,rgba(103,88,244,.5),transparent 68%);pointer-events:none}
+    .gc-live-close{position:absolute;z-index:2;right:18px;top:18px;width:38px;height:38px;border:1px solid rgba(255,255,255,.1);border-radius:50%;background:rgba(255,255,255,.03);color:rgba(255,255,255,.65);display:grid;place-items:center;cursor:pointer;transition:.2s}
+    .gc-live-close:hover{color:#fff;background:rgba(255,255,255,.08)}
+    .gc-live-eyebrow{position:relative;display:inline-flex;align-items:center;gap:8px;color:var(--mint);font:500 9px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}
+    .gc-live-eyebrow i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08)}
+    .gc-live-card h2{position:relative;max-width:620px;margin:18px 0 10px;font-size:clamp(38px,5.4vw,62px);line-height:.97;letter-spacing:-.06em;font-weight:630}
+    .gc-live-card>p{position:relative;max-width:620px;margin:0;color:rgba(255,255,255,.5);font-size:13px;line-height:1.6}
+    .gc-live-options{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px}
+    .gc-live-option{position:relative;min-height:205px;padding:20px;border:1px solid rgba(255,255,255,.1);border-radius:19px;background:rgba(255,255,255,.035);color:#fff;text-align:left;cursor:pointer;overflow:hidden;transition:transform .22s ease,border-color .22s ease,background .22s ease,box-shadow .22s ease}
+    .gc-live-option:before{content:"";position:absolute;inset:auto -50px -70px auto;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(103,88,244,.22),transparent 68%);transition:.25s}
+    .gc-live-option:hover{transform:translateY(-4px);border-color:rgba(160,241,213,.25);background:rgba(255,255,255,.055);box-shadow:0 18px 40px rgba(0,0,0,.18)}
+    .gc-live-option:hover:before{transform:scale(1.18)}
+    .gc-live-icon{position:relative;width:44px;height:44px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:linear-gradient(135deg,rgba(103,88,244,.38),rgba(160,241,213,.1));display:grid;place-items:center;font-size:19px;color:#fff}
+    .gc-live-option[data-gc-live-mode="blind"] .gc-live-icon{background:linear-gradient(135deg,rgba(160,241,213,.24),rgba(103,88,244,.18))}
+    .gc-live-option small{position:relative;display:block;margin:22px 0 7px;color:rgba(255,255,255,.4);font:500 8px "DM Mono",monospace;letter-spacing:.11em;text-transform:uppercase}
+    .gc-live-option strong{position:relative;display:block;font-size:18px;letter-spacing:-.035em}
+    .gc-live-option span:last-child{position:relative;display:block;margin-top:9px;color:rgba(255,255,255,.48);font-size:10px;line-height:1.5}
+    .gc-live-foot{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:18px;color:rgba(255,255,255,.3);font:500 8px "DM Mono",monospace;letter-spacing:.06em}.gc-live-foot b{color:var(--mint);font-weight:500}
+    body.gc-live-picker-open{overflow:hidden}
+
+    .gc-live-companion{position:fixed;z-index:10021;left:0;top:0;display:flex;align-items:flex-start;gap:8px;pointer-events:none;will-change:transform;filter:drop-shadow(0 12px 24px rgba(17,17,22,.17));opacity:0;transition:opacity .14s ease}
+    .gc-live-companion.is-visible{opacity:1}.gc-live-companion.flip-x{flex-direction:row-reverse}
+    .gc-live-mark{width:30px;height:30px;border-radius:10px;background:var(--indigo);color:#fff;display:grid;place-items:center;font-size:15px;box-shadow:0 0 0 6px rgba(103,88,244,.08),0 6px 18px rgba(76,62,183,.22);animation:gcLiveMark 1.9s ease-in-out infinite}
+    .gc-live-mark span{display:inline-block;transition:transform .12s linear}
+    .gc-live-bubble{width:218px;padding:11px 12px;border:1px solid rgba(255,255,255,.12);border-radius:13px;background:rgba(17,17,22,.95);color:#fff;backdrop-filter:blur(16px);box-shadow:0 14px 38px rgba(0,0,0,.19)}
+    .gc-live-bubble small{display:block;margin-bottom:4px;color:var(--mint);font:500 8px "DM Mono",monospace;letter-spacing:.12em}
+    .gc-live-bubble strong{display:block;font-size:11px;line-height:1.25}.gc-live-bubble>span{display:block;margin-top:4px;color:rgba(255,255,255,.48);font-size:9px;line-height:1.35}
+
+    .gc-live-panel{position:fixed;z-index:10020;right:22px;bottom:22px;width:min(410px,calc(100vw - 44px));padding:16px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(17,17,22,.93);color:#fff;backdrop-filter:blur(22px) saturate(125%);box-shadow:0 24px 70px rgba(0,0,0,.28);animation:gcLivePanel .38s cubic-bezier(.22,1,.36,1) both}
+    .gc-live-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.gc-live-brand{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700}.gc-live-brand i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08)}
+    .gc-live-progress{padding:6px 8px;border:1px solid rgba(255,255,255,.1);border-radius:999px;color:rgba(255,255,255,.56);font:500 8px "DM Mono",monospace;letter-spacing:.12em}
+    .gc-live-switcher{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;padding:4px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}
+    .gc-live-switch{min-height:34px;padding:0 8px;border:0;border-radius:9px;background:transparent;color:rgba(255,255,255,.42);font-size:9px;font-weight:650;cursor:pointer;transition:.2s}.gc-live-switch:hover{color:#fff;background:rgba(255,255,255,.05)}.gc-live-switch.active{color:#fff;background:rgba(103,88,244,.28);box-shadow:inset 0 0 0 1px rgba(140,129,255,.2)}
+    .gc-live-task{padding:15px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)}.gc-live-task small{display:block;margin-bottom:6px;color:var(--mint);font:500 8px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}.gc-live-task strong{display:block;font-size:18px;letter-spacing:-.035em}.gc-live-task p{margin:7px 0 0;color:rgba(255,255,255,.52);font-size:11px;line-height:1.5}
+    .gc-live-feedback{display:flex;align-items:center;gap:9px;margin-top:10px;padding:9px 11px;border-radius:11px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);color:rgba(255,255,255,.47);font-size:9px;line-height:1.35}.gc-live-feedback i{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.07)}.gc-live-feedback strong{color:rgba(255,255,255,.82);font-weight:650}.gc-live-audio-status{margin-left:auto;color:rgba(255,255,255,.32);font:500 8px "DM Mono",monospace;letter-spacing:.06em;text-transform:uppercase}
+    .gc-live-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.gc-live-mini{min-height:35px;padding:0 10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:transparent;color:rgba(255,255,255,.62);display:inline-flex;align-items:center;gap:6px;font-size:9px;cursor:pointer;transition:.2s}.gc-live-mini:hover{color:#fff;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.17)}.gc-live-mini[aria-pressed="true"]{color:var(--mint);border-color:rgba(160,241,213,.24);background:rgba(160,241,213,.07)}.gc-live-mini[hidden]{display:none!important}.gc-live-replay{color:var(--mint)}
+    .gc-live-panel.gc-live-complete .gc-live-task{background:rgba(160,241,213,.08);border-color:rgba(160,241,213,.16)}.gc-live-panel.gc-live-complete .gc-live-task small,.gc-live-panel.gc-live-complete .gc-live-task strong{color:var(--mint)}.gc-live-panel.gc-live-complete .gc-live-progress{color:var(--mint);border-color:rgba(160,241,213,.18)}
+
+    .gc-live-target{position:relative!important;z-index:85!important;transition:transform .16s ease,box-shadow .22s ease,background .22s ease!important}
+    .gc-live-target:after{content:"";position:absolute!important;inset:-9px!important;border:2px solid rgba(103,88,244,.64)!important;border-radius:inherit!important;pointer-events:none!important;box-shadow:0 0 0 5px rgba(103,88,244,.05),0 0 30px rgba(103,88,244,.14)!important;animation:gcLiveTarget 1.45s ease-in-out infinite!important}
+    .gc-live-target.gc-live-near{transform:scale(1.018)!important;box-shadow:0 10px 34px rgba(103,88,244,.13)!important}.gc-live-target.gc-live-ready:after{border-color:var(--mint)!important;box-shadow:0 0 0 10px rgba(160,241,213,.1),0 0 40px rgba(160,241,213,.22)!important;animation:gcLiveReady .78s ease-in-out infinite!important}
+    body[data-gc-live-mode="blind"] .gc-live-target:after{border-color:rgba(160,241,213,.72)!important;border-style:dashed!important;box-shadow:0 0 0 4px rgba(160,241,213,.045)!important}
+    body.gc-live-active .stage-pointer,body.gc-live-active .stage-arrow,body.gc-live-active .hero-visual .pointer,body.gc-live-active .hero-visual .arrow-line{opacity:0!important}
+    body[data-gc-live-mode="blind"] .gc-live-feedback i{animation:gcLiveAudioBeat .85s ease-in-out infinite}
+    @keyframes gcLiveFade{from{opacity:0}to{opacity:1}}@keyframes gcLiveRise{from{opacity:0;transform:translateY(22px) scale(.975);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}@keyframes gcLivePanel{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}@keyframes gcLiveMark{0%,100%{box-shadow:0 0 0 5px rgba(103,88,244,.06),0 6px 18px rgba(76,62,183,.2)}50%{box-shadow:0 0 0 9px rgba(160,241,213,.08),0 6px 22px rgba(76,62,183,.27)}}@keyframes gcLiveTarget{0%,100%{opacity:.58;transform:scale(.985)}50%{opacity:1;transform:scale(1.035)}}@keyframes gcLiveReady{0%,100%{transform:scale(.98);opacity:.65}50%{transform:scale(1.03);opacity:1}}@keyframes gcLiveAudioBeat{0%,100%{opacity:.35;transform:scale(.72)}50%{opacity:1;transform:scale(1.2)}}
+    @media(max-width:700px){.gc-live-picker{padding:10px}.gc-live-card{padding:26px 20px;border-radius:22px}.gc-live-options{grid-template-columns:1fr}.gc-live-option{min-height:145px}.gc-live-option small{margin-top:15px}.gc-live-panel{left:12px;right:12px;bottom:12px;width:auto}.gc-live-actions{justify-content:space-between}}
+    @media(pointer:coarse){.gc-live-companion{display:none!important}}
+
   </style>
 </head>
 <body>
-  <header class="nav-wrap"><nav class="nav"><a class="brand" href="/"><span class="mark">↖<i></i></span><span>Guide<b>Cursor</b></span></a><div class="nav-links"><a href="#product">Product</a><a href="#how">How it works</a><a href="/scope">Capabilities</a><a href="/funding">For workplaces</a><a href="#research">Research</a><a class="cta" href="#demo">Try GuideCursor ↗</a></div></nav></header>
+  <header class="nav-wrap"><nav class="nav"><a class="brand" href="/"><span class="mark">↖<i></i></span><span>Guide<b>Cursor</b></span></a><div class="nav-links"><a href="#product">Product</a><a href="#how">How it works</a><a href="/scope">Capabilities</a><a href="/funding">For workplaces</a><a href="#research" data-gc-live-target="research-nav">Research</a><a class="cta" href="#demo" data-start-guide-demo>Try GuideCursor ↗</a></div></nav></header>
 
   <main>
     <section class="hero" id="top">
@@ -51,7 +104,7 @@
           <span class="eyebrow"><i></i> BUILT FOR VISUAL ACCESS · MACOS</span>
           <h1>From intent to<span>the right control.</span></h1>
           <p>GuideCursor helps people with low vision or blindness use the software they already know. Say or type what you want to do. GuideCursor identifies the right control, verifies it in the current window, and guides you there without taking over the action.</p>
-          <div class="hero-actions"><a class="btn primary" href="#demo">Try the interactive preview ↗</a><a class="btn secondary" href="#how">How GuideCursor works</a></div>
+          <div class="hero-actions"><a class="btn primary" href="#demo" data-start-guide-demo>Try the interactive preview ↗</a><a class="btn secondary" href="#how">How GuideCursor works</a></div>
           <div class="scope-pill"><span>Low vision</span><span>Blindness</span><span>Native macOS</span><span>Local by default</span><span>User-controlled</span></div>
         </div>
         <div class="hero-visual" aria-hidden="true">
@@ -105,7 +158,7 @@
               <div class="appbar"><i></i><i></i><i></i><span id="app-label">Mail · New message</span></div>
               <div class="stage-mail">
                 <aside class="stage-sidebar"><span class="active" id="side-a">Compose</span><span id="side-b">Inbox</span><span id="side-c">Sent</span></aside>
-                <div class="stage-main"><div class="stage-title" id="stage-title">Application email</div><div class="stage-sub" id="stage-sub">GuideCursor has verified the next control in the live window.</div><div class="control-row" id="row-a">Recipient <span>hiring@example.com</span></div><div class="control-row target" id="row-target"><strong id="target-text">Attach</strong><span id="target-meta">verified control</span></div><div class="control-row" id="row-b">Send <span>not yet</span></div><span class="stage-pointer" id="stage-pointer">↖</span><span class="stage-arrow" id="stage-arrow"></span></div>
+                <div class="stage-main"><div class="stage-title" id="stage-title">Application email</div><div class="stage-sub" id="stage-sub">GuideCursor has verified the next control in the live window.</div><div class="control-row" id="row-a">Recipient <span>hiring@example.com</span></div><button class="control-row target" id="row-target" type="button" data-gc-live-target="attach"><strong id="target-text">Attach</strong><span id="target-meta">verified control</span></button><div class="control-row" id="row-b">Send <span>not yet</span></div><span class="stage-pointer" id="stage-pointer">↖</span><span class="stage-arrow" id="stage-arrow"></span></div>
               </div>
               <div class="assist-panel"><small id="assist-kicker">VISUAL GUIDANCE</small><strong id="assist-title">Move up-right to Attach.</strong><p id="assist-copy">The outline and arrow point to the verified target. You decide when to click.</p><div class="sound-dots"><i></i><i></i><i></i></div><div class="assist-actions"><button type="button" id="hear-cue">Hear cue</button><button class="go" type="button" id="advance">I clicked it →</button></div></div>
             </div>
@@ -176,7 +229,7 @@
           <article class="paper highlight"><small>ABILITY-BASED DESIGN</small><h3>Wobbrock et al. (2011)</h3><p>Technology should adapt to what people can do rather than requiring them to adapt to a fixed interface.</p><a href="https://doi.org/10.1145/1952383.1952384" target="_blank" rel="noreferrer">Open DOI ↗</a></article>
           <article class="paper"><small>LOW VISION</small><h3>Szpiro et al. (2016)</h3><p>Observed how people with low vision use computing devices and documented limitations in existing magnification workflows.</p><a href="https://doi.org/10.1145/2982142.2982168" target="_blank" rel="noreferrer">Open DOI ↗</a></article>
           <article class="paper"><small>NON-VISUAL NAVIGATION</small><h3>Lee, Ashok & Ramakrishnan (2020)</h3><p>Direct spatial input can reduce task time and action count compared with purely sequential access.</p><a href="https://doi.org/10.1109/SMC42975.2020.9283015" target="_blank" rel="noreferrer">Open DOI ↗</a></article>
-          <article class="paper"><small>SCREEN RECOGNITION</small><h3>Zhang et al. (2021)</h3><p>Shows how accessibility metadata can be inferred from pixels when interface information is incomplete.</p><a href="https://doi.org/10.1145/3411764.3445186" target="_blank" rel="noreferrer">Open DOI ↗</a></article>
+          <article class="paper" data-gc-live-target="screen-recognition"><small>SCREEN RECOGNITION</small><h3>Zhang et al. (2021)</h3><p>Shows how accessibility metadata can be inferred from pixels when interface information is incomplete.</p><a href="https://doi.org/10.1145/3411764.3445186" target="_blank" rel="noreferrer">Open DOI ↗</a></article>
           <article class="paper"><small>WORKPLACE BARRIERS</small><h3>McDonnall et al. (2024)</h3><p>Documents continuing workplace technology challenges among people with blindness and low vision.</p><a href="https://doi.org/10.1080/10400435.2023.2213762" target="_blank" rel="noreferrer">Open DOI ↗</a></article>
           <article class="paper"><small>USABILITY TIMING</small><h3>Nielsen (1993)</h3><p>Response-time thresholds inform GuideCursor’s target of immediate pointer cues and explicit feedback when identification takes longer.</p></article>
         </div>
@@ -185,6 +238,68 @@
 
     <section class="final"><div class="final-inner"><div><h2>Guide the pointer.<br>Keep control human.</h2><p>GuideCursor turns intent into verified guidance while preserving the interaction model people already know: their apps, their pointer, their action.</p></div><div class="final-actions"><a class="primary" href="/scope">Explore capabilities ↗</a><a class="secondary" href="/prototype">macOS preview</a></div></div></section>
   </main>
+
+
+  <div class="gc-live-picker" id="gc-live-picker" role="dialog" aria-modal="true" aria-labelledby="gc-live-picker-title" hidden>
+    <div class="gc-live-card">
+      <button type="button" class="gc-live-close" id="gc-live-close" aria-label="Close interactive preview">×</button>
+      <span class="gc-live-eyebrow"><i></i> Interactive GuideCursor preview</span>
+      <h2 id="gc-live-picker-title">How should GuideCursor guide you?</h2>
+      <p>This preview uses your real pointer on this page. GuideCursor never moves or replaces the system cursor; it only adds guidance around it.</p>
+      <div class="gc-live-options">
+        <button type="button" class="gc-live-option" data-gc-live-mode="lowvision">
+          <span class="gc-live-icon" aria-hidden="true">◉</span>
+          <small>Low vision</small>
+          <strong>Visual guidance</strong>
+          <span>High-contrast target highlighting, live direction cues and stronger confirmation as you approach the control.</span>
+        </button>
+        <button type="button" class="gc-live-option" data-gc-live-mode="blind">
+          <span class="gc-live-icon" aria-hidden="true">♪</span>
+          <small>Blindness</small>
+          <strong>Audio guidance</strong>
+          <span>Spoken task instructions, directional audio cues and confirmation when your pointer reaches the verified target.</span>
+        </button>
+      </div>
+      <div class="gc-live-foot"><span>Three short tasks · browser preview</span><b>You make every click.</b></div>
+    </div>
+  </div>
+
+  <div class="gc-live-companion" id="gc-live-companion" aria-hidden="true" hidden>
+    <span class="gc-live-mark"><span id="gc-live-compass">↗</span></span>
+    <div class="gc-live-bubble">
+      <small id="gc-live-companion-mode">GUIDECURSOR · LOW VISION</small>
+      <strong id="gc-live-direction">Move toward the target</strong>
+      <span id="gc-live-distance">You move. GuideCursor guides.</span>
+    </div>
+  </div>
+
+  <aside class="gc-live-panel" id="gc-live-panel" aria-live="polite" hidden>
+    <div class="gc-live-head">
+      <span class="gc-live-brand"><i></i> GuideCursor live</span>
+      <span class="gc-live-progress" id="gc-live-progress">1 / 3</span>
+    </div>
+    <div class="gc-live-switcher" role="group" aria-label="Guidance mode">
+      <button type="button" class="gc-live-switch active" data-gc-live-switch="lowvision">Low vision</button>
+      <button type="button" class="gc-live-switch" data-gc-live-switch="blind">Blind</button>
+    </div>
+    <div class="gc-live-task">
+      <small id="gc-live-kicker">Task 01</small>
+      <strong id="gc-live-title">Attach the file</strong>
+      <p id="gc-live-copy">Move your real cursor to the highlighted Attach control and click it.</p>
+      <div class="gc-live-feedback">
+        <i></i>
+        <span><strong id="gc-live-feedback-title">Guidance active</strong> <span id="gc-live-feedback-copy">Follow the cursor cue.</span></span>
+        <span class="gc-live-audio-status" id="gc-live-audio-status" hidden>Audio ready</span>
+      </div>
+    </div>
+    <div class="gc-live-actions">
+      <button type="button" class="gc-live-mini" id="gc-live-audio" aria-pressed="true" hidden><span>♪</span> Audio on</button>
+      <button type="button" class="gc-live-mini" id="gc-live-repeat" hidden><span>↻</span> Repeat</button>
+      <button type="button" class="gc-live-mini gc-live-replay" id="gc-live-replay" hidden><span>↻</span> Replay</button>
+      <button type="button" class="gc-live-mini" id="gc-live-exit"><span>×</span> Exit</button>
+    </div>
+  </aside>
+
 
   <script src="/legal-ui.js?v=%VITE_BUILD_ID%"></script>
   <script>
@@ -210,5 +325,268 @@
     q('#hear-cue').addEventListener('click',()=>{const d=steps[step];if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(mode==='blind'?d.blind:d.target+' is the verified target.');u.rate=.95;speechSynthesis.speak(u)}});
     addEventListener('resize',render);render();
   </script>
+
+  <script>
+  (() => {
+    const qs=(s,r=document)=>r.querySelector(s), qsa=(s,r=document)=>[...r.querySelectorAll(s)];
+    const picker=qs('#gc-live-picker'), close=qs('#gc-live-close'), companion=qs('#gc-live-companion'),
+      companionMode=qs('#gc-live-companion-mode'), compass=qs('#gc-live-compass'), directionEl=qs('#gc-live-direction'),
+      distanceEl=qs('#gc-live-distance'), panel=qs('#gc-live-panel'), progress=qs('#gc-live-progress'),
+      kicker=qs('#gc-live-kicker'), title=qs('#gc-live-title'), copy=qs('#gc-live-copy'),
+      feedbackTitle=qs('#gc-live-feedback-title'), feedbackCopy=qs('#gc-live-feedback-copy'),
+      audioStatus=qs('#gc-live-audio-status'), audioToggle=qs('#gc-live-audio'),
+      repeat=qs('#gc-live-repeat'), replay=qs('#gc-live-replay'), exit=qs('#gc-live-exit');
+
+    if(!picker||!panel||!companion)return;
+
+    const coarse=matchMedia('(pointer:coarse)').matches;
+    const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let active=false, complete=false, mode='lowvision', taskIndex=0, target=null, raf=0;
+    let pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
+    let audioOn=true, audioCtx=null, lastCue='', lastCueAt=0, voice=null;
+
+    const tasks=[
+      {
+        target:()=>qs('[data-gc-live-target="attach"]'),
+        title:'Attach the file',
+        copy:'Move your real cursor to the highlighted Attach control in the Mail preview and click it.',
+        touch:'Scroll to the Mail preview and tap the highlighted Attach control.',
+        voice:'Task one. Attach the file. GuideCursor has verified the Attach control. Move your pointer toward it and click when I confirm the target.',
+        kicker:'Task 01',
+        activate:()=>qs('#advance')?.click()
+      },
+      {
+        target:()=>qs('[data-gc-live-target="research-nav"]'),
+        title:'Go to Research',
+        copy:'GuideCursor found Research in the navigation. Move to it and click normally.',
+        touch:'Tap Research in the navigation.',
+        voice:'Task two. Go to Research. Move toward the Research link in the navigation and click it.',
+        kicker:'Task 02'
+      },
+      {
+        target:()=>qs('[data-gc-live-target="screen-recognition"]'),
+        title:'Open Screen Recognition',
+        copy:'Find the highlighted Screen Recognition research card and click it.',
+        touch:'Tap the highlighted Screen Recognition research card.',
+        voice:'Task three. Open Screen Recognition. Move to the highlighted research card and click it.',
+        kicker:'Task 03',
+        activate:(el)=>{const link=el?.querySelector?.('a[href]');if(link)try{window.open(link.href,'_blank','noopener')}catch(_){}}
+      }
+    ];
+
+    function pickVoice(){
+      if(!('speechSynthesis'in window))return null;
+      const voices=speechSynthesis.getVoices();
+      const english=voices.filter(v=>/^en([-_]|$)/i.test(v.lang||''));
+      voice=english.find(v=>/Samantha|Daniel|Google UK|Microsoft (Sonia|Ryan)|Natural/i.test(v.name||''))||
+        english.find(v=>/^en-GB/i.test(v.lang||''))||english.find(v=>/^en-US/i.test(v.lang||''))||english[0]||voices[0]||null;
+      return voice;
+    }
+    if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',pickVoice)}
+
+    function setAudioStatus(text){audioStatus.textContent=text}
+    function speak(text,{interrupt=true}={}){
+      if(mode!=='blind'||!audioOn||!text)return;
+      if(!('speechSynthesis'in window)){setAudioStatus('Audio unavailable');return}
+      try{
+        if(interrupt)speechSynthesis.cancel();
+        const u=new SpeechSynthesisUtterance(text);
+        const v=voice||pickVoice(); if(v)u.voice=v;
+        u.lang=v?.lang||'en-GB';u.rate=.96;u.pitch=1;u.volume=1;
+        u.onstart=()=>setAudioStatus('Speaking');u.onend=()=>setAudioStatus('Audio ready');u.onerror=()=>setAudioStatus('Try repeat');
+        speechSynthesis.speak(u);
+      }catch(_){setAudioStatus('Try repeat')}
+    }
+
+    function tone(direction,dist=220){
+      if(mode!=='blind'||!audioOn||coarse)return;
+      const now=performance.now();
+      if(direction===lastCue&&now-lastCueAt<620)return;
+      if(now-lastCueAt<360)return;
+      lastCue=direction;lastCueAt=now;
+      try{
+        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+        const ac=audioCtx, t=ac.currentTime, osc=ac.createOscillator(), gain=ac.createGain();
+        const pan=ac.createStereoPanner?ac.createStereoPanner():null;
+        let hz=470,p=0;
+        if(/left/i.test(direction))p=-.75;if(/right/i.test(direction))p=.75;
+        if(/up/i.test(direction))hz=700;if(/down/i.test(direction))hz=340;
+        if(/scroll up/i.test(direction))hz=820;if(/scroll down/i.test(direction))hz=280;
+        if(/target found/i.test(direction)){hz=820;p=0}
+        osc.type='sine';osc.frequency.setValueAtTime(hz,t);
+        const level=Math.max(.018,Math.min(.055,.055-(Math.min(dist,350)/350)*.032));
+        gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(level,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+.13);
+        if(pan){pan.pan.value=p;osc.connect(gain);gain.connect(pan);pan.connect(ac.destination)}else{osc.connect(gain);gain.connect(ac.destination)}
+        osc.start(t);osc.stop(t+.14);
+      }catch(_){}
+    }
+
+    function successTone(){
+      if(mode!=='blind'||!audioOn)return;
+      try{
+        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+        const ac=audioCtx,t=ac.currentTime,g=ac.createGain();g.connect(ac.destination);
+        g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.045,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+.28);
+        [620,880].forEach((hz,i)=>{const o=ac.createOscillator();o.type='sine';o.frequency.value=hz;o.connect(g);o.start(t+i*.09);o.stop(t+.18+i*.09)});
+      }catch(_){}
+    }
+
+    function clearTarget(){
+      if(!target)return;
+      target.classList.remove('gc-live-target','gc-live-near','gc-live-ready');
+      target=null;
+    }
+    function setTarget(){
+      clearTarget();
+      if(!active||complete)return;
+      target=tasks[taskIndex]?.target?.()||null;
+      if(target)target.classList.add('gc-live-target');
+    }
+    function currentTask(){return tasks[taskIndex]}
+    function updateModeUI(){
+      panel.dataset.mode=mode;document.body.dataset.gcLiveMode=mode;
+      companionMode.textContent='GUIDECURSOR · '+(mode==='blind'?'AUDIO':'LOW VISION');
+      qsa('[data-gc-live-switch]').forEach(b=>b.classList.toggle('active',b.dataset.gcLiveSwitch===mode));
+      const audio=mode==='blind';audioToggle.hidden=!audio;repeat.hidden=!audio;audioStatus.hidden=!audio;
+      if(audio){audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.innerHTML='<span>♪</span> Audio '+(audioOn?'on':'off');setAudioStatus(audioOn?'Audio ready':'Audio off')}
+      else if('speechSynthesis'in window)speechSynthesis.cancel();
+      if(!complete){
+        feedbackTitle.textContent=mode==='blind'?'Audio guidance':'Visual guidance';
+        feedbackCopy.textContent=mode==='blind'?'Listen for directional cues while the task stays visible here.':'Follow the high-contrast target and the direction cue attached to your pointer.';
+      }
+      const embeddedMode=qs('[data-mode="'+(mode==='blind'?'blind':'vision')+'"]');embeddedMode?.click();
+    }
+    function updatePanel(){
+      if(!active)return;
+      progress.textContent=complete?'3 / 3':(taskIndex+1)+' / 3';
+      if(complete){
+        panel.classList.add('gc-live-complete');kicker.textContent='Preview complete';title.textContent='You kept every click.';
+        copy.textContent=mode==='blind'?'Audio guidance helped you reach each verified control while the interface remained yours.':'Visual guidance helped you reach each verified control while the interface remained yours.';
+        replay.hidden=false;feedbackTitle.textContent='✓ Complete';feedbackCopy.textContent='Switch modes above or replay the three tasks.';
+        window.GuideCursorTitle?.setContext('Interactive preview complete · GuideCursor');
+      }else{
+        const t=currentTask();panel.classList.remove('gc-live-complete');kicker.textContent=t.kicker;title.textContent=t.title;copy.textContent=coarse?t.touch:t.copy;replay.hidden=true;
+        window.GuideCursorTitle?.setContext('GuideCursor preview '+(taskIndex+1)+'/3 — '+t.title);
+      }
+    }
+    function directionName(dx,dy){
+      const ax=Math.abs(dx),ay=Math.abs(dy);
+      if(ax<2&&ay<2)return 'Target found — click once';
+      if(ax>ay*1.35)return dx>0?'Move right':'Move left';
+      if(ay>ax*1.35)return dy>0?'Move down':'Move up';
+      return (dy>0?'Move down':'Move up')+(dx>0?'-right':'-left');
+    }
+    function queue(){if(!raf)raf=requestAnimationFrame(render)}
+    function render(){
+      raf=0;if(!active||complete||!target)return;
+      const r=target.getBoundingClientRect(),vh=innerHeight,vw=innerWidth;
+      let dir='',detail='',dist=999,angle=0;
+      if(r.top>=vh){dir='Scroll down';detail='The verified target is below this view.';target.classList.remove('gc-live-near','gc-live-ready')}
+      else if(r.bottom<=0){dir='Scroll up';detail='The verified target is above this view.';target.classList.remove('gc-live-near','gc-live-ready')}
+      else if(coarse){
+        dir='Tap highlighted target';detail='The verified target is on screen.';target.classList.add('gc-live-near');target.classList.remove('gc-live-ready');
+      }else{
+        const nx=Math.max(r.left,Math.min(r.right,pointer.x)),ny=Math.max(r.top,Math.min(r.bottom,pointer.y));
+        const dx=nx-pointer.x,dy=ny-pointer.y;dist=Math.hypot(dx,dy);angle=Math.atan2(dy,dx)*180/Math.PI;
+        dir=directionName(dx,dy);
+        const near=dist<205,ready=pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom;
+        if(ready)dir='Target found — click once';
+        detail=ready?'Verified target ready. You make the click.':dist<70?'Almost there.':dist<170?'You are close.':'Move toward the verified target.';
+        target.classList.toggle('gc-live-near',near);target.classList.toggle('gc-live-ready',ready);
+        compass.style.transform='rotate('+angle+'deg)';
+      }
+      directionEl.textContent=dir;distanceEl.textContent=detail;
+      feedbackTitle.textContent=dir;feedbackCopy.textContent=detail;
+      if(mode==='blind')tone(dir,dist);
+      if(!coarse&&pointer.seen){
+        const bubbleW=258,flip=pointer.x>vw-bubbleW-48;
+        companion.classList.toggle('flip-x',flip);companion.classList.add('is-visible');
+        const x=Math.max(10,Math.min(vw-bubbleW-34,pointer.x+(flip?-244:18)));
+        const y=Math.max(92,Math.min(vh-112,pointer.y+18));
+        companion.style.transform='translate3d('+x+'px,'+y+'px,0)';
+      }
+    }
+    function activateTask(index,{scroll=false,announce=true}={}){
+      taskIndex=Math.max(0,Math.min(tasks.length-1,index));complete=false;lastCue='';
+      updatePanel();setTarget();
+      if(scroll&&target)target.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'center'});
+      queue();
+      if(announce&&mode==='blind')setTimeout(()=>speak(currentTask().voice),260);
+    }
+    function openPicker(e){
+      e?.preventDefault();picker.hidden=false;document.body.classList.add('gc-live-picker-open');
+      requestAnimationFrame(()=>qs('[data-gc-live-mode="lowvision"]')?.focus());
+    }
+    function closePicker(){
+      picker.hidden=true;document.body.classList.remove('gc-live-picker-open');window.GuideCursorTitle?.clearContext();
+    }
+    function begin(nextMode){
+      picker.hidden=true;document.body.classList.remove('gc-live-picker-open');
+      mode=nextMode;active=true;complete=false;audioOn=true;window.__gcActive=true;
+      document.body.classList.add('gc-live-active');panel.hidden=false;companion.hidden=false;
+      updateModeUI();activateTask(0,{scroll:true,announce:false});
+      if(mode==='blind')setTimeout(()=>speak('Blind guidance selected. '+currentTask().voice),420);
+    }
+    function stop(){
+      active=false;complete=false;window.__gcActive=false;document.body.classList.remove('gc-live-active');delete document.body.dataset.gcLiveMode;
+      panel.hidden=true;companion.hidden=true;companion.classList.remove('is-visible');panel.classList.remove('gc-live-complete');clearTarget();
+      if('speechSynthesis'in window)speechSynthesis.cancel();window.GuideCursorTitle?.clearContext();
+    }
+    function finish(){
+      clearTarget();complete=true;updatePanel();directionEl.textContent='✓ That’s GuideCursor';distanceEl.textContent='The interface stayed yours the whole time.';successTone();
+      if(mode==='blind')speak('Preview complete. You stayed in control of every click.');
+      if(!coarse){companion.classList.add('is-visible');setTimeout(()=>{if(complete)companion.classList.remove('is-visible')},2200)}
+    }
+    function completeTask(){
+      if(!active||complete)return;
+      successTone();
+      if(taskIndex>=tasks.length-1){finish();return}
+      clearTarget();taskIndex++;updatePanel();
+      setTimeout(()=>{setTarget();queue();if(mode==='blind')speak(currentTask().voice)},360);
+    }
+    function activateTarget(el){
+      const t=currentTask();let delay=230;
+      if(taskIndex===0)t.activate?.(el);
+      if(taskIndex===1){
+        const href=el.getAttribute?.('href');
+        if(href?.startsWith('#')){qs(href)?.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});delay=540}
+      }
+      if(taskIndex===2)t.activate?.(el);
+      feedbackTitle.textContent='✓ Target activated';feedbackCopy.textContent='You made the click. GuideCursor only helped you get there.';
+      if(mode==='blind')speak('Target activated.');
+      setTimeout(completeTask,delay);
+    }
+
+    qsa('[data-start-guide-demo]').forEach(el=>el.addEventListener('click',openPicker));
+    qsa('[data-gc-live-mode]').forEach(btn=>btn.addEventListener('click',()=>begin(btn.dataset.gcLiveMode)));
+    qsa('[data-gc-live-switch]').forEach(btn=>btn.addEventListener('click',()=>{
+      const next=btn.dataset.gcLiveSwitch;if(next===mode)return;mode=next;lastCue='';updateModeUI();updatePanel();queue();
+      if(mode==='blind')speak('Audio guidance selected. '+(complete?'':currentTask().voice));
+    }));
+    close.addEventListener('click',closePicker);exit.addEventListener('click',stop);
+    replay.addEventListener('click',()=>activateTask(0,{scroll:true,announce:true}));
+    audioToggle.addEventListener('click',()=>{
+      audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.innerHTML='<span>♪</span> Audio '+(audioOn?'on':'off');
+      if(!audioOn){speechSynthesis?.cancel?.();setAudioStatus('Audio off')}else{setAudioStatus('Audio ready');speak('Audio guidance enabled. '+(complete?'':currentTask().voice))}
+    });
+    repeat.addEventListener('click',()=>{if(!complete)speak(currentTask().voice)});
+    addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});
+    addEventListener('scroll',queue,{passive:true});addEventListener('resize',queue);
+    document.addEventListener('keydown',e=>{
+      if(!picker.hidden&&e.key==='Escape'){e.preventDefault();closePicker();return}
+      if(active&&e.key==='Escape'){e.preventDefault();stop()}
+    });
+    document.addEventListener('click',e=>{
+      if(!active||complete||!target)return;
+      const hit=e.target.closest?.('[data-gc-live-target]');if(hit!==target)return;
+      e.preventDefault();e.stopPropagation();activateTarget(target);
+    },true);
+
+    if(new URLSearchParams(location.search).get('demo')==='1'){
+      setTimeout(()=>{openPicker();const u=new URL(location.href);u.searchParams.delete('demo');history.replaceState({},'',u.pathname+u.search+u.hash)},450);
+    }
+  })();
+  </script>
+
 </body>
 </html>
