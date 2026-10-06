@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111116" />
   <meta name="description" content="GuideCursor is AI-guided pointer support for people with a visual impairment working on macOS." />
   <meta name="guidecursor-build" content="%VITE_BUILD_ID%" />
-  <title>GuideCursor — AI-guided pointer support for macOS</title>
+  <title>GuideCursor - AI-guided pointer support for macOS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -303,7 +303,7 @@
 
   <script src="/legal-ui.js?v=%VITE_BUILD_ID%"></script>
   <script>
-    window.GuideCursorTitle?.setBase('GuideCursor — AI-guided pointer support for macOS');
+    window.GuideCursorTitle?.setBase('GuideCursor - AI-guided pointer support for macOS');
     const q=s=>document.querySelector(s),qa=s=>[...document.querySelectorAll(s)];
     const stage=q('#concept-stage'),modeLabel=q('#mode-label'),target=q('#row-target'),pointer=q('#stage-pointer'),arrow=q('#stage-arrow'),title=q('#stage-title'),sub=q('#stage-sub'),targetText=q('#target-text'),targetMeta=q('#target-meta'),rowA=q('#row-a'),rowB=q('#row-b'),assistKicker=q('#assist-kicker'),assistTitle=q('#assist-title'),assistCopy=q('#assist-copy'),appLabel=q('#app-label'),advance=q('#advance');
     let mode='vision',step=0;
@@ -402,7 +402,7 @@
     }
 
     function speakDirection(direction){
-      if(mode!=='blind'||!audioOn||!direction||direction==='Target found — click once')return;
+      if(mode!=='blind'||!audioOn||!direction||direction==='Target found - click once')return;
       if(direction===lastSpokenDirection)return;
       lastSpokenDirection=direction;
       speak(direction,{interrupt:true});
@@ -476,12 +476,12 @@
         window.GuideCursorTitle?.setContext('Interactive preview complete · GuideCursor');
       }else{
         const t=currentTask();panel.classList.remove('gc-live-complete');kicker.textContent=t.kicker;title.textContent=t.title;copy.textContent=coarse?t.touch:t.copy;replay.hidden=true;
-        window.GuideCursorTitle?.setContext('GuideCursor preview '+(taskIndex+1)+'/3 — '+t.title);
+        window.GuideCursorTitle?.setContext('GuideCursor preview '+(taskIndex+1)+'/3 - '+t.title);
       }
     }
     function directionName(dx,dy){
       const ax=Math.abs(dx),ay=Math.abs(dy);
-      if(ax<2&&ay<2)return 'Target found — click once';
+      if(ax<2&&ay<2)return 'Target found - click once';
       if(ax>ay*1.35)return dx>0?'Move right':'Move left';
       if(ay>ax*1.35)return dy>0?'Move down':'Move up';
       return (dy>0?'Move down':'Move up')+(dx>0?'-right':'-left');
@@ -500,13 +500,13 @@
         const dx=nx-pointer.x,dy=ny-pointer.y;dist=Math.hypot(dx,dy);angle=Math.atan2(dy,dx)*180/Math.PI;
         dir=directionName(dx,dy);
         const near=dist<205,ready=pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom;
-        if(ready)dir='Target found — click once';
+        if(ready)dir='Target found - click once';
         detail=ready?'Verified target ready. You make the click.':dist<70?'Almost there.':dist<170?'You are close.':'Move toward the verified target.';
         target.classList.toggle('gc-live-near',near);target.classList.toggle('gc-live-ready',ready);
         compass.style.transform='rotate('+angle+'deg)';
         if(mode==='blind'&&ready&&!wasReady){
           const name=currentTask().targetName||'Target';
-          lastSpokenDirection='Target found — click once';
+          lastSpokenDirection='Target found - click once';
           speak(name+'. Target reached. Click once.',{interrupt:true});
         }
         wasReady=ready;
@@ -514,7 +514,7 @@
       if(!coarse&&(r.top>=vh||r.bottom<=0))wasReady=false;
       directionEl.textContent=dir;distanceEl.textContent=detail;
       feedbackTitle.textContent=dir;feedbackCopy.textContent=detail;
-      if(mode==='blind'&&dir!=='Target found — click once'){
+      if(mode==='blind'&&dir!=='Target found - click once'){
         speakDirection(dir);
         tone(dir,dist);
       }
