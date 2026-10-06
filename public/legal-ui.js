@@ -64,7 +64,7 @@
     el.innerHTML=`
       <div class="gc-consent-message">
         <span class="gc-consent-icon" aria-hidden="true">↖</span>
-        <div class="gc-consent-copy"><strong>Your cursor. Your choice.</strong><p>GuideCursor uses essential browser storage to keep the demo working and remember your privacy choice. Optional categories stay off unless you choose them. <a href="/cookies">See what is stored</a>.</p></div>
+        <div class="gc-consent-copy"><strong>Your cursor. Your choice.</strong><p>GuideCursor uses essential browser storage to keep the interactive preview working and remember your privacy choice. Optional categories stay off unless you choose them. <a href="/cookies">See what is stored</a>.</p></div>
       </div>
       <div class="gc-consent-actions">
         <button type="button" class="gc-consent-btn manage" data-consent-manage>Manage</button>
@@ -170,7 +170,7 @@
       for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith('gc:')||k.startsWith('gc_')))keys.push(k)}
       keys.forEach(k=>localStorage.removeItem(k));
       if(keepCookie)try{localStorage.setItem(COOKIE_NAME,JSON.stringify(keepCookie))}catch{}
-      toast('Local demo data cleared');
+      toast('Local site data cleared');
     }
   };
 
