@@ -175,7 +175,7 @@
       listenStatus=qs('#listen-status'), listenStatusTitle=qs('#listen-status-title'), listenStatusCopy=qs('#listen-status-copy');
 
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
-    let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',wasReady=false,lastTone='',lastToneAt=0;
+    let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
     let pendingRecognitionResult=null,actionFallbackTimer=0;
@@ -185,12 +185,13 @@
     function pickVoice(){
       if(!('speechSynthesis'in window))return null;
       const voices=speechSynthesis.getVoices();
+      if(!voices.length)return null;
       const english=voices.filter(v=>/^en([-_]|$)/i.test(v.lang||''));
-      const local=english.filter(v=>v.localService===true||/Samantha|Daniel|Alex|Karen|Moira|Tessa|Fiona|com\.apple/i.test((v.name||'')+' '+(v.voiceURI||'')));
-      voice=local.find(v=>/Samantha|Daniel|Alex/i.test(v.name||''))||
-        local.find(v=>/^en-GB/i.test(v.lang||''))||
-        local.find(v=>/^en-US/i.test(v.lang||''))||
-        local[0]||null;
+      const preferred=english.find(v=>/Samantha|Daniel|Google UK|Microsoft (Sonia|Ryan)|Natural/i.test(v.name||''))||
+        english.find(v=>/^en-GB/i.test(v.lang||''))||
+        english.find(v=>/^en-US/i.test(v.lang||''))||
+        english[0]||voices[0];
+      voice=preferred||null;
       return voice;
     }
     if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',pickVoice)}
@@ -233,38 +234,22 @@
         if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
       }catch(_){}
     }
-    let speechAttempt=0;
-    function speak(text,{interrupt=true,onend=null,retry=true}={}){
+    function speak(text,{interrupt=true,onend=null}={}){
       if(mode!=='blind'||!audioOn||!text)return;
       if(!('speechSynthesis'in window)){if(typeof onend==='function')onend();return}
-      const attempt=++speechAttempt;
       try{
         if(interrupt)speechSynthesis.cancel();
-        speechSynthesis.resume?.();
         const u=new SpeechSynthesisUtterance(text);
+        u.lang=voice?.lang||'en-GB';
+        u.rate=.96;u.pitch=1;u.volume=1;
         const v=voice||pickVoice();if(v)u.voice=v;
-        u.lang=v?.lang||'en-GB';u.rate=.96;u.pitch=1;u.volume=1;
-        let started=false,finished=false;
-        const finish=()=>{if(finished||attempt!==speechAttempt)return;finished=true;if(typeof onend==='function')onend()};
-        u.onstart=()=>{if(attempt!==speechAttempt)return;started=true;sr.textContent=text;setFeedback('Speaking',text)};
-        u.onend=finish;u.onerror=finish;
+        u.onstart=()=>{sr.textContent=text;setFeedback('Speaking',text)};
+        u.onend=()=>{if(typeof onend==='function')onend()};
+        u.onerror=()=>{if(typeof onend==='function')onend()};
         speechSynthesis.speak(u);
-        if(retry)setTimeout(()=>{
-          if(attempt!==speechAttempt||started||finished)return;
-          try{
-            speechSynthesis.cancel();speechSynthesis.resume?.();
-            const fallback=new SpeechSynthesisUtterance(text);
-            fallback.lang='en-US';fallback.rate=.96;fallback.pitch=1;fallback.volume=1;
-            let fallbackFinished=false;
-            const fallbackDone=()=>{if(fallbackFinished||attempt!==speechAttempt)return;fallbackFinished=true;finish()};
-            fallback.onstart=()=>{if(attempt===speechAttempt){started=true;sr.textContent=text;setFeedback('Speaking',text)}};
-            fallback.onend=fallbackDone;fallback.onerror=fallbackDone;
-            speechSynthesis.speak(fallback);
-          }catch(_){finish()}
-        },550);
-        setTimeout(()=>{if(attempt===speechAttempt&&!finished)finish()},Math.max(1800,Math.min(8500,text.length*70)));
       }catch(_){if(typeof onend==='function')onend()}
     }
+
     function finishActionSpeech(){
       clearTimeout(actionFallbackTimer);actionFallbackTimer=0;
       if(!actionSpeaking&&directionSpeechEnabled)return;
@@ -284,16 +269,19 @@
     function announceTargetFound(){
       if(mode!=='blind'||!target)return;
       if(actionSpeaking||!directionSpeechEnabled){pendingTargetFound=true;return}
-      pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';
-      speak(targetLabel()+'. Target found. Click once.',{interrupt:true});
+      pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';lastDirectionAt=performance.now();
+      speak(targetLabel()+'. Target found. Click once.',{interrupt:false});
       successTone();
     }
     function speakDirectionChange(dir,{force=false}={}){
       if(mode!=='blind'||!audioOn||!dir||dir==='Target reached')return;
-      if(!force&&dir===lastDirection)return;
       if(actionSpeaking||!directionSpeechEnabled){pendingDirection=dir;return}
-      pendingDirection='';lastDirection=dir;
-      speak(dir,{interrupt:true});
+      const now=performance.now();
+      if(!force&&dir===lastDirection)return;
+      if(!force&&now-lastDirectionAt<1150){pendingDirection=dir;return}
+      if(!force&&'speechSynthesis'in window&&speechSynthesis.speaking&&now-lastDirectionAt<1800){pendingDirection=dir;return}
+      pendingDirection='';lastDirection=dir;lastDirectionAt=now;
+      speak(dir.replace('-',' '),{interrupt:false});
     }
     function tone(direction,dist=240){
       if(mode!=='blind'||!audioOn)return;
@@ -337,7 +325,7 @@
       if(target)target.classList.remove('guide-target','near','ready');
       target=null;halo.classList.remove('show','near','ready');companion.classList.remove('show');
       clearTimeout(actionFallbackTimer);actionFallbackTimer=0;
-      wasReady=false;lastDirection='';lastTone='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
+      wasReady=false;lastDirection='';lastDirectionAt=0;lastTone='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
     }
     function syncHalo(near=false,ready=false){
       if(!target){halo.classList.remove('show','near','ready');return}
@@ -365,13 +353,13 @@
       audioToggle.hidden=mode!=='blind';repeat.hidden=mode!=='blind';
       modeNote.innerHTML=mode==='blind'?'<b>Blind guidance</b> uses spoken labels and directional audio without visual target cues. You still move the pointer and make every click.':'<b>Low-vision guidance</b> uses a high-contrast target outline and a direction cue that follows your pointer. You still move the pointer and make every click.';
       if(mode==='blind'){
-        audioOn=true;unlockAudio();if('speechSynthesis'in window)speechSynthesis.resume?.();
+        audioOn=true;unlockAudio();
         audioToggle.setAttribute('aria-pressed','true');audioToggle.textContent='♪ Audio on';
       }else{
         stopListening({quiet:true});setListenStatus('idle');
         if('speechSynthesis'in window)speechSynthesis.cancel();
       }
-      lastDirection='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;wasReady=false;syncHalo(false,false);queue();
+      lastDirection='';lastDirectionAt=0;pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;wasReady=false;syncHalo(false,false);queue();
       if(announce&&mode==='blind'){
         speak('Blind guidance selected.',{interrupt:true,onend:()=>announcePhase()});
       }
@@ -466,7 +454,7 @@
       if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.',{kind:'warning'});
     }
     function reset(){
-      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
+      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';lastDirectionAt=0;wasReady=false;if(mode==='blind')announcePhase();
     }
 
     submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
@@ -476,7 +464,7 @@
     qsa('[data-wrong]').forEach(el=>el.addEventListener('click',()=>wrongClick(el)));
     qsa('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
     qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
-    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();if(audioOn)unlockAudio();lastDirection='';wasReady=false;if(audioOn)announcePhase()});
+    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
     repeat.addEventListener('click',announcePhase);
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',()=>{syncHalo(target?.classList.contains('near'),target?.classList.contains('ready'));queue()});
 
