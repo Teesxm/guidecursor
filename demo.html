@@ -311,7 +311,7 @@
     function clearTarget(){
       if(target)target.classList.remove('guide-target','near','ready');
       target=null;halo.classList.remove('show','near','ready');companion.classList.remove('show');
-      clearTimeout(directionTimer);wasReady=false;lastDirection='';lastTone='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
+      wasReady=false;lastDirection='';lastTone='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
     }
     function syncHalo(near=false,ready=false){
       if(!target||mode!=='lowvision'){halo.classList.remove('show','near','ready');return}
