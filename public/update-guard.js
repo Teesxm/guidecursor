@@ -136,7 +136,7 @@
     const previousBuild = displayedBuild;
     const previousCount = displayedCount;
     const count = stableMissedCount(data);
-    window.GuideCursorTitle?.setSystem(count > 1 ? 'Update available — '+count+' missed · GuideCursor' : 'Update available — GuideCursor');
+    window.GuideCursorTitle?.setSystem(count > 1 ? 'Update available - '+count+' missed · GuideCursor' : 'Update available - GuideCursor');
     const label = modal.querySelector('#gc-update-count-label');
     label.textContent = count === 1 ? 'update missed' : 'updates missed';
     const countChanged = !visible || previousBuild !== data.build || previousCount !== count;
