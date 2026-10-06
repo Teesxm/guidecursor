@@ -86,7 +86,7 @@
                 <button class="tool attach" type="button" id="attach-btn">⌕ Attach</button>
               </div>
               <div class="fields"><div class="field"><b>To</b> hiring@example.com</div><div class="field"><b>Subject</b> Application</div></div>
-              <div class="bodycopy"><strong>Hi Alex,</strong>Please find my CV attached.<br><br>Best,<br>Terence</div>
+              <div class="bodycopy"><strong>Hi Alex,</strong>Please find my CV attached.<br><br>Best,<br>Sam</div>
               <div class="attachment-chip" id="attachment-chip"><i>PDF</i><span id="attached-name"></span></div>
             </div>
           </div>
@@ -99,8 +99,8 @@
             <div class="finder-main">
               <div class="file-list">
                 <div class="file-head"><span>Name</span><span>Kind</span><span>Modified</span></div>
-                <button class="file-row" type="button" data-file="CV_Terence_2026.pdf"><span class="file-name"><i class="file-icon">PDF</i>CV_Terence_2026.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Today</span></button>
-                <button class="file-row" type="button" data-file="CV_Terence_Old.pdf"><span class="file-name"><i class="file-icon">PDF</i>CV_Terence_Old.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Aug 18</span></button>
+                <button class="file-row" type="button" data-file="CV_2026.pdf"><span class="file-name"><i class="file-icon">PDF</i>CV_2026.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Today</span></button>
+                <button class="file-row" type="button" data-file="CV_Previous.pdf"><span class="file-name"><i class="file-icon">PDF</i>CV_Previous.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Aug 18</span></button>
                 <button class="file-row" type="button" data-file="CV_Design.pdf"><span class="file-name"><i class="file-icon">PDF</i>CV_Design.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Jul 03</span></button>
                 <button class="file-row" type="button" data-file="Cover_Letter.pdf"><span class="file-name"><i class="file-icon">PDF</i>Cover_Letter.pdf</span><span class="file-meta">PDF</span><span class="file-meta">Today</span></button>
               </div>
@@ -179,7 +179,7 @@
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
     let pendingRecognitionResult=null,actionFallbackTimer=0;
-    const cvFiles=['CV_Terence_2026.pdf','CV_Terence_Old.pdf','CV_Design.pdf'];
+    const cvFiles=['CV_2026.pdf','CV_Previous.pdf','CV_Design.pdf'];
     const choiceLetters=['A','B','C'];
 
     function pickVoice(){
