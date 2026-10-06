@@ -175,7 +175,8 @@
       listenStatus=qs('#listen-status'), listenStatusTitle=qs('#listen-status-title'), listenStatusCopy=qs('#listen-status-copy');
 
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
-    let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0,speechActive=false,currentUtterance=null;
+    let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0;
+    let speechBusy=false,currentUtterance=null,speechQueue=[],speechSeq=0,speechStartTimer=0,speechEndTimer=0;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
     let pendingRecognitionResult=null,actionFallbackTimer=0;
@@ -234,34 +235,68 @@
         if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
       }catch(_){}
     }
-    function speak(text,{interrupt=false,onend=null}={}){
-      if(mode!=='blind'||!audioOn||!text){if(typeof onend==='function')onend();return}
-      if(!('speechSynthesis'in window)){if(typeof onend==='function')onend();return}
-      try{
-        const synth=window.speechSynthesis;
-        if(interrupt&&(synth.speaking||synth.pending))synth.cancel();
-        if(synth.paused)synth.resume();
-        const u=new SpeechSynthesisUtterance(text);
-        u.rate=.95;u.pitch=1;u.volume=1;
-        currentUtterance=u;speechActive=true;
-        let finished=false;
-        const done=()=>{
-          if(finished)return;finished=true;
-          if(currentUtterance===u)currentUtterance=null;
-          speechActive=false;
-          if(typeof onend==='function')onend();
-        };
-        u.onstart=()=>{speechActive=true;sr.textContent=text;setFeedback('Speaking',text)};
-        u.onend=done;
-        u.onerror=e=>{setFeedback('Voice error',String(e?.error||'unknown'));done()};
-        synth.speak(u);
-        const watchdog=Math.max(1800,Math.min(9000,text.length*85));
+    function clearSpeechTimers(){
+      clearTimeout(speechStartTimer);clearTimeout(speechEndTimer);
+      speechStartTimer=0;speechEndTimer=0;
+    }
+    function speechEstimate(text){return Math.max(1400,Math.min(9000,900+text.length*60))}
+    function stopSpeech(){
+      speechSeq++;clearSpeechTimers();speechQueue=[];speechBusy=false;currentUtterance=null;
+      try{window.speechSynthesis?.cancel()}catch(_){}
+    }
+    function flushSpeechQueue(){
+      if(speechBusy||!speechQueue.length)return;
+      const next=speechQueue.shift();startSpeech(next);
+    }
+    function makeUtterance(item,seq,isRetry=false){
+      const synth=window.speechSynthesis,u=new SpeechSynthesisUtterance(item.text);
+      u.lang='en-US';u.rate=.95;u.pitch=1;u.volume=1;
+      currentUtterance=u;
+      let started=false,finished=false;
+      const finish=()=>{
+        if(finished||seq!==speechSeq)return;finished=true;
+        clearSpeechTimers();if(currentUtterance===u)currentUtterance=null;
+        speechBusy=false;
+        if(typeof item.onend==='function')item.onend();
+        flushSpeechQueue();
+      };
+      u.onstart=()=>{if(seq!==speechSeq)return;started=true;sr.textContent=item.text;setFeedback('Speaking',item.text)};
+      u.onend=finish;
+      u.onerror=e=>{if(seq===speechSeq)setFeedback('Voice error',String(e?.error||'unknown'));finish()};
+      synth.speak(u);
+      speechStartTimer=setTimeout(()=>{
+        if(started||finished||seq!==speechSeq)return;
+        if(isRetry){setFeedback('Voice unavailable','Speech did not start. Directional tones remain active.');finish();return}
+        setFeedback('Retrying voice','Chrome did not start the first utterance. Trying once more.');
+        try{synth.cancel()}catch(_){}
         setTimeout(()=>{
-          if(finished)return;
-          if(!synth.speaking&&!synth.pending)done();
-          else setTimeout(()=>{if(!finished)done()},1200);
-        },watchdog);
-      }catch(_){speechActive=false;currentUtterance=null;if(typeof onend==='function')onend()}
+          if(finished||seq!==speechSeq)return;
+          makeUtterance(item,seq,true);
+        },250);
+      },450);
+      speechEndTimer=setTimeout(finish,speechEstimate(item.text));
+    }
+    function startSpeech(item){
+      if(mode!=='blind'||!audioOn||!item?.text){if(typeof item?.onend==='function')item.onend();return}
+      if(!('speechSynthesis'in window)){if(typeof item.onend==='function')item.onend();return}
+      clearSpeechTimers();speechBusy=true;const seq=++speechSeq;
+      try{
+        if(window.speechSynthesis.paused)window.speechSynthesis.resume();
+        makeUtterance(item,seq,false);
+      }catch(_){
+        speechBusy=false;if(typeof item.onend==='function')item.onend();flushSpeechQueue();
+      }
+    }
+    function speak(text,{kind='general',onend=null}={}){
+      if(mode!=='blind'||!audioOn||!text){if(typeof onend==='function')onend();return}
+      const item={text,kind,onend};
+      if(kind==='direction')speechQueue=speechQueue.filter(x=>x.kind!=='direction');
+      if(kind==='target')speechQueue=speechQueue.filter(x=>x.kind!=='direction'&&x.kind!=='target');
+      if(speechBusy){
+        if(kind==='target')speechQueue.unshift(item);else speechQueue.push(item);
+        return;
+      }
+      startSpeech(item);
     }
 
     function finishActionSpeech(){
@@ -277,14 +312,14 @@
     function speakAction(text){
       clearTimeout(actionFallbackTimer);
       pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=true;
-      speak(text,{interrupt:false,onend:finishActionSpeech});
+      speak(text,{kind:'task',onend:finishActionSpeech});
       actionFallbackTimer=setTimeout(finishActionSpeech,6500);
     }
     function announceTargetFound(){
       if(mode!=='blind'||!target)return;
       if(actionSpeaking||!directionSpeechEnabled){pendingTargetFound=true;return}
       pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';lastDirectionAt=performance.now();
-      speak(targetLabel()+'. Target found. Click once.',{interrupt:false});
+      speak(targetLabel()+'. Target found. Click once.',{kind:'target'});
       successTone();
     }
     function speakDirectionChange(dir,{force=false}={}){
@@ -295,10 +330,10 @@
       if(!force&&now-lastDirectionAt<1150){pendingDirection=dir;return}
       if(!force&&'speechSynthesis'in window&&speechSynthesis.speaking&&now-lastDirectionAt<1800){pendingDirection=dir;return}
       pendingDirection='';lastDirection=dir;lastDirectionAt=now;
-      speak(dir.replace('-',' '),{interrupt:false});
+      speak(dir.replace('-',' '),{kind:'direction'});
     }
     function tone(direction,dist=240){
-      if(mode!=='blind'||!audioOn||speechActive)return;
+      if(mode!=='blind'||!audioOn)return;
       const now=performance.now();
       if(direction===lastTone&&now-lastToneAt<620)return;
       if(now-lastToneAt<360)return;
@@ -374,9 +409,7 @@
         if('speechSynthesis'in window)speechSynthesis.cancel();
       }
       lastDirection='';lastDirectionAt=0;pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;wasReady=false;syncHalo(false,false);queue();
-      if(announce&&mode==='blind'){
-        speak('Blind guidance selected.',{interrupt:false,onend:()=>announcePhase()});
-      }
+      if(announce&&mode==='blind')announcePhase();
     }
     function announcePhase(){
       if(mode!=='blind')return;
@@ -468,7 +501,7 @@
       if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.',{kind:'warning'});
     }
     function reset(){
-      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;speechActive=false;currentUtterance=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');lastDirection='';lastDirectionAt=0;wasReady=false;if(mode==='blind')announcePhase();
+      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');lastDirection='';lastDirectionAt=0;wasReady=false;if(mode==='blind')announcePhase();
     }
 
     submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
@@ -478,7 +511,7 @@
     qsa('[data-wrong]').forEach(el=>el.addEventListener('click',()=>wrongClick(el)));
     qsa('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
     qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
-    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
+    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn)stopSpeech();if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
     repeat.addEventListener('click',announcePhase);
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',()=>{syncHalo(target?.classList.contains('near'),target?.classList.contains('ready'));queue()});
 
