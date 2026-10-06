@@ -201,7 +201,7 @@
     }
     function stopListening({quiet=true}={}){
       clearTimeout(autoListenTimer);autoListenTimer=0;
-      if(recognition&&isListening){try{recognition.abort()}catch(_){}}
+      if(recognition){try{recognition.abort()}catch(_){}}
       isListening=false;
       if(!quiet)setListenStatus('idle','Microphone ready','GuideCursor will listen automatically when it asks a question.');
     }
@@ -350,6 +350,7 @@
     }
     function announcePhase(){
       if(mode!=='blind')return;
+      stopListening({quiet:true});
       pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
       if(phase==='request')speak('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',onend:()=>startListening('goal')});
       if(phase==='attach')speakAction('Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.');
