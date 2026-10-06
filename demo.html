@@ -46,6 +46,7 @@
     .feedback{display:flex;align-items:flex-start;gap:9px;margin-top:12px;padding:10px 11px;border-radius:11px;background:rgba(160,241,213,.055);border:1px solid rgba(160,241,213,.12)}.feedback i{flex:0 0 auto;width:7px;height:7px;margin-top:2px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.06)}.feedback strong{display:block;font-size:9px}.feedback span{display:block;margin-top:3px;color:rgba(255,255,255,.43);font-size:8px;line-height:1.5}
     .listen-status{display:flex;align-items:center;gap:9px;margin-top:12px;padding:10px 11px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(255,255,255,.035)}.listen-status[hidden]{display:none!important}.listen-status>i{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.28)}.listen-status strong{display:block;font-size:9px}.listen-status span{display:block;margin-top:3px;color:rgba(255,255,255,.43);font-size:8px;line-height:1.45}.listen-status.listening{border-color:rgba(160,241,213,.22);background:rgba(160,241,213,.065)}.listen-status.listening>i{background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08);animation:listenPulse 1s ease-in-out infinite}
     .guide-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}.guide-actions button{height:35px;padding:0 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:rgba(255,255,255,.62);font-size:8px;font-weight:700}.guide-actions button:hover{background:rgba(255,255,255,.05);color:#fff}.guide-actions .primary{background:#fff;color:#111116}.guide-actions button[hidden]{display:none!important}
+    .audio-debug{margin-top:10px;padding:9px 11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.025);color:rgba(255,255,255,.45);font:500 8px "DM Mono",monospace;line-height:1.6}.audio-debug[hidden]{display:none!important}.audio-debug summary{cursor:pointer;color:rgba(255,255,255,.62)}.audio-debug code{display:block;margin-top:7px;white-space:pre-wrap;color:rgba(255,255,255,.48)}.audio-debug button{margin-top:8px;height:30px!important;color:var(--mint)!important;border-color:rgba(160,241,213,.18)!important;background:rgba(160,241,213,.06)!important}
     .cursor-companion{position:fixed;z-index:200;display:flex;gap:7px;align-items:flex-start;pointer-events:none;opacity:0;transition:opacity .12s ease;filter:drop-shadow(0 10px 24px rgba(0,0,0,.22))}.cursor-companion.show{opacity:1}.cursor-companion.flip{flex-direction:row-reverse}.cursor-dot{width:28px;height:28px;border-radius:9px;background:var(--indigo);color:#fff;display:grid;place-items:center;font-size:14px;box-shadow:0 0 0 6px rgba(103,88,244,.09)}.cursor-bubble{width:185px;padding:10px 11px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:rgba(17,17,22,.95);color:#fff;backdrop-filter:blur(15px)}.cursor-bubble small{display:block;color:var(--mint);font:500 7px "DM Mono",monospace;letter-spacing:.1em}.cursor-bubble strong{display:block;margin-top:3px;font-size:10px}.cursor-bubble span{display:block;margin-top:3px;color:rgba(255,255,255,.45);font-size:8px;line-height:1.4}
     .guide-target{position:relative!important;z-index:85!important;transition:transform .16s ease,box-shadow .22s ease,background .22s ease!important}.lowvision .guide-target.near{transform:scale(1.018)!important;box-shadow:0 10px 34px rgba(103,88,244,.14)!important}
     .target-halo{position:fixed;z-index:190;pointer-events:none;opacity:0;border:2px solid rgba(103,88,244,.82);box-shadow:0 0 0 5px rgba(103,88,244,.07),0 0 34px rgba(103,88,244,.22);transition:left .08s linear,top .08s linear,width .08s linear,height .08s linear,border-color .16s ease,box-shadow .16s ease,opacity .12s ease,transform .16s ease;animation:targetPulse 1.25s ease-in-out infinite}.target-halo.show{opacity:1}.target-halo.near{transform:scale(1.018);box-shadow:0 0 0 7px rgba(103,88,244,.08),0 0 42px rgba(103,88,244,.25)}.target-halo.ready{border-color:var(--mint);box-shadow:0 0 0 10px rgba(160,241,213,.12),0 0 48px rgba(160,241,213,.32);animation:targetReady .78s ease-in-out infinite}.blind .target-halo{display:block!important;border-color:rgba(160,241,213,.76);border-style:dashed;box-shadow:0 0 0 4px rgba(160,241,213,.05),0 0 30px rgba(160,241,213,.14);animation:targetPulse 1.25s ease-in-out infinite}.blind .target-halo.near{box-shadow:0 0 0 7px rgba(160,241,213,.07),0 0 38px rgba(160,241,213,.2)}.blind .target-halo.ready{border-style:solid;border-color:var(--mint);box-shadow:0 0 0 10px rgba(160,241,213,.11),0 0 46px rgba(160,241,213,.28);animation:targetReady .78s ease-in-out infinite}
@@ -143,6 +144,11 @@
             <button type="button" id="repeat" hidden>↻ Repeat</button>
             <button type="button" class="primary" id="replay" hidden>Replay demo</button>
           </div>
+          <details class="audio-debug" id="audio-debug" hidden>
+            <summary>Audio debug</summary>
+            <code id="audio-debug-text">Waiting for audio state…</code>
+            <button type="button" id="audio-debug-test">Test voice</button>
+          </details>
 
           <div class="completion" id="completion"><strong>Attachment complete.</strong><p id="completion-copy"></p></div>
         </div>
@@ -172,7 +178,8 @@
       replay=qs('#replay'), completion=qs('#completion'), completionCopy=qs('#completion-copy'),
       companion=qs('#cursor-companion'), cursorMode=qs('#cursor-mode'), cursorDirection=qs('#cursor-direction'),
       cursorDetail=qs('#cursor-detail'), halo=qs('#target-halo'), sr=qs('#sr-status'), modeNote=qs('#mode-note'),
-      listenStatus=qs('#listen-status'), listenStatusTitle=qs('#listen-status-title'), listenStatusCopy=qs('#listen-status-copy');
+      listenStatus=qs('#listen-status'), listenStatusTitle=qs('#listen-status-title'), listenStatusCopy=qs('#listen-status-copy'),
+      audioDebug=qs('#audio-debug'), audioDebugText=qs('#audio-debug-text'), audioDebugTest=qs('#audio-debug-test');
 
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
     let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0;
@@ -235,46 +242,63 @@
         if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
       }catch(_){}
     }
-    function clearSpeechTimers(){
-      clearTimeout(speechStartTimer);clearTimeout(speechEndTimer);
-      speechStartTimer=0;speechEndTimer=0;
+    let speechDebugEvent='idle',speechWaitTimer=0;
+    function updateSpeechDebug(event=speechDebugEvent){
+      speechDebugEvent=event;
+      if(!audioDebugText||!('speechSynthesis'in window))return;
+      const synth=window.speechSynthesis,voices=synth.getVoices?.()||[];
+      audioDebugText.textContent=[
+        'event: '+speechDebugEvent,
+        'voices: '+voices.length,
+        'speaking: '+String(synth.speaking),
+        'pending: '+String(synth.pending),
+        'paused: '+String(synth.paused),
+        'queue: '+speechQueue.length,
+        'busy: '+String(speechBusy),
+        'mic: '+(isListening?'listening':'idle')
+      ].join('\n');
     }
-    function speechEstimate(text){return Math.max(1400,Math.min(9000,900+text.length*60))}
+    function clearSpeechTimers(){
+      clearTimeout(speechStartTimer);clearTimeout(speechEndTimer);clearTimeout(speechWaitTimer);
+      speechStartTimer=0;speechEndTimer=0;speechWaitTimer=0;
+    }
     function stopSpeech(){
       speechSeq++;clearSpeechTimers();speechQueue=[];speechBusy=false;currentUtterance=null;
       try{window.speechSynthesis?.cancel()}catch(_){}
+      updateSpeechDebug('stopped');
     }
     function flushSpeechQueue(){
+      updateSpeechDebug();
       if(speechBusy||!speechQueue.length)return;
       const next=speechQueue.shift();startSpeech(next);
     }
-    function makeUtterance(item,seq,isRetry=false){
+    function makeUtterance(item,seq){
       const synth=window.speechSynthesis,u=new SpeechSynthesisUtterance(item.text);
       u.lang='en-US';u.rate=.95;u.pitch=1;u.volume=1;
       currentUtterance=u;
-      let started=false,finished=false;
+      let finished=false;
       const finish=()=>{
         if(finished||seq!==speechSeq)return;finished=true;
         clearSpeechTimers();if(currentUtterance===u)currentUtterance=null;
-        speechBusy=false;
+        speechBusy=false;updateSpeechDebug('ended');
         if(typeof item.onend==='function')item.onend();
         flushSpeechQueue();
       };
-      u.onstart=()=>{if(seq!==speechSeq)return;started=true;sr.textContent=item.text;setFeedback('Speaking',item.text)};
+      u.onstart=()=>{if(seq!==speechSeq)return;sr.textContent=item.text;setFeedback('Speaking',item.text);updateSpeechDebug('started')};
       u.onend=finish;
-      u.onerror=e=>{if(seq===speechSeq)setFeedback('Voice error',String(e?.error||'unknown'));finish()};
+      u.onerror=e=>{
+        if(seq!==speechSeq)return;
+        setFeedback('Voice error',String(e?.error||'unknown'));
+        updateSpeechDebug('error: '+(e?.error||'unknown'));
+        finish();
+      };
+      updateSpeechDebug('queued: '+item.kind);
       synth.speak(u);
-      speechStartTimer=setTimeout(()=>{
-        if(started||finished||seq!==speechSeq)return;
-        if(isRetry){setFeedback('Voice unavailable','Speech did not start. Directional tones remain active.');finish();return}
-        setFeedback('Retrying voice','Chrome did not start the first utterance. Trying once more.');
-        try{synth.cancel()}catch(_){}
-        setTimeout(()=>{
-          if(finished||seq!==speechSeq)return;
-          makeUtterance(item,seq,true);
-        },250);
-      },450);
-      speechEndTimer=setTimeout(finish,speechEstimate(item.text));
+      speechWaitTimer=setTimeout(()=>{
+        if(finished||seq!==speechSeq)return;
+        updateSpeechDebug(synth.speaking?'speaking without start event':'waiting for browser TTS');
+        if(!synth.speaking)setFeedback('Voice queued','Chrome has not started the utterance yet. It has not been cancelled.');
+      },1500);
     }
     function startSpeech(item){
       if(mode!=='blind'||!audioOn||!item?.text){if(typeof item?.onend==='function')item.onend();return}
@@ -282,9 +306,10 @@
       clearSpeechTimers();speechBusy=true;const seq=++speechSeq;
       try{
         if(window.speechSynthesis.paused)window.speechSynthesis.resume();
-        makeUtterance(item,seq,false);
+        makeUtterance(item,seq);
       }catch(_){
-        speechBusy=false;if(typeof item.onend==='function')item.onend();flushSpeechQueue();
+        speechBusy=false;updateSpeechDebug('exception');
+        if(typeof item.onend==='function')item.onend();flushSpeechQueue();
       }
     }
     function speak(text,{kind='general',onend=null}={}){
@@ -294,6 +319,7 @@
       if(kind==='target')speechQueue=speechQueue.filter(x=>x.kind!=='direction'&&x.kind!=='target');
       if(speechBusy){
         if(kind==='target')speechQueue.unshift(item);else speechQueue.push(item);
+        updateSpeechDebug('queued behind speech: '+kind);
         return;
       }
       startSpeech(item);
@@ -399,7 +425,7 @@
       mode=next;body.classList.toggle('lowvision',mode==='lowvision');body.classList.toggle('blind',mode==='blind');
       qsa('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
       cursorMode.textContent='GUIDECURSOR · '+(mode==='blind'?'BLIND':'LOW VISION');
-      audioToggle.hidden=mode!=='blind';repeat.hidden=mode!=='blind';
+      audioToggle.hidden=mode!=='blind';repeat.hidden=mode!=='blind';audioDebug.hidden=mode!=='blind';
       modeNote.innerHTML=mode==='blind'?'<b>Blind guidance</b> uses spoken labels and directional audio without visual target cues. You still move the pointer and make every click.':'<b>Low-vision guidance</b> uses a high-contrast target outline and a direction cue that follows your pointer. You still move the pointer and make every click.';
       if(mode==='blind'){
         audioOn=true;unlockAudio();
@@ -513,6 +539,8 @@
     qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
     audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn)stopSpeech();if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
     repeat.addEventListener('click',announcePhase);
+    audioDebugTest.addEventListener('click',()=>speak('GuideCursor voice test.',{kind:'task'}));
+    setInterval(()=>{if(mode==='blind')updateSpeechDebug()},900);
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',()=>{syncHalo(target?.classList.contains('near'),target?.classList.contains('ready'));queue()});
 
     function normalizedSpeech(text){return (text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()}
