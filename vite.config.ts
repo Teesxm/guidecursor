@@ -12,8 +12,6 @@ export default defineConfig({
       input: {
         main: resolve(rootDir, 'index.html'),
         pricing: resolve(rootDir, 'pricing.html'),
-        checkout: resolve(rootDir, 'checkout.html'),
-        checkoutSuccess: resolve(rootDir, 'checkout-success.html'),
         downloads: resolve(rootDir, 'downloads.html'),
         privacy: resolve(rootDir, 'privacy.html'),
         terms: resolve(rootDir, 'terms.html'),
