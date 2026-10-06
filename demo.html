@@ -175,7 +175,7 @@
       listenStatus=qs('#listen-status'), listenStatusTitle=qs('#listen-status-title'), listenStatusCopy=qs('#listen-status-copy');
 
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
-    let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0;
+    let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0,speechActive=false,currentUtterance=null;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
     let pendingRecognitionResult=null,actionFallbackTimer=0;
@@ -234,20 +234,34 @@
         if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
       }catch(_){}
     }
-    function speak(text,{interrupt=true,onend=null}={}){
-      if(mode!=='blind'||!audioOn||!text)return;
+    function speak(text,{interrupt=false,onend=null}={}){
+      if(mode!=='blind'||!audioOn||!text){if(typeof onend==='function')onend();return}
       if(!('speechSynthesis'in window)){if(typeof onend==='function')onend();return}
       try{
-        if(interrupt)speechSynthesis.cancel();
+        const synth=window.speechSynthesis;
+        if(interrupt&&(synth.speaking||synth.pending))synth.cancel();
+        if(synth.paused)synth.resume();
         const u=new SpeechSynthesisUtterance(text);
-        u.lang=voice?.lang||'en-GB';
-        u.rate=.96;u.pitch=1;u.volume=1;
-        const v=voice||pickVoice();if(v)u.voice=v;
-        u.onstart=()=>{sr.textContent=text;setFeedback('Speaking',text)};
-        u.onend=()=>{if(typeof onend==='function')onend()};
-        u.onerror=()=>{if(typeof onend==='function')onend()};
-        speechSynthesis.speak(u);
-      }catch(_){if(typeof onend==='function')onend()}
+        u.rate=.95;u.pitch=1;u.volume=1;
+        currentUtterance=u;speechActive=true;
+        let finished=false;
+        const done=()=>{
+          if(finished)return;finished=true;
+          if(currentUtterance===u)currentUtterance=null;
+          speechActive=false;
+          if(typeof onend==='function')onend();
+        };
+        u.onstart=()=>{speechActive=true;sr.textContent=text;setFeedback('Speaking',text)};
+        u.onend=done;
+        u.onerror=e=>{setFeedback('Voice error',String(e?.error||'unknown'));done()};
+        synth.speak(u);
+        const watchdog=Math.max(1800,Math.min(9000,text.length*85));
+        setTimeout(()=>{
+          if(finished)return;
+          if(!synth.speaking&&!synth.pending)done();
+          else setTimeout(()=>{if(!finished)done()},1200);
+        },watchdog);
+      }catch(_){speechActive=false;currentUtterance=null;if(typeof onend==='function')onend()}
     }
 
     function finishActionSpeech(){
@@ -263,7 +277,7 @@
     function speakAction(text){
       clearTimeout(actionFallbackTimer);
       pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=true;
-      speak(text,{interrupt:true,onend:finishActionSpeech});
+      speak(text,{interrupt:false,onend:finishActionSpeech});
       actionFallbackTimer=setTimeout(finishActionSpeech,6500);
     }
     function announceTargetFound(){
@@ -284,7 +298,7 @@
       speak(dir.replace('-',' '),{interrupt:false});
     }
     function tone(direction,dist=240){
-      if(mode!=='blind'||!audioOn)return;
+      if(mode!=='blind'||!audioOn||speechActive)return;
       const now=performance.now();
       if(direction===lastTone&&now-lastToneAt<620)return;
       if(now-lastToneAt<360)return;
@@ -308,7 +322,7 @@
       if(audioCtx?.state==='running')play();else audioCtx?.resume?.().then(play).catch(()=>{});
     }
     function successTone(){
-      if(mode!=='blind'||!audioOn)return;
+      if(mode!=='blind'||!audioOn||speechActive)return;
       unlockAudio();
       const play=()=>{
         try{
@@ -361,7 +375,7 @@
       }
       lastDirection='';lastDirectionAt=0;pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;wasReady=false;syncHalo(false,false);queue();
       if(announce&&mode==='blind'){
-        speak('Blind guidance selected.',{interrupt:true,onend:()=>announcePhase()});
+        speak('Blind guidance selected.',{interrupt:false,onend:()=>announcePhase()});
       }
     }
     function announcePhase(){
@@ -454,7 +468,7 @@
       if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.',{kind:'warning'});
     }
     function reset(){
-      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';lastDirectionAt=0;wasReady=false;if(mode==='blind')announcePhase();
+      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;speechActive=false;currentUtterance=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');lastDirection='';lastDirectionAt=0;wasReady=false;if(mode==='blind')announcePhase();
     }
 
     submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
