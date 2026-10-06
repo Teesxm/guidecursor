@@ -877,7 +877,7 @@ function TaskSwipe({
                 {direction === 'right' ? <Check size={17} /> : <X size={17} />}
               </div>
               <div>
-                <strong>{direction === 'right' ? 'Preference signal captured' : 'Got it — not your thing'}</strong>
+                <strong>{direction === 'right' ? 'Preference signal captured' : 'Got it - not your thing'}</strong>
                 <span>{reveal}</span>
               </div>
               {direction === 'right' && (
