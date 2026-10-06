@@ -357,7 +357,7 @@
       if(audioCtx?.state==='running')play();else audioCtx?.resume?.().then(play).catch(()=>{});
     }
     function successTone(){
-      if(mode!=='blind'||!audioOn||speechActive)return;
+      if(mode!=='blind'||!audioOn)return;
       unlockAudio();
       const play=()=>{
         try{
