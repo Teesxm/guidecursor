@@ -243,13 +243,40 @@
       }catch(_){}
     }
     let speechDebugEvent='idle',speechWaitTimer=0,currentSpeechStarted=false,recoveryCount=0;
+    let reliableVoices=[],reliableVoiceIndex=0,lastVoiceTried='none';
+    function refreshReliableVoices(){
+      if(!('speechSynthesis'in window))return [];
+      const all=window.speechSynthesis.getVoices?.()||[];
+      const localEnglish=all.filter(v=>v.localService===true&&/^en([-_]|$)/i.test(v.lang||''));
+      const preferredNames=[/Samantha/i,/Daniel/i,/Alex/i,/Karen/i,/Moira/i,/Tessa/i,/Fiona/i,/Victoria/i];
+      const preferred=[];
+      preferredNames.forEach(rx=>localEnglish.filter(v=>rx.test(v.name||'')).forEach(v=>{if(!preferred.includes(v))preferred.push(v)}));
+      localEnglish.forEach(v=>{if(!preferred.includes(v))preferred.push(v)});
+      const anyLocal=all.filter(v=>v.localService===true&&!preferred.includes(v));
+      reliableVoices=[...preferred,...anyLocal];
+      if(!reliableVoices.length)reliableVoices=all.filter(v=>/^en([-_]|$)/i.test(v.lang||''));
+      if(!reliableVoices.length)reliableVoices=all;
+      reliableVoiceIndex=Math.min(reliableVoiceIndex,Math.max(0,reliableVoices.length-1));
+      voice=reliableVoices[reliableVoiceIndex]||null;
+      return reliableVoices;
+    }
+    refreshReliableVoices();
+    if('speechSynthesis'in window)speechSynthesis.addEventListener?.('voiceschanged',()=>{refreshReliableVoices();updateSpeechDebug('voices changed')});
+    function selectedVoiceLabel(){
+      const v=reliableVoices[reliableVoiceIndex]||voice;
+      return v?((v.name||'unnamed')+' | '+(v.lang||'?')+' | '+(v.localService?'local':'remote')):'none';
+    }
     function updateSpeechDebug(event=speechDebugEvent){
       speechDebugEvent=event;
       if(!audioDebugText||!('speechSynthesis'in window))return;
       const synth=window.speechSynthesis,voices=synth.getVoices?.()||[];
+      const localEnglish=voices.filter(v=>v.localService===true&&/^en([-_]|$)/i.test(v.lang||''));
       audioDebugText.textContent=[
         'event: '+speechDebugEvent,
         'voices: '+voices.length,
+        'local English: '+localEnglish.length,
+        'selected: '+selectedVoiceLabel(),
+        'last tried: '+lastVoiceTried,
         'speaking: '+String(synth.speaking),
         'pending: '+String(synth.pending),
         'paused: '+String(synth.paused),
@@ -264,40 +291,44 @@
       clearTimeout(speechStartTimer);clearTimeout(speechEndTimer);clearTimeout(speechWaitTimer);
       speechStartTimer=0;speechEndTimer=0;speechWaitTimer=0;
     }
-    function stopSpeech(){
+    function hardResetSpeechEngine(label='reset'){
       speechSeq++;clearSpeechTimers();speechQueue=[];speechBusy=false;currentSpeechStarted=false;currentUtterance=null;
       try{window.speechSynthesis?.cancel()}catch(_){}
-      updateSpeechDebug('stopped');
+      updateSpeechDebug(label);
     }
+    function stopSpeech(){hardResetSpeechEngine('stopped')}
     function flushSpeechQueue(){
       updateSpeechDebug();
       if(speechBusy||!speechQueue.length)return;
       const next=speechQueue.shift();startSpeech(next);
     }
-    function recoverZombie(item,oldSeq){
+    function tryNextVoice(item,oldSeq,attempt){
       if(oldSeq!==speechSeq)return;
-      recoveryCount++;
-      setFeedback('Recovering voice','Chrome reported speech as active but never started it. Resetting that utterance once.');
-      updateSpeechDebug('recovering zombie utterance');
       const synth=window.speechSynthesis;
-      const retryItem={...item,recovered:true};
+      recoveryCount++;
+      const nextIndex=reliableVoices.length?Math.min(attempt,reliableVoices.length-1):0;
       const retrySeq=++speechSeq;
       clearSpeechTimers();currentUtterance=null;currentSpeechStarted=false;speechBusy=true;
       speechQueue=speechQueue.filter(x=>x.kind!=='direction');
       try{synth.cancel()}catch(_){}
+      reliableVoiceIndex=nextIndex;voice=reliableVoices[reliableVoiceIndex]||null;
+      setFeedback('Switching voice','Trying another local macOS voice.');
+      updateSpeechDebug('switching local voice');
       setTimeout(()=>{
         if(retrySeq!==speechSeq||mode!=='blind'||!audioOn)return;
-        try{
-          if(synth.paused)synth.resume();
-          makeUtterance(retryItem,retrySeq,true);
-        }catch(_){
-          speechBusy=false;setFeedback('Voice unavailable','The speech engine could not restart. Directional tones remain active.');updateSpeechDebug('recovery exception');flushSpeechQueue();
-        }
-      },300);
+        makeUtterance(item,retrySeq,attempt);
+      },220);
     }
-    function makeUtterance(item,seq,isRecovery=false){
-      const synth=window.speechSynthesis,u=new SpeechSynthesisUtterance(item.text);
-      u.lang='en-US';u.rate=.95;u.pitch=1;u.volume=1;
+    function makeUtterance(item,seq,attempt=0){
+      const synth=window.speechSynthesis;
+      if(!reliableVoices.length)refreshReliableVoices();
+      const selected=reliableVoices[Math.min(attempt,Math.max(0,reliableVoices.length-1))]||voice||null;
+      reliableVoiceIndex=selected?Math.max(0,reliableVoices.indexOf(selected)):0;
+      voice=selected;
+      const u=new SpeechSynthesisUtterance(item.text);
+      if(selected){u.voice=selected;u.lang=selected.lang||'en-US'}else u.lang='en-US';
+      u.rate=.95;u.pitch=1;u.volume=1;
+      lastVoiceTried=selectedVoiceLabel();
       currentUtterance=u;currentSpeechStarted=false;
       let finished=false;
       const finish=()=>{
@@ -307,47 +338,48 @@
         if(typeof item.onend==='function')item.onend();
         flushSpeechQueue();
       };
-      u.onstart=()=>{if(seq!==speechSeq)return;currentSpeechStarted=true;sr.textContent=item.text;setFeedback('Speaking',item.text);updateSpeechDebug(isRecovery?'started after recovery':'started')};
+      u.onstart=()=>{if(seq!==speechSeq)return;currentSpeechStarted=true;sr.textContent=item.text;setFeedback('Speaking',item.text);updateSpeechDebug('started')};
       u.onend=finish;
       u.onerror=e=>{
         if(seq!==speechSeq)return;
         const err=e?.error||'unknown';
-        if(err==='canceled'&&isRecovery){updateSpeechDebug('recovery cancel ignored');return}
-        setFeedback('Voice error',String(err));
-        updateSpeechDebug('error: '+err);
-        finish();
+        if(err==='canceled')return;
+        setFeedback('Voice error',String(err));updateSpeechDebug('error: '+err);finish();
       };
-      updateSpeechDebug((isRecovery?'retry queued: ':'queued: ')+item.kind);
+      updateSpeechDebug('trying voice '+(attempt+1));
       synth.speak(u);
       speechWaitTimer=setTimeout(()=>{
         if(finished||seq!==speechSeq||currentSpeechStarted)return;
-        if(synth.speaking&&!isRecovery){
-          recoverZombie(item,seq);
-          return;
-        }
-        if(synth.speaking&&isRecovery){
-          setFeedback('Voice unavailable','Chrome still reports a stuck speech session after recovery. Directional tones remain active.');
-          updateSpeechDebug('zombie persisted after recovery');
-          finish();
-          return;
-        }
-        updateSpeechDebug(synth.pending?'waiting in browser queue':'waiting for browser TTS');
-        if(!synth.speaking)setFeedback('Voice queued','Chrome has not started the utterance yet.');
-      },1400);
+        const maxAttempts=Math.min(4,Math.max(1,reliableVoices.length));
+        if(attempt+1<maxAttempts){tryNextVoice(item,seq,attempt+1);return}
+        setFeedback('Voice unavailable','Several local macOS voices failed to start. Directional tones remain active.');
+        updateSpeechDebug('all local voice attempts failed');
+        finish();
+      },1700);
     }
-    function startSpeech(item){
+    function startSpeech(item,{resetStale=false}={}){
       if(mode!=='blind'||!audioOn||!item?.text){if(typeof item?.onend==='function')item.onend();return}
       if(!('speechSynthesis'in window)){if(typeof item.onend==='function')item.onend();return}
-      clearSpeechTimers();speechBusy=true;currentSpeechStarted=false;const seq=++speechSeq;
+      refreshReliableVoices();
+      clearSpeechTimers();speechBusy=true;currentSpeechStarted=false;
+      const synth=window.speechSynthesis;
+      if(resetStale&&synth.speaking&&!currentUtterance){
+        const seq=++speechSeq;
+        try{synth.cancel()}catch(_){}
+        updateSpeechDebug('clearing stale browser speech');
+        setTimeout(()=>{if(seq===speechSeq){speechBusy=true;makeUtterance(item,seq,0)}},180);
+        return;
+      }
+      const seq=++speechSeq;
       try{
-        if(window.speechSynthesis.paused)window.speechSynthesis.resume();
-        makeUtterance(item,seq,false);
+        if(synth.paused)synth.resume();
+        makeUtterance(item,seq,0);
       }catch(_){
         speechBusy=false;currentSpeechStarted=false;updateSpeechDebug('exception');
         if(typeof item.onend==='function')item.onend();flushSpeechQueue();
       }
     }
-    function speak(text,{kind='general',onend=null}={}){
+    function speak(text,{kind='general',onend=null,resetStale=false}={}){
       if(mode!=='blind'||!audioOn||!text){if(typeof onend==='function')onend();return}
       const item={text,kind,onend};
       if(kind==='direction')speechQueue=speechQueue.filter(x=>x.kind!=='direction');
@@ -363,7 +395,7 @@
         updateSpeechDebug('queued behind speech: '+kind);
         return;
       }
-      startSpeech(item);
+      startSpeech(item,{resetStale});
     }
 
     function finishActionSpeech(){
@@ -476,7 +508,11 @@
         if('speechSynthesis'in window)speechSynthesis.cancel();
       }
       lastDirection='';lastDirectionAt=0;pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;wasReady=false;syncHalo(false,false);queue();
-      if(announce&&mode==='blind')announcePhase();
+      if(announce&&mode==='blind'){
+        if(phase==='request'){
+          speak('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',resetStale:true,onend:()=>startListening('goal')});
+        }else announcePhase();
+      }
     }
     function announcePhase(){
       if(mode!=='blind')return;
@@ -580,7 +616,7 @@
     qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
     audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn)stopSpeech();if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
     repeat.addEventListener('click',announcePhase);
-    audioDebugTest.addEventListener('click',()=>speak('GuideCursor voice test.',{kind:'task'}));
+    audioDebugTest.addEventListener('click',()=>{hardResetSpeechEngine('manual voice test reset');setTimeout(()=>speak('GuideCursor voice test.',{kind:'task',resetStale:true}),180)});
     setInterval(()=>{if(mode==='blind')updateSpeechDebug()},900);
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',()=>{syncHalo(target?.classList.contains('near'),target?.classList.contains('ready'));queue()});
 
