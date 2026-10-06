@@ -36,17 +36,17 @@
         <div class="gc-footer-top">
           <div>
             <a class="gc-footer-brand" href="/"><span class="gc-footer-mark">↖<i></i></span><span>Guide<b>Cursor</b></span></a>
-            <div class="gc-footer-copy"><strong>Same software. More reachable.</strong>GuideCursor is a student MVP exploring AI-guided pointer support for people with a visual impairment working on macOS.</div>
-            <span class="gc-footer-status"><i></i> Pitch-paper build · October 2026</span>
+            <div class="gc-footer-copy"><strong>Same software. More reachable.</strong>GuideCursor helps people with low vision or blindness reach the right control in mainstream macOS software while keeping every action their own.</div>
+            <span class="gc-footer-status"><i></i> Native macOS · Local by default</span>
           </div>
           <div class="gc-footer-links">
-            <div class="gc-footer-col"><small>Product</small><a href="/#product">Product</a><a href="/#how">How it works</a><a href="/scope">MVP scope</a><a href="/funding">Funding & pilot</a><a href="/prototype">Prototype status</a></div>
-            <div class="gc-footer-col"><small>Explore</small><a href="/#demo">Try the core journey</a><a href="/#research">Research</a><a href="/help">Help Center</a><a href="/security">Security & Trust</a><a href="/accessibility">Accessibility</a></div>
+            <div class="gc-footer-col"><small>Product</small><a href="/#product">Product</a><a href="/#how">How it works</a><a href="/scope">Capabilities</a><a href="/funding">For workplaces</a><a href="/prototype">macOS preview</a></div>
+            <div class="gc-footer-col"><small>Explore</small><a href="/#demo">Try the interactive preview</a><a href="/#research">Research</a><a href="/help">Help Center</a><a href="/security">Security & Trust</a><a href="/accessibility">Accessibility</a></div>
             <div class="gc-footer-col"><small>Legal</small><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/cookies">Cookie policy</a><button type="button" data-open-cookie-settings>Cookie settings</button></div>
           </div>
         </div>
         <div class="gc-footer-bottom">
-          <span>© 2026 GuideCursor · DBIS Team 15</span>
+          <span>© 2026 GuideCursor</span>
           <div class="gc-footer-bottom-links"><a href="/help">Help</a><a href="/privacy">Privacy</a><a href="/security">Security</a><a href="/terms">Terms</a><a href="/cookies">Cookies</a><a href="/accessibility">Accessibility</a></div>
         </div>
         <span class="gc-footer-cursor" aria-hidden="true">↖</span>
@@ -64,7 +64,7 @@
     el.innerHTML=`
       <div class="gc-consent-message">
         <span class="gc-consent-icon" aria-hidden="true">↖</span>
-        <div class="gc-consent-copy"><strong>Your cursor. Your choice.</strong><p>GuideCursor uses essential browser storage to keep the demo working and remember your privacy choice. Optional categories stay off unless you choose them. <a href="/cookies">See what is stored</a>.</p></div>
+        <div class="gc-consent-copy"><strong>Your cursor. Your choice.</strong><p>GuideCursor uses essential browser storage to keep the interactive preview working and remember your privacy choice. Optional categories stay off unless you choose them. <a href="/cookies">See what is stored</a>.</p></div>
       </div>
       <div class="gc-consent-actions">
         <button type="button" class="gc-consent-btn manage" data-consent-manage>Manage</button>
@@ -86,9 +86,9 @@
     el.innerHTML=`
       <div class="gc-consent-card">
         <div class="gc-consent-head"><div><span class="gc-consent-kicker">Privacy controls</span><h2 id="gc-consent-title">Choose what stays <span>on.</span></h2></div><button class="gc-consent-close" type="button" aria-label="Close cookie settings">×</button></div>
-        <p class="gc-consent-intro">Essential storage supports requested site features. Optional categories require your choice. This MVP currently loads no advertising tracker and no third-party analytics SDK.</p>
+        <p class="gc-consent-intro">Essential storage supports requested site features. Optional categories require your choice. This website currently loads no advertising tracker and no third-party analytics SDK.</p>
         <div class="gc-consent-category"><div><strong>Essential storage</strong><p>Remembers this consent choice and acknowledged site updates. These features cannot be disabled here because the site uses them to provide the requested experience.</p></div><span class="gc-consent-always">Always on</span></div>
-        <div class="gc-consent-category"><div><strong>Preferences</strong><p>Allows the site to remember optional experience choices. In this MVP, enabling this records your preference only; no sensitive accessibility profile is stored.</p></div><label class="gc-switch"><input id="gc-consent-preferences" type="checkbox"><span></span></label></div>
+        <div class="gc-consent-category"><div><strong>Preferences</strong><p>Allows the site to remember optional experience choices. Enabling this records your preference only; no sensitive accessibility profile is stored.</p></div><label class="gc-switch"><input id="gc-consent-preferences" type="checkbox"><span></span></label></div>
         <div class="gc-consent-category"><div><strong>Analytics</strong><p>Permission for privacy-preserving site measurement. No external analytics provider is currently loaded, even if you enable this category.</p></div><label class="gc-switch"><input id="gc-consent-analytics" type="checkbox"><span></span></label></div>
         <div class="gc-consent-note"><b>No dark patterns.</b> “Essential only” is available at the same level as “Accept all”, optional toggles start off, and you can change your choice from the footer at any time.</div>
         <div class="gc-consent-modal-actions"><button type="button" class="gc-consent-btn essential" data-modal-essential>Use essential only</button><button type="button" class="gc-consent-btn primary" data-modal-save>Save my choices</button></div>
@@ -170,7 +170,7 @@
       for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith('gc:')||k.startsWith('gc_')))keys.push(k)}
       keys.forEach(k=>localStorage.removeItem(k));
       if(keepCookie)try{localStorage.setItem(COOKIE_NAME,JSON.stringify(keepCookie))}catch{}
-      toast('Local demo data cleared');
+      toast('Local site data cleared');
     }
   };
 
