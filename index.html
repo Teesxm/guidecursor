@@ -41,18 +41,18 @@
   </style>
 </head>
 <body>
-  <header class="nav-wrap"><nav class="nav"><a class="brand" href="/"><span class="mark">↖<i></i></span><span>Guide<b>Cursor</b></span></a><div class="nav-links"><a href="#product">Product</a><a href="#how">How it works</a><a href="/scope">MVP scope</a><a href="/funding">Funding</a><a href="#research">Research</a><a class="cta" href="#demo">Try the journey ↗</a></div></nav></header>
+  <header class="nav-wrap"><nav class="nav"><a class="brand" href="/"><span class="mark">↖<i></i></span><span>Guide<b>Cursor</b></span></a><div class="nav-links"><a href="#product">Product</a><a href="#how">How it works</a><a href="/scope">Capabilities</a><a href="/funding">For workplaces</a><a href="#research">Research</a><a class="cta" href="#demo">Try GuideCursor ↗</a></div></nav></header>
 
   <main>
     <section class="hero" id="top">
       <div class="grid"></div>
       <div class="hero-inner">
         <div class="hero-copy">
-          <span class="eyebrow"><i></i> DBIS 2026 · TEAM 15 · MACOS FIRST</span>
-          <h1>From a goal to<span>the right control.</span></h1>
-          <p>GuideCursor is AI-guided pointer support for people with a visual impairment working on macOS. Say or type what you want to do. GuideCursor identifies a real control in the current window, verifies it, and guides you there while you keep every click.</p>
-          <div class="hero-actions"><a class="btn primary" href="#demo">Try the core journey ↗</a><a class="btn secondary" href="#how">See how verification works</a></div>
-          <div class="scope-pill"><span>Low vision</span><span>Blindness</span><span>macOS</span><span>User-controlled</span><span class="out">Hearing support</span><span class="out">Motor support</span></div>
+          <span class="eyebrow"><i></i> BUILT FOR VISUAL ACCESS · MACOS</span>
+          <h1>From intent to<span>the right control.</span></h1>
+          <p>GuideCursor helps people with low vision or blindness use the software they already know. Say or type what you want to do. GuideCursor identifies the right control, verifies it in the current window, and guides you there without taking over the action.</p>
+          <div class="hero-actions"><a class="btn primary" href="#demo">Try the interactive preview ↗</a><a class="btn secondary" href="#how">How GuideCursor works</a></div>
+          <div class="scope-pill"><span>Low vision</span><span>Blindness</span><span>Native macOS</span><span>Local by default</span><span>User-controlled</span></div>
         </div>
         <div class="hero-visual" aria-hidden="true">
           <div class="mac-shell"><div class="mac"><div class="mac-bar"><span>Mail · Draft message</span><span>GuideCursor active</span></div><div class="mail"><aside class="side"><strong>Mail</strong><span class="active">Compose</span><span>Inbox</span><span>Sent</span><span>Archive</span></aside><div class="compose"><div class="compose-top"><div class="circle">↶</div><div class="circle">↷</div><div class="attach target">⌕ Attach</div></div><div class="fields"><div class="field"><b>To</b> hiring@example.com</div><div class="field"><b>Subject</b> Application</div></div><div class="bodycopy"><strong>Hi Alex,</strong>Please find my CV attached.<br><br>Best,<br>Sam</div><span class="pointer">↖</span><span class="arrow-line"></span><div class="guide-bubble"><small>GUIDECURSOR</small><strong>Attach is the verified target.</strong><span>Move up-right. You make the click.</span></div></div></div></div></div>
@@ -82,7 +82,7 @@
 
     <section class="section modes">
       <div class="section-inner">
-        <div class="section-head"><span class="section-num">02 · TWO GUIDANCE MODES</span><div><h2>One mechanism.<br>Different output.</h2><p>GuideCursor adapts to the user’s remaining vision instead of forcing one accessibility workflow. The first version is intentionally limited to visual impairment; hearing and motor support are later possibilities, not part of this MVP.</p></div></div>
+        <div class="section-head"><span class="section-num">02 · TWO GUIDANCE MODES</span><div><h2>One mechanism.<br>Different output.</h2><p>GuideCursor adapts to the user’s remaining vision instead of forcing one accessibility workflow. The product is focused on visual access, with guidance that can be tuned from highly visual to fully non-visual output.</p></div></div>
         <div class="mode-grid">
           <article class="mode-card"><small>LOW VISION</small><h3>Visual guidance</h3><p>The user stays in the normal application while GuideCursor makes the needed control easier to locate and reach.</p><div class="mode-list"><span><b>High-contrast outline</b> around the verified target</span><span><b>Arrow</b> from the pointer toward the target</span><span><b>Zoom on the target</b> when requested</span><span><b>Confirmation</b> before the user clicks</span></div></article>
           <article class="mode-card"><small>BLIND / LITTLE USABLE VISION</small><h3>Audio guidance</h3><p>The same verified target can be communicated without depending on visual cues.</p><div class="mode-list"><span><b>Target name</b> through the macOS accessibility announcement mechanism</span><span><b>Short non-speech sounds</b> for direction and distance</span><span><b>Confirmation</b> when the pointer reaches the control</span><span><b>VoiceOver-compatible settings</b> and keyboard operation</span></div></article>
@@ -93,14 +93,14 @@
 
     <section class="section demo" id="demo">
       <div class="section-inner">
-        <div class="section-head"><span class="section-num">03 · CORE JOURNEY</span><div><h2>Attach a file in Mail.</h2><p>The MVP concentrates on one end-to-end journey: attaching a file to an email in Apple Mail, including the file-selection window. Use the concept below to switch between low-vision and blind guidance.</p></div></div>
+        <div class="section-head"><span class="section-num">03 · INTERACTIVE PREVIEW</span><div><h2>See GuideCursor in action.</h2><p>Preview the full guidance loop inside a familiar Mail workflow, including the transition into the file-selection window. Switch between low-vision and blind guidance to see how the same verified target is communicated differently.</p></div></div>
         <div class="demo-shell">
           <aside class="demo-side">
             <div><small>GUIDANCE MODE</small><h3>Choose how GuideCursor communicates.</h3><p>Both modes use the same verified target. Only the guidance output changes.</p><div class="mode-toggle"><button class="active" type="button" data-mode="vision">Low vision</button><button type="button" data-mode="blind">Blind</button></div></div>
             <div class="journey"><button class="active" type="button" data-step="0" data-n="1">Find the Attach button</button><button type="button" data-step="1" data-n="2">Choose the intended CV file</button><button type="button" data-step="2" data-n="3">Find and click Open</button></div>
           </aside>
           <div class="demo-stage" id="concept-stage">
-            <div class="demo-head"><span>INTERACTIVE CONCEPT · USER KEEPS EVERY CLICK</span><b id="mode-label">LOW-VISION GUIDANCE</b></div>
+            <div class="demo-head"><span>INTERACTIVE PREVIEW · YOU KEEP EVERY CLICK</span><b id="mode-label">LOW-VISION GUIDANCE</b></div>
             <div class="app-window">
               <div class="appbar"><i></i><i></i><i></i><span id="app-label">Mail · New message</span></div>
               <div class="stage-mail">
@@ -139,39 +139,39 @@
 
     <section class="section scope">
       <div class="section-inner">
-        <div class="section-head"><span class="section-num">06 · MVP SCOPE</span><div><h2>One journey first.<br>Then prove it generalises.</h2><p>The new MVP is deliberately narrower than the earlier website concept. Reliability on one end-to-end workflow matters more than claiming support for many applications or impairments.</p></div></div>
+        <div class="section-head"><span class="section-num">06 · FOCUSED ROLLOUT</span><div><h2>Start focused.<br>Expand where reliability holds.</h2><p>GuideCursor starts with a small number of deeply supported workflows. Reliability matters more than claiming universal application support before it has been proven.</p></div></div>
         <div class="scope-grid">
-          <article class="scope-main"><h3>Core journey · Mail</h3><p>Attach a specific file to an email while GuideCursor guides the user through both Mail and the file-selection window.</p><div class="journey-big"><div><b>1</b><span><strong>Find Attach</strong><span>Interpret “attach my CV” and guide to Mail’s Attach control.</span></span></div><div><b>2</b><span><strong>Choose the intended file</strong><span>If several files match, ask the user which one they mean instead of guessing.</span></span></div><div><b>3</b><span><strong>Find Open</strong><span>Re-read the new window, verify Open and guide the pointer there.</span></span></div></div></article>
-          <article class="scope-side"><h3>Stretch tests</h3><p>Only added once the Mail journey works reliably.</p><div class="stretch"><div><b>Safari download</b>Find and reach a download-related control in Safari.</div><div><b>Menu command</b>Locate a command exposed in a macOS menu.</div></div><div class="out-scope"><b>Deliberately outside this first version</b>Windows, hearing support, motor support, broad application compatibility and autonomous task completion remain later possibilities.</div></article>
+          <article class="scope-main"><h3>Initial workflow · Mail</h3><p>Attach a specific file to an email while GuideCursor guides the user through both Mail and the file-selection window.</p><div class="journey-big"><div><b>1</b><span><strong>Find Attach</strong><span>Interpret “attach my CV” and guide to Mail’s Attach control.</span></span></div><div><b>2</b><span><strong>Choose the intended file</strong><span>If several files match, ask the user which one they mean instead of guessing.</span></span></div><div><b>3</b><span><strong>Find Open</strong><span>Re-read the new window, verify Open and guide the pointer there.</span></span></div></div></article>
+          <article class="scope-side"><h3>Expansion path</h3><p>Broader workflows are added only when the same target-verification standard holds.</p><div class="stretch"><div><b>Safari download</b>Find and reach a download-related control in Safari.</div><div><b>Menu command</b>Locate a command exposed in a macOS menu.</div></div><div class="out-scope"><b>Current focus</b>macOS visual access comes first. Broader platform and impairment support can follow once the core interaction model is reliable.</div></article>
         </div>
       </div>
     </section>
 
     <section class="section testing">
       <div class="section-inner">
-        <div class="section-head"><span class="section-num">07 · CO-DESIGN & TESTING</span><div><h2>Built with intended users,<br>not only for them.</h2><p>The MVP should be judged on whether visually impaired users can complete the selected tasks successfully, with fewer errors or less time, without feeling less in control.</p></div></div>
+        <div class="section-head"><span class="section-num">07 · VALIDATION</span><div><h2>Measure what matters:<br>success, effort and control.</h2><p>GuideCursor should earn trust through measurable outcomes: successful task completion, fewer wrong targets, less time spent searching and no loss of user control.</p></div></div>
         <div class="test-grid">
-          <article class="test-card"><h3>Two testing rounds</h3><p>First, 5–8 participants with low vision or blindness show how they currently complete the selected tasks and help design wording, sounds, highlights and confirmation points. Then participants perform the tasks with their usual tools and with GuideCursor in alternating order.</p><div class="partners"><span>Visio</span><span>Bartiméus</span><span>Oogvereniging</span></div></article>
-          <article class="test-card"><h3>What we measure</h3><p>The sample is indicative rather than statistically conclusive. Each failure, cause and resulting product change should be recorded in the development log.</p><div class="metric-grid"><div class="metric"><small>OUTCOME</small><strong>Task success</strong></div><div class="metric"><small>SAFETY</small><strong>Wrong controls</strong></div><div class="metric"><small>EFFICIENCY</small><strong>Time on task</strong></div><div class="metric"><small>WORKLOAD</small><strong>NASA-TLX</strong></div><div class="metric"><small>AGENCY</small><strong>Perceived control</strong></div><div class="metric"><small>SYSTEM</small><strong>Target accuracy & clarifications</strong></div></div></article>
+          <article class="test-card"><h3>User-centred validation</h3><p>Guidance language, sounds, highlights and confirmation points are evaluated with the people they are designed for. Product decisions are driven by task performance and user control, not feature count.</p><div class="partners"><span>Low vision</span><span>Blindness</span><span>Workplace workflows</span></div></article>
+          <article class="test-card"><h3>What we measure</h3><p>We track the signals that matter for an assistive product and use failures as product input, not as edge cases to hide.</p><div class="metric-grid"><div class="metric"><small>OUTCOME</small><strong>Task success</strong></div><div class="metric"><small>SAFETY</small><strong>Wrong controls</strong></div><div class="metric"><small>EFFICIENCY</small><strong>Time on task</strong></div><div class="metric"><small>WORKLOAD</small><strong>NASA-TLX</strong></div><div class="metric"><small>AGENCY</small><strong>Perceived control</strong></div><div class="metric"><small>SYSTEM</small><strong>Target accuracy & clarifications</strong></div></div></article>
         </div>
       </div>
     </section>
 
     <section class="section funding">
       <div class="section-inner">
-        <div class="section-head"><span class="section-num">08 · INTRODUCTION & FUNDING</span><div><h2>A workplace tool,<br>not another consumer subscription.</h2><p>The business route now follows how assistive technology is actually introduced at work: an annual licence per user, funded by an employer or potentially through a UWV work provision, with specialist suppliers and trainers supporting adoption.</p></div></div>
+        <div class="section-head"><span class="section-num">08 · FOR WORKPLACES</span><div><h2>Built for workplace<br>accessibility deployment.</h2><p>GuideCursor is designed for annual workplace licensing, with deployment and training that can fit existing accessibility-support channels.</p></div></div>
         <div class="funding-grid">
-          <article class="fund-card"><small>BUYER / FUNDER</small><h3>Employer or UWV</h3><p>GuideCursor is positioned as a workplace accessibility provision rather than a freemium consumer app.</p></article>
-          <article class="fund-card"><small>ADOPTION CHANNEL</small><h3>Suppliers & trainers</h3><p>Distribution can build on organisations that already install and teach magnification, screen-reading and other assistive software.</p></article>
+          <article class="fund-card"><small>WORKPLACE ACCESS</small><h3>Employer-funded deployment</h3><p>GuideCursor is designed to be introduced as assistive workplace software, not a consumer add-on.</p></article>
+          <article class="fund-card"><small>ROLLOUT</small><h3>Suppliers & trainers</h3><p>Deployment can include accessible setup, training and support alongside the tools people already use.</p></article>
           <article class="fund-card"><small>ONGOING COSTS</small><h3>Compatibility & support</h3><p>Costs come mainly from macOS/application changes, model re-testing, accessible support and training, plus optional cloud usage.</p></article>
         </div>
-        <div class="fund-actions"><a class="white" href="/funding">Funding & pilot model ↗</a><a class="ghost" href="/security">Security & trust</a></div>
+        <div class="fund-actions"><a class="white" href="/funding">For workplaces ↗</a><a class="ghost" href="/security">Security & trust</a></div>
       </div>
     </section>
 
     <section class="section research" id="research">
       <div class="section-inner">
-        <div class="section-head"><span class="section-num">09 · RESEARCH FOUNDATION</span><div><h2>The concept is narrow<br>for a reason.</h2><p>The new paper grounds GuideCursor in visual-impairment research, ability-based design, macOS accessibility mechanisms, screen recognition and measurable usability targets.</p></div></div>
+        <div class="section-head"><span class="section-num">09 · EVIDENCE-LED DESIGN</span><div><h2>Accessibility decisions<br>should be evidence-led.</h2><p>GuideCursor draws on ability-based design, low-vision and non-visual navigation research, screen recognition and established usability principles.</p></div></div>
         <div class="research-grid">
           <article class="paper highlight"><small>ABILITY-BASED DESIGN</small><h3>Wobbrock et al. (2011)</h3><p>Technology should adapt to what people can do rather than requiring them to adapt to a fixed interface.</p><a href="https://doi.org/10.1145/1952383.1952384" target="_blank" rel="noreferrer">Open DOI ↗</a></article>
           <article class="paper"><small>LOW VISION</small><h3>Szpiro et al. (2016)</h3><p>Observed how people with low vision use computing devices and documented limitations in existing magnification workflows.</p><a href="https://doi.org/10.1145/2982142.2982168" target="_blank" rel="noreferrer">Open DOI ↗</a></article>
@@ -183,7 +183,7 @@
       </div>
     </section>
 
-    <section class="final"><div class="final-inner"><div><h2>Guide the pointer.<br>Keep the action human.</h2><p>GuideCursor’s first job is deliberately simple to state: help a visually impaired macOS user get from “what I want to do” to the right control, without taking the click away from them.</p></div><div class="final-actions"><a class="primary" href="/scope">See the MVP scope ↗</a><a class="secondary" href="/prototype">Prototype status</a></div></div></section>
+    <section class="final"><div class="final-inner"><div><h2>Guide the pointer.<br>Keep control human.</h2><p>GuideCursor turns intent into verified guidance while preserving the interaction model people already know: their apps, their pointer, their action.</p></div><div class="final-actions"><a class="primary" href="/scope">Explore capabilities ↗</a><a class="secondary" href="/prototype">macOS preview</a></div></div></section>
   </main>
 
   <script src="/legal-ui.js?v=%VITE_BUILD_ID%"></script>
