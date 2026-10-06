@@ -271,7 +271,7 @@
       voice=preferred||null;
       return voice;
     }
-    if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',pickVoice)}
+    if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',()=>{pickVoice();labAdd('voiceschanged','count='+speechSynthesis.getVoices().length+' selected='+labVoiceLabel())})}
 
     function setListenStatus(state,title,copy){
       if(!listenStatus)return;
@@ -283,11 +283,14 @@
     }
     function stopListening({quiet=true}={}){
       clearTimeout(autoListenTimer);autoListenTimer=0;
-      if(recognition&&isListening){try{recognition.abort()}catch(_){}}
+      labAdd('mic stop requested','listening='+isListening);
+      if(recognition&&isListening){try{recognition.abort()}catch(e){labAdd('mic abort exception',String(e))}}
       if(!quiet)setListenStatus('idle','Microphone ready','GuideCursor will listen automatically when it asks a question.');
     }
     function startListening(purpose,{delay=180,manual=false}={}){
       clearTimeout(autoListenTimer);
+      labAdd('mic start requested','purpose='+purpose+' manual='+manual+' enabled='+labMicOn);
+      if(!labMicOn){setListenStatus('idle','Microphone disabled in Audio Lab','Turn Microphone / recognition back on to test it.');return}
       if(mode!=='blind'&&!manual)return;
       if(!recognition){
         setListenStatus('error','Microphone unavailable','Voice input is not supported in this browser. You can still use the visible choices.');
@@ -307,24 +310,46 @@
     }
     function unlockAudio(){
       try{
-        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
-        if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
-      }catch(_){}
+        if(!audioCtx){
+          audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+          audioCtx.onstatechange=()=>labAdd('AudioContext state',audioCtx.state);
+          labAdd('AudioContext created',audioCtx.state);
+        }
+        if(audioCtx.state==='suspended')audioCtx.resume().then(()=>labAdd('AudioContext resumed',audioCtx.state)).catch(e=>labAdd('AudioContext resume error',String(e)));
+      }catch(e){labAdd('AudioContext exception',String(e))}
     }
-    function speak(text,{interrupt=true,onend=null}={}){
-      if(mode!=='blind'||!audioOn||!text){if(typeof onend==='function')onend();return}
-      if(!('speechSynthesis'in window)){if(typeof onend==='function')onend();return}
+    function speak(text,{interrupt=true,onend=null,source='general'}={}){
+      const id=++labSpeechCounter;
+      labAdd('TTS request #'+id,'source='+source+' interrupt='+interrupt+' text='+text.slice(0,100));
+      if(mode!=='blind'||!audioOn||!labTtsOn||!text){
+        labAdd('TTS skipped #'+id,'mode/audio/lab gate');
+        if(typeof onend==='function')onend();return;
+      }
+      if(!('speechSynthesis'in window)){labAdd('TTS unavailable #'+id);if(typeof onend==='function')onend();return}
       try{
-        if(interrupt)speechSynthesis.cancel();
+        const synth=window.speechSynthesis;
+        labAdd('TTS pre-speak #'+id,'speaking='+synth.speaking+' pending='+synth.pending+' paused='+synth.paused);
+        if(interrupt&&labCancelOn){
+          labAdd('TTS cancel #'+id,'before interrupt');
+          synth.cancel();
+        }
         const utterance=new SpeechSynthesisUtterance(text);
         utterance.lang=voice?.lang||'en-GB';
         utterance.rate=.96;utterance.pitch=1;utterance.volume=1;
-        const selected=voice||pickVoice();if(selected)utterance.voice=selected;
-        utterance.onstart=()=>{sr.textContent=text;setFeedback('Speaking',text)};
-        utterance.onend=()=>{if(typeof onend==='function')onend()};
-        utterance.onerror=()=>{if(typeof onend==='function')onend()};
-        speechSynthesis.speak(utterance);
-      }catch(_){if(typeof onend==='function')onend()}
+        const selected=voice||pickVoice();
+        if(labUseVoice&&selected)utterance.voice=selected;
+        if(labRetainOn)activeUtterance=utterance;
+        utterance.onstart=()=>{labAdd('TTS start #'+id,'voice='+(utterance.voice?.name||'browser default'));sr.textContent=text;setFeedback('Speaking',text);labUpdate()};
+        utterance.onboundary=e=>{if(e.charIndex===0||e.charIndex%20<3)labAdd('TTS boundary #'+id,'char='+e.charIndex)};
+        utterance.onpause=()=>labAdd('TTS pause #'+id);
+        utterance.onresume=()=>labAdd('TTS resume #'+id);
+        utterance.onend=()=>{labAdd('TTS end #'+id);if(activeUtterance===utterance)activeUtterance=null;if(typeof onend==='function')onend();labUpdate()};
+        utterance.onerror=e=>{labAdd('TTS error #'+id,String(e?.error||'unknown'));if(activeUtterance===utterance)activeUtterance=null;if(typeof onend==='function')onend();labUpdate()};
+        labAdd('speechSynthesis.speak #'+id,'assignedVoice='+(labUseVoice?(selected?.name||'none'):'OFF/browser default'));
+        synth.speak(utterance);
+        setTimeout(()=>labAdd('TTS snapshot +250ms #'+id,'speaking='+synth.speaking+' pending='+synth.pending+' paused='+synth.paused),250);
+        setTimeout(()=>labAdd('TTS snapshot +1500ms #'+id,'speaking='+synth.speaking+' pending='+synth.pending+' paused='+synth.paused),1500);
+      }catch(e){labAdd('TTS exception #'+id,String(e));if(typeof onend==='function')onend()}
     }
 
     function finishActionSpeech(){
@@ -340,14 +365,14 @@
     function speakAction(text){
       clearTimeout(actionFallbackTimer);
       pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=true;
-      speak(text,{interrupt:true,onend:finishActionSpeech});
+      speak(text,{interrupt:true,onend:finishActionSpeech,source:'task'});
       actionFallbackTimer=setTimeout(finishActionSpeech,6500);
     }
     function announceTargetFound(){
       if(mode!=='blind'||!target)return;
       if(actionSpeaking||!directionSpeechEnabled){pendingTargetFound=true;return}
       pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';lastDirectionAt=performance.now();
-      speak(targetLabel()+'. Target found. Click once.',{interrupt:false});
+      if(labTargetOn)speak(targetLabel()+'. Target found. Click once.',{interrupt:false,source:'target'});else labAdd('target speech skipped','toggle off');
       successTone();
     }
     function speakDirectionChange(dir,{force=false}={}){
@@ -358,10 +383,11 @@
       if(!force&&now-lastDirectionAt<1150){pendingDirection=dir;return}
       if(!force&&'speechSynthesis'in window&&speechSynthesis.speaking&&now-lastDirectionAt<1800){pendingDirection=dir;return}
       pendingDirection='';lastDirection=dir;lastDirectionAt=now;
-      speak(dir.replace('-',' '),{interrupt:false});
+      if(labDirectionsOn)speak(dir.replace('-',' '),{interrupt:false,source:'direction'});else labAdd('direction speech skipped',dir);
     }
     function tone(direction,dist=240){
-      if(mode!=='blind'||!audioOn)return;
+      if(mode!=='blind'||!audioOn||!labBeepsOn)return;
+      const logNow=performance.now();if(logNow-labLastBeepLog>900){labLastBeepLog=logNow;labAdd('beep',direction+' dist='+Math.round(dist))}
       const now=performance.now();
       if(direction===lastTone&&now-lastToneAt<620)return;
       if(now-lastToneAt<360)return;
@@ -385,7 +411,8 @@
       if(audioCtx?.state==='running')play();else audioCtx?.resume?.().then(play).catch(()=>{});
     }
     function successTone(){
-      if(mode!=='blind'||!audioOn)return;
+      if(mode!=='blind'||!audioOn||!labBeepsOn)return;
+      labAdd('success beep');
       unlockAudio();
       const play=()=>{
         try{
@@ -424,10 +451,11 @@
     function setFeedback(title,copy){feedbackTitle.textContent=title;feedbackCopy.textContent=copy}
     function setGuide(label,title,copyText){stepLabel.textContent=label;stepTitle.textContent=title;stepCopy.textContent=copyText}
     function setMode(next,{announce=true}={}){
+      labAdd('mode change',mode+' -> '+next+' announce='+announce);
       mode=next;body.classList.toggle('lowvision',mode==='lowvision');body.classList.toggle('blind',mode==='blind');
       qsa('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
       cursorMode.textContent='GUIDECURSOR · '+(mode==='blind'?'BLIND':'LOW VISION');
-      audioToggle.hidden=mode!=='blind';repeat.hidden=mode!=='blind';
+      audioToggle.hidden=mode!=='blind';repeat.hidden=mode!=='blind';audioLab.hidden=mode!=='blind';
       modeNote.innerHTML=mode==='blind'?'<b>Blind guidance</b> uses spoken labels and directional audio without visual target cues. You still move the pointer and make every click.':'<b>Low-vision guidance</b> uses a high-contrast target outline and a direction cue that follows your pointer. You still move the pointer and make every click.';
       if(mode==='blind'){
         audioOn=true;unlockAudio();
@@ -540,7 +568,18 @@
     qsa('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
     qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
     audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
-    repeat.addEventListener('click',announcePhase);
+    repeat.addEventListener('click',()=>{labAdd('Repeat clicked');announcePhase()});
+    labSetFlag(labTts,'tts');labSetFlag(labDirections,'directions');labSetFlag(labTarget,'target');labSetFlag(labBeeps,'beeps');
+    labSetFlag(labMic,'mic');labSetFlag(labVoice,'voice');labSetFlag(labCancel,'cancel');labSetFlag(labRetain,'retain');
+    labTestVoice.addEventListener('click',()=>{labAdd('TEST voice clicked');speak('GuideCursor diagnostic voice test.',{interrupt:false,source:'manual-test'})});
+    labTestBeep.addEventListener('click',()=>{labAdd('TEST beep clicked');unlockAudio();tone('Move right',80)});
+    labStartMic.addEventListener('click',()=>{labAdd('TEST mic start clicked');startListening(phase==='choose'?'choice':'goal',{delay:0,manual:true})});
+    labStopMic.addEventListener('click',()=>{labAdd('TEST mic stop clicked');stopListening({quiet:false})});
+    labResetTts.addEventListener('click',()=>{labAdd('TEST TTS reset clicked','before speaking='+String(speechSynthesis?.speaking));try{speechSynthesis.cancel()}catch(e){labAdd('TTS reset exception',String(e))};activeUtterance=null;setTimeout(()=>labAdd('TTS reset snapshot','speaking='+String(speechSynthesis?.speaking)+' pending='+String(speechSynthesis?.pending)),100)});
+    labCopy.addEventListener('click',async()=>{const text=(labState?.textContent||'')+'\n\n'+labEntries.join('\n');try{await navigator.clipboard.writeText(text);labAdd('log copied')}catch(e){labAdd('copy failed',String(e))}});
+    labClear.addEventListener('click',()=>{labEntries=[];if(labLog)labLog.textContent='';labAdd('log cleared')});
+    setInterval(()=>{if(mode==='blind')labUpdate()},500);
+    labCheckMicPermission();labAdd('Audio Lab initialized',navigator.userAgent);
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',()=>{syncHalo(target?.classList.contains('near'),target?.classList.contains('ready'));queue()});
 
     function normalizedSpeech(text){return (text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()}
@@ -571,9 +610,11 @@
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(SpeechRecognition){
       recognition=new SpeechRecognition();recognition.lang='en-GB';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
+      ['audiostart','audioend','soundstart','soundend','speechstart','speechend','nomatch'].forEach(ev=>recognition.addEventListener(ev,()=>labAdd('mic '+ev)));
       mic.addEventListener('click',()=>{unlockAudio();startListening(phase==='choose'?'choice':'goal',{delay:0,manual:true})});
-      recognition.onstart=()=>{isListening=true;mic.textContent='● Listening';setListenStatus('listening','Listening now',listenPurpose==='choice'?'Say A, B, C, first/second/third, or the file name.':'Say what you want GuideCursor to help you do.')};
+      recognition.onstart=()=>{isListening=true;labAdd('mic start');mic.textContent='● Listening';setListenStatus('listening','Listening now',listenPurpose==='choice'?'Say A, B, C, first/second/third, or the file name.':'Say what you want GuideCursor to help you do.')};
       recognition.onresult=e=>{
+        labAdd('mic result','result count='+(e.results?.length||0));
         noSpeechRetries=0;mic.textContent='♪ Speak';
         const alternatives=[...(e.results?.[0]||[])].map(r=>r.transcript).filter(Boolean);
         const text=alternatives[0]||'';
@@ -581,6 +622,7 @@
         setListenStatus('heard','Heard: “'+text+'”','Finishing microphone input before GuideCursor responds.');
       };
       recognition.onerror=e=>{
+        labAdd('mic error',String(e.error||'unknown'));
         pendingRecognitionResult=null;mic.textContent='♪ Speak';
         if(e.error==='not-allowed'||e.error==='service-not-allowed'){
           setListenStatus('error','Microphone permission blocked','Allow microphone access in the browser to answer GuideCursor by voice.');
@@ -604,6 +646,7 @@
         setFeedback('Microphone unavailable','Use Repeat to retry, or use the visible controls.');
       };
       recognition.onend=()=>{
+        labAdd('mic end');
         isListening=false;mic.textContent='♪ Speak';
         const result=pendingRecognitionResult;pendingRecognitionResult=null;
         setTimeout(()=>{
