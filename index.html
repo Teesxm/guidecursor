@@ -343,7 +343,7 @@
     const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
     let active=false, complete=false, mode='lowvision', taskIndex=0, target=null, raf=0;
     let pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
-    let audioOn=true, audioCtx=null, lastCue='', lastCueAt=0, voice=null, lastSpokenDirection='', lastSpokenDirectionAt=0, wasReady=false;
+    let audioOn=true, audioCtx=null, lastCue='', lastCueAt=0, voice=null, lastSpokenDirection='', lastSpokenDirectionAt=0, wasReady=false, speechActive=false, currentUtterance=null;
 
     const tasks=[
       {
@@ -392,20 +392,21 @@
     if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',pickVoice)}
 
     function setAudioStatus(text){audioStatus.textContent=text}
-    function speak(text,{interrupt=true}={}){
+    function speak(text,{interrupt=false}={}){
       if(mode!=='blind'||!audioOn||!text)return;
-      if(!('speechSynthesis'in window)){setAudioStatus('Audio unavailable');return}
+      if(!('speechSynthesis'in window)){setAudioStatus('Voice unavailable');return}
       try{
-        if(interrupt)speechSynthesis.cancel();
+        const synth=window.speechSynthesis;
+        if(interrupt&&(synth.speaking||synth.pending))synth.cancel();
+        if(synth.paused)synth.resume();
         const u=new SpeechSynthesisUtterance(text);
-        u.lang=voice?.lang||'en-GB';
-        u.rate=.96;u.pitch=1;u.volume=1;
-        const v=voice||pickVoice();if(v)u.voice=v;
-        u.onstart=()=>setAudioStatus('Speaking');
-        u.onend=()=>setAudioStatus('Audio ready');
-        u.onerror=()=>setAudioStatus('Try repeat');
-        speechSynthesis.speak(u);
-      }catch(_){setAudioStatus('Try repeat')}
+        u.rate=.95;u.pitch=1;u.volume=1;
+        currentUtterance=u;speechActive=true;
+        u.onstart=()=>{speechActive=true;setAudioStatus('Speaking')};
+        u.onend=()=>{if(currentUtterance===u)currentUtterance=null;speechActive=false;setAudioStatus('Voice ready')};
+        u.onerror=e=>{if(currentUtterance===u)currentUtterance=null;speechActive=false;setAudioStatus('Voice error: '+(e?.error||'unknown'))};
+        synth.speak(u);
+      }catch(_){speechActive=false;currentUtterance=null;setAudioStatus('Voice unavailable')}
     }
 
     function speakDirection(direction){
@@ -418,7 +419,7 @@
     }
 
     function tone(direction,dist=220){
-      if(mode!=='blind'||!audioOn||coarse)return;
+      if(mode!=='blind'||!audioOn||coarse||speechActive)return;
       const now=performance.now();
       if(direction===lastCue&&now-lastCueAt<620)return;
       if(now-lastCueAt<360)return;
@@ -441,7 +442,7 @@
     }
 
     function successTone(){
-      if(mode!=='blind'||!audioOn)return;
+      if(mode!=='blind'||!audioOn||speechActive)return;
       try{
         audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
         const ac=audioCtx,t=ac.currentTime,g=ac.createGain();g.connect(ac.destination);
@@ -555,7 +556,7 @@
       mode=nextMode;active=true;complete=false;audioOn=true;lastSpokenDirection='';lastSpokenDirectionAt=0;wasReady=false;window.__gcActive=true;
       document.body.classList.add('gc-live-active');panel.hidden=false;companion.hidden=false;
       updateModeUI();activateTask(0,{scroll:true,announce:false});
-      if(mode==='blind')speak('Blind guidance selected. '+currentTask().voice,{interrupt:true});
+      if(mode==='blind')speak('Blind guidance selected. '+currentTask().voice,{interrupt:false});
     }
     function stop(){
       active=false;complete=false;lastSpokenDirection='';lastSpokenDirectionAt=0;wasReady=false;window.__gcActive=false;document.body.classList.remove('gc-live-active');delete document.body.dataset.gcLiveMode;
