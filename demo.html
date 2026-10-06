@@ -178,7 +178,7 @@
     let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',wasReady=false,lastTone='',lastToneAt=0;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
-    let speechToken=0,directionTimer=0;
+    let activeUtterance=null;
     const cvFiles=['CV_Terence_2026.pdf','CV_Terence_Old.pdf','CV_Design.pdf'];
     const choiceLetters=['A','B','C'];
 
@@ -224,22 +224,30 @@
         }
       },delay);
     }
-    function speakRaw(text,{interrupt=true,onend=null,kind='general'}={}){
-      if(mode!=='blind'||!text){if(typeof onend==='function')setTimeout(onend,0);return}
-      stopListening({quiet:true});
-      if(!audioOn||!('speechSynthesis'in window)){if(typeof onend==='function')setTimeout(onend,0);return}
-      const token=++speechToken;
-      if(interrupt)speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(text),v=voice||pickVoice();if(v)u.voice=v;
-      u.lang=v?.lang||'en-GB';u.rate=.96;u.pitch=1;u.volume=1;
-      u.onstart=()=>{sr.textContent=text;if(kind!=='direction'){feedbackTitle.textContent='Speaking';feedbackCopy.textContent=text}};
-      u.onend=()=>{if(token!==speechToken)return;if(typeof onend==='function')onend()};
-      u.onerror=()=>{if(token!==speechToken)return;if(typeof onend==='function')onend()};
-      setTimeout(()=>{if(token===speechToken)speechSynthesis.speak(u)},interrupt?24:0);
+    function unlockAudio(){
+      try{
+        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+        if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+      }catch(_){}
+    }
+    function speak(text,{interrupt=true,onend=null}={}){
+      if(mode!=='blind'||!audioOn||!text)return;
+      if(!('speechSynthesis'in window))return;
+      try{
+        if(interrupt)speechSynthesis.cancel();
+        const u=new SpeechSynthesisUtterance(text);
+        const v=voice||pickVoice();if(v)u.voice=v;
+        u.lang=v?.lang||'en-GB';u.rate=.96;u.pitch=1;u.volume=1;
+        activeUtterance=u;
+        u.onstart=()=>{sr.textContent=text};
+        u.onend=()=>{if(activeUtterance===u)activeUtterance=null;if(typeof onend==='function')onend()};
+        u.onerror=()=>{if(activeUtterance===u)activeUtterance=null;if(typeof onend==='function')onend()};
+        speechSynthesis.speak(u);
+      }catch(_){}
     }
     function speakAction(text){
-      clearTimeout(directionTimer);pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=true;
-      speakRaw(text,{kind:'action',onend:()=>{
+      pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=true;
+      speak(text,{interrupt:true,onend:()=>{
         actionSpeaking=false;directionSpeechEnabled=true;
         if(pendingTargetFound&&target){
           pendingTargetFound=false;pendingDirection='';announceTargetFound();return;
@@ -251,41 +259,53 @@
     function announceTargetFound(){
       if(mode!=='blind'||!target)return;
       if(actionSpeaking||!directionSpeechEnabled){pendingTargetFound=true;return}
-      clearTimeout(directionTimer);pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';
-      speakRaw(targetLabel()+'. Target found. Click once.',{interrupt:true,kind:'target'});successTone();
+      pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';
+      speak(targetLabel()+'. Target found. Click once.',{interrupt:true});
+      successTone();
     }
     function speakDirectionChange(dir,{force=false}={}){
       if(mode!=='blind'||!audioOn||!dir||dir==='Target reached')return;
       if(!force&&dir===lastDirection)return;
       if(actionSpeaking||!directionSpeechEnabled){pendingDirection=dir;return}
-      clearTimeout(directionTimer);pendingDirection=dir;
-      directionTimer=setTimeout(()=>{
-        if(mode!=='blind'||!target||wasReady||pendingDirection!==dir)return;
-        pendingDirection='';lastDirection=dir;
-        speakRaw(dir,{interrupt:true,kind:'direction'});
-      },70);
+      pendingDirection='';lastDirection=dir;
+      speak(dir,{interrupt:true});
     }
     function tone(direction,dist=240){
       if(mode!=='blind'||!audioOn)return;
-      const now=performance.now();if(direction===lastTone&&now-lastToneAt<600)return;if(now-lastToneAt<330)return;
+      const now=performance.now();
+      if(direction===lastTone&&now-lastToneAt<620)return;
+      if(now-lastToneAt<360)return;
       lastTone=direction;lastToneAt=now;
-      try{
-        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
-        const ac=audioCtx,t=ac.currentTime,osc=ac.createOscillator(),gain=ac.createGain(),pan=ac.createStereoPanner?ac.createStereoPanner():null;
-        let hz=470,p=0;if(/left/i.test(direction))p=-.78;if(/right/i.test(direction))p=.78;if(/up/i.test(direction))hz=700;if(/down/i.test(direction))hz=340;
-        osc.type='sine';osc.frequency.value=hz;const level=Math.max(.018,Math.min(.055,.055-(Math.min(dist,350)/350)*.032));
-        gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(level,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+.13);
-        if(pan){pan.pan.value=p;osc.connect(gain);gain.connect(pan);pan.connect(ac.destination)}else{osc.connect(gain);gain.connect(ac.destination)}
-        osc.start(t);osc.stop(t+.14);
-      }catch(_){}
+      unlockAudio();
+      const play=()=>{
+        try{
+          const ac=audioCtx;if(!ac||ac.state!=='running')return;
+          const t=ac.currentTime,osc=ac.createOscillator(),gain=ac.createGain();
+          const pan=ac.createStereoPanner?ac.createStereoPanner():null;
+          let hz=470,p=0;
+          if(/left/i.test(direction))p=-.75;if(/right/i.test(direction))p=.75;
+          if(/up/i.test(direction))hz=700;if(/down/i.test(direction))hz=340;
+          osc.type='sine';osc.frequency.setValueAtTime(hz,t);
+          const level=Math.max(.018,Math.min(.055,.055-(Math.min(dist,350)/350)*.032));
+          gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(level,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+.13);
+          if(pan){pan.pan.value=p;osc.connect(gain);gain.connect(pan);pan.connect(ac.destination)}else{osc.connect(gain);gain.connect(ac.destination)}
+          osc.start(t);osc.stop(t+.14);
+        }catch(_){}
+      };
+      if(audioCtx?.state==='running')play();else audioCtx?.resume?.().then(play).catch(()=>{});
     }
     function successTone(){
       if(mode!=='blind'||!audioOn)return;
-      try{
-        audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
-        const ac=audioCtx,t=ac.currentTime,g=ac.createGain();g.connect(ac.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.045,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+.28);
-        [620,880].forEach((hz,i)=>{const o=ac.createOscillator();o.frequency.value=hz;o.connect(g);o.start(t+i*.09);o.stop(t+.18+i*.09)});
-      }catch(_){}
+      unlockAudio();
+      const play=()=>{
+        try{
+          const ac=audioCtx;if(!ac||ac.state!=='running')return;
+          const t=ac.currentTime,g=ac.createGain();g.connect(ac.destination);
+          g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.045,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+.28);
+          [620,880].forEach((hz,i)=>{const o=ac.createOscillator();o.type='sine';o.frequency.value=hz;o.connect(g);o.start(t+i*.09);o.stop(t+.18+i*.09)});
+        }catch(_){}
+      };
+      if(audioCtx?.state==='running')play();else audioCtx?.resume?.().then(play).catch(()=>{});
     }
 
     function clearTarget(){
@@ -318,7 +338,10 @@
       cursorMode.textContent='GUIDECURSOR · '+(mode==='blind'?'BLIND':'LOW VISION');
       audioToggle.hidden=mode!=='blind';repeat.hidden=mode!=='blind';
       modeNote.innerHTML=mode==='blind'?'<b>Blind guidance</b> uses spoken labels and directional audio without visual target cues. You still move the pointer and make every click.':'<b>Low-vision guidance</b> uses a high-contrast target outline and a direction cue that follows your pointer. You still move the pointer and make every click.';
-      if(mode!=='blind'){
+      if(mode==='blind'){
+        audioOn=true;unlockAudio();
+        audioToggle.setAttribute('aria-pressed','true');audioToggle.textContent='♪ Audio on';
+      }else{
         stopListening({quiet:true});setListenStatus('idle');
         if('speechSynthesis'in window)speechSynthesis.cancel();
       }
@@ -328,22 +351,22 @@
     function announcePhase(){
       if(mode!=='blind')return;
       pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
-      if(phase==='request')speakRaw('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',onend:()=>startListening('goal')});
+      if(phase==='request')speak('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',onend:()=>startListening('goal')});
       if(phase==='attach')speakAction('Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.');
       if(phase==='choose'){
         const options=cvFiles.map((f,i)=>'Option '+choiceLetters[i]+'. '+f.replaceAll('_',' ')).join('. ');
-        speakRaw('I found several files containing C V. '+options+'. Which C V do you mean? You can say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
+        speak('I found several files containing C V. '+options+'. Which C V do you mean? You can say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
       }
       if(phase==='file')speakAction('Choice received. '+chosenFile.replaceAll('_',' ')+' is the target. Move your pointer toward that file and click it when I confirm you have reached it.');
       if(phase==='open')speakAction('File selected. Open is now the verified target. Move your pointer toward Open and click it when I confirm you have reached it.');
-      if(phase==='done')speakRaw('Attachment complete. '+selectedFile.replaceAll('_',' ')+' is attached to the email.',{kind:'completion'});
+      if(phase==='done')speak('Attachment complete. '+selectedFile.replaceAll('_',' ')+' is attached to the email.',{kind:'completion'});
     }
     function startGoal(raw){
       stopListening({quiet:true});noSpeechRetries=0;setListenStatus('idle');
       const goal=(raw||'').trim();input.value=goal;
       if(!/attach|add|include/i.test(goal)||!/cv|file|document/i.test(goal)){
         setFeedback('I need a clearer goal','Try “attach my CV” for this demo.');
-        if(mode==='blind')speakRaw('I need a clearer goal. Try: attach my C V.',{kind:'question',onend:()=>startListening('goal')});
+        if(mode==='blind')speak('I need a clearer goal. Try: attach my C V.',{kind:'question',onend:()=>startListening('goal')});
         return;
       }
       phase='attach';progress.textContent='1 / 4';requestBox.hidden=true;choiceList.hidden=true;setGuide('Step 01','Find Attach','GuideCursor has mapped your goal to the Attach button and verified that the control exists in this Mail window.');
@@ -411,10 +434,10 @@
     function wrongClick(el){
       if(phase==='request'||phase==='choose'||phase==='done')return;
       el.classList.remove('wrong-flash');void el.offsetWidth;el.classList.add('wrong-flash');setFeedback('That is not the verified target','GuideCursor has not chosen that control for this step.');
-      if(mode==='blind')speakRaw('That is not the verified target. Continue toward '+targetLabel()+'.',{kind:'warning'});
+      if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.',{kind:'warning'});
     }
     function reset(){
-      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
+      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;activeUtterance=null;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
     }
 
     submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
@@ -424,7 +447,7 @@
     qsa('[data-wrong]').forEach(el=>el.addEventListener('click',()=>wrongClick(el)));
     qsa('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
     qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
-    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;announcePhase()});
+    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();if(audioOn)unlockAudio();lastDirection='';wasReady=false;if(audioOn)announcePhase()});
     repeat.addEventListener('click',announcePhase);
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',()=>{syncHalo(target?.classList.contains('near'),target?.classList.contains('ready'));queue()});
 
@@ -447,7 +470,7 @@
           chooseFile(file);return;
         }
         setFeedback('I did not catch a valid choice','I heard “'+text+'”. Say A, B or C, first/second/third, or the file name.');
-        speakRaw('I did not catch that choice. Say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
+        speak('I did not catch that choice. Say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
         return;
       }
       startGoal(text);
@@ -456,7 +479,7 @@
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(SpeechRecognition){
       recognition=new SpeechRecognition();recognition.lang='en-GB';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
-      mic.addEventListener('click',()=>startListening(phase==='choose'?'choice':'goal',{delay:0,manual:true}));
+      mic.addEventListener('click',()=>{unlockAudio();startListening(phase==='choose'?'choice':'goal',{delay:0,manual:true})});
       recognition.onstart=()=>{isListening=true;mic.textContent='● Listening';setListenStatus('listening','Listening now',listenPurpose==='choice'?'Say A, B, C, first/second/third, or the file name.':'Say what you want GuideCursor to help you do.')};
       recognition.onresult=e=>{
         isListening=false;noSpeechRetries=0;mic.textContent='♪ Speak';
@@ -485,7 +508,7 @@
             noSpeechRetries++;
             setListenStatus('idle','No speech heard','GuideCursor will ask once more and listen again.');
             const purpose=phase==='choose'?'choice':'goal';
-            speakRaw('I did not hear an answer. I will listen again.',{kind:'question',onend:()=>startListening(purpose)});
+            speak('I did not hear an answer. I will listen again.',{kind:'question',onend:()=>startListening(purpose)});
           }else{
             noSpeechRetries=0;
             setListenStatus('idle','No answer heard','Use Repeat when you are ready and GuideCursor will listen again.');
