@@ -79,6 +79,7 @@
     .gc-live-task{padding:15px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)}.gc-live-task small{display:block;margin-bottom:6px;color:var(--mint);font:500 8px "DM Mono",monospace;letter-spacing:.13em;text-transform:uppercase}.gc-live-task strong{display:block;font-size:18px;letter-spacing:-.035em}.gc-live-task p{margin:7px 0 0;color:rgba(255,255,255,.52);font-size:11px;line-height:1.5}
     .gc-live-feedback{display:flex;align-items:center;gap:9px;margin-top:10px;padding:9px 11px;border-radius:11px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);color:rgba(255,255,255,.47);font-size:9px;line-height:1.35}.gc-live-feedback i{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.07)}.gc-live-feedback strong{color:rgba(255,255,255,.82);font-weight:650}.gc-live-audio-status{margin-left:auto;color:rgba(255,255,255,.32);font:500 8px "DM Mono",monospace;letter-spacing:.06em;text-transform:uppercase}
     .gc-live-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.gc-live-mini{min-height:35px;padding:0 10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:transparent;color:rgba(255,255,255,.62);display:inline-flex;align-items:center;gap:6px;font-size:9px;cursor:pointer;transition:.2s}.gc-live-mini:hover{color:#fff;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.17)}.gc-live-mini[aria-pressed="true"]{color:var(--mint);border-color:rgba(160,241,213,.24);background:rgba(160,241,213,.07)}.gc-live-mini[hidden]{display:none!important}.gc-live-replay{color:var(--mint)}
+    .gc-live-debug{width:100%;margin-top:8px;padding:9px 11px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.025);color:rgba(255,255,255,.45);font:500 8px "DM Mono",monospace;line-height:1.6}.gc-live-debug[hidden]{display:none!important}.gc-live-debug summary{cursor:pointer;color:rgba(255,255,255,.62)}.gc-live-debug code{display:block;margin-top:7px;white-space:pre-wrap;color:rgba(255,255,255,.48)}.gc-live-debug button{margin-top:8px;min-height:30px;padding:0 9px;border:1px solid rgba(160,241,213,.18);border-radius:8px;background:rgba(160,241,213,.06);color:var(--mint);font:inherit;cursor:pointer}
     .gc-live-panel.gc-live-complete .gc-live-task{background:rgba(160,241,213,.08);border-color:rgba(160,241,213,.16)}.gc-live-panel.gc-live-complete .gc-live-task small,.gc-live-panel.gc-live-complete .gc-live-task strong{color:var(--mint)}.gc-live-panel.gc-live-complete .gc-live-progress{color:var(--mint);border-color:rgba(160,241,213,.18)}
 
     .gc-live-target{position:relative!important;z-index:85!important;transition:transform .16s ease,box-shadow .22s ease,background .22s ease!important}
@@ -298,6 +299,11 @@
       <button type="button" class="gc-live-mini gc-live-replay" id="gc-live-replay" hidden><span>↻</span> Replay</button>
       <button type="button" class="gc-live-mini" id="gc-live-exit"><span>×</span> Exit</button>
     </div>
+    <details class="gc-live-debug" id="gc-live-debug" hidden>
+      <summary>Audio debug</summary>
+      <code id="gc-live-debug-text">Waiting for audio state…</code>
+      <button type="button" id="gc-live-debug-test">Test voice</button>
+    </details>
   </aside>
 
 
@@ -335,7 +341,8 @@
       kicker=qs('#gc-live-kicker'), title=qs('#gc-live-title'), copy=qs('#gc-live-copy'),
       feedbackTitle=qs('#gc-live-feedback-title'), feedbackCopy=qs('#gc-live-feedback-copy'),
       audioStatus=qs('#gc-live-audio-status'), audioToggle=qs('#gc-live-audio'),
-      repeat=qs('#gc-live-repeat'), replay=qs('#gc-live-replay'), exit=qs('#gc-live-exit');
+      repeat=qs('#gc-live-repeat'), replay=qs('#gc-live-replay'), exit=qs('#gc-live-exit'),
+      debugBox=qs('#gc-live-debug'), debugText=qs('#gc-live-debug-text'), debugTest=qs('#gc-live-debug-test');
 
     if(!picker||!panel||!companion)return;
 
@@ -393,48 +400,63 @@
     if('speechSynthesis'in window){pickVoice();speechSynthesis.addEventListener?.('voiceschanged',pickVoice)}
 
     function setAudioStatus(text){audioStatus.textContent=text}
-    function clearSpeechTimers(){
-      clearTimeout(speechStartTimer);clearTimeout(speechEndTimer);
-      speechStartTimer=0;speechEndTimer=0;
+    let speechDebugEvent='idle',speechWaitTimer=0;
+    function updateSpeechDebug(event=speechDebugEvent){
+      speechDebugEvent=event;
+      if(!debugText||!('speechSynthesis'in window))return;
+      const synth=window.speechSynthesis;
+      const voices=synth.getVoices?.()||[];
+      debugText.textContent=[
+        'event: '+speechDebugEvent,
+        'voices: '+voices.length,
+        'speaking: '+String(synth.speaking),
+        'pending: '+String(synth.pending),
+        'paused: '+String(synth.paused),
+        'queue: '+speechQueue.length,
+        'busy: '+String(speechBusy)
+      ].join('\n');
     }
-    function speechEstimate(text){return Math.max(1400,Math.min(8500,900+text.length*58))}
+    function clearSpeechTimers(){
+      clearTimeout(speechStartTimer);clearTimeout(speechEndTimer);clearTimeout(speechWaitTimer);
+      speechStartTimer=0;speechEndTimer=0;speechWaitTimer=0;
+    }
     function stopSpeech(){
       speechSeq++;clearSpeechTimers();speechQueue=[];speechBusy=false;currentUtterance=null;
       try{window.speechSynthesis?.cancel()}catch(_){}
+      updateSpeechDebug('stopped');
     }
     function flushSpeechQueue(){
+      updateSpeechDebug();
       if(speechBusy||!speechQueue.length)return;
       const next=speechQueue.shift();startSpeech(next);
     }
-    function makeUtterance(item,seq,isRetry=false){
+    function makeUtterance(item,seq){
       const synth=window.speechSynthesis,u=new SpeechSynthesisUtterance(item.text);
       u.lang='en-US';u.rate=.95;u.pitch=1;u.volume=1;
       currentUtterance=u;
-      let started=false,finished=false;
+      let finished=false;
       const finish=()=>{
         if(finished||seq!==speechSeq)return;finished=true;
         clearSpeechTimers();if(currentUtterance===u)currentUtterance=null;
-        speechBusy=false;setAudioStatus('Voice ready');
+        speechBusy=false;setAudioStatus('Voice ready');updateSpeechDebug('ended');
         if(typeof item.onend==='function')item.onend();
         flushSpeechQueue();
       };
-      u.onstart=()=>{if(seq!==speechSeq)return;started=true;setAudioStatus('Speaking')};
+      u.onstart=()=>{if(seq!==speechSeq)return;setAudioStatus('Speaking');updateSpeechDebug('started')};
       u.onend=finish;
-      u.onerror=e=>{if(seq===speechSeq)setAudioStatus('Voice error: '+(e?.error||'unknown'));finish()};
+      u.onerror=e=>{
+        if(seq!==speechSeq)return;
+        setAudioStatus('Voice error: '+(e?.error||'unknown'));
+        updateSpeechDebug('error: '+(e?.error||'unknown'));
+        finish();
+      };
+      updateSpeechDebug('queued: '+item.kind);
       synth.speak(u);
-      speechStartTimer=setTimeout(()=>{
-        if(started||finished||seq!==speechSeq)return;
-        if(isRetry){
-          setAudioStatus('Voice unavailable');finish();return;
-        }
-        setAudioStatus('Retrying voice');
-        try{synth.cancel()}catch(_){}
-        setTimeout(()=>{
-          if(finished||seq!==speechSeq)return;
-          makeUtterance(item,seq,true);
-        },250);
-      },450);
-      speechEndTimer=setTimeout(finish,speechEstimate(item.text));
+      speechWaitTimer=setTimeout(()=>{
+        if(finished||seq!==speechSeq)return;
+        updateSpeechDebug(synth.speaking?'speaking without start event':'waiting for browser TTS');
+        setAudioStatus(synth.speaking?'Speaking':'Voice queued');
+      },1500);
     }
     function startSpeech(item){
       if(mode!=='blind'||!audioOn||!item?.text){if(typeof item?.onend==='function')item.onend();return}
@@ -442,22 +464,20 @@
       clearSpeechTimers();speechBusy=true;const seq=++speechSeq;
       try{
         if(window.speechSynthesis.paused)window.speechSynthesis.resume();
-        makeUtterance(item,seq,false);
+        makeUtterance(item,seq);
       }catch(_){
-        speechBusy=false;setAudioStatus('Voice unavailable');
+        speechBusy=false;setAudioStatus('Voice unavailable');updateSpeechDebug('exception');
         if(typeof item.onend==='function')item.onend();flushSpeechQueue();
       }
     }
     function speak(text,{kind='general',onend=null}={}){
       if(mode!=='blind'||!audioOn||!text){if(typeof onend==='function')onend();return}
       const item={text,kind,onend};
-      if(kind==='direction'){
-        speechQueue=speechQueue.filter(x=>x.kind!=='direction');
-      }else if(kind==='target'){
-        speechQueue=speechQueue.filter(x=>x.kind!=='direction'&&x.kind!=='target');
-      }
+      if(kind==='direction')speechQueue=speechQueue.filter(x=>x.kind!=='direction');
+      else if(kind==='target')speechQueue=speechQueue.filter(x=>x.kind!=='direction'&&x.kind!=='target');
       if(speechBusy){
         if(kind==='target')speechQueue.unshift(item);else speechQueue.push(item);
+        updateSpeechDebug('queued behind speech: '+kind);
         return;
       }
       startSpeech(item);
@@ -520,7 +540,7 @@
       panel.dataset.mode=mode;document.body.dataset.gcLiveMode=mode;
       companionMode.textContent='GUIDECURSOR · '+(mode==='blind'?'AUDIO':'LOW VISION');
       qsa('[data-gc-live-switch]').forEach(b=>b.classList.toggle('active',b.dataset.gcLiveSwitch===mode));
-      const audio=mode==='blind';audioToggle.hidden=!audio;repeat.hidden=!audio;audioStatus.hidden=!audio;
+      const audio=mode==='blind';audioToggle.hidden=!audio;repeat.hidden=!audio;audioStatus.hidden=!audio;debugBox.hidden=!audio;
       if(audio){audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.innerHTML='<span>♪</span> Audio '+(audioOn?'on':'off');setAudioStatus(audioOn?'Audio ready':'Audio off')}
       else if('speechSynthesis'in window)speechSynthesis.cancel();
       if(!complete){
@@ -653,7 +673,9 @@
       audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.innerHTML='<span>♪</span> Audio '+(audioOn?'on':'off');
       if(!audioOn){stopSpeech();setAudioStatus('Audio off')}else{lastSpokenDirection='';lastSpokenDirectionAt=0;wasReady=false;setAudioStatus('Audio ready');speak('Audio guidance enabled. '+(complete?'':currentTask().voice))}
     });
-    repeat.addEventListener('click',()=>{if(!complete)speak(currentTask().voice)});
+    repeat.addEventListener('click',()=>{if(!complete)speak(currentTask().voice,{kind:'task'})});
+    debugTest.addEventListener('click',()=>speak('GuideCursor voice test.',{kind:'task'}));
+    setInterval(()=>{if(mode==='blind')updateSpeechDebug()},900);
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});
     addEventListener('scroll',queue,{passive:true});addEventListener('resize',queue);
     document.addEventListener('keydown',e=>{
