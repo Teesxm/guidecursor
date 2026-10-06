@@ -189,7 +189,7 @@
     function setListenStatus(state,title,copy){
       if(!listenStatus)return;
       const question=phase==='request'||phase==='choose';
-      listenStatus.hidden=mode!=='blind'||(!question&&state==='idle');
+      listenStatus.hidden=(mode!=='blind'&&state==='idle')||(!question&&state==='idle');
       listenStatus.classList.toggle('listening',state==='listening');
       listenStatusTitle.textContent=title||'Microphone ready';
       listenStatusCopy.textContent=copy||'GuideCursor will listen automatically when it asks a question.';
@@ -200,16 +200,16 @@
       isListening=false;
       if(!quiet)setListenStatus('idle','Microphone ready','GuideCursor will listen automatically when it asks a question.');
     }
-    function startListening(purpose,{delay=180}={}){
+    function startListening(purpose,{delay=180,manual=false}={}){
       clearTimeout(autoListenTimer);
-      if(mode!=='blind')return;
+      if(mode!=='blind'&&!manual)return;
       if(!recognition){
         setListenStatus('error','Microphone unavailable','Voice input is not supported in this browser. You can still use the visible choices.');
         return;
       }
       autoListenTimer=setTimeout(()=>{
         const valid=(purpose==='goal'&&phase==='request')||(purpose==='choice'&&phase==='choose');
-        if(mode!=='blind'||!valid)return;
+        if((mode!=='blind'&&!manual)||!valid)return;
         listenPurpose=purpose;
         try{
           setListenStatus('starting','Starting microphone','Your browser may ask for microphone permission.');
@@ -294,7 +294,7 @@
     }
 
     function startGoal(raw){
-      stopListening({quiet:true});noSpeechRetries=0;
+      stopListening({quiet:true});noSpeechRetries=0;setListenStatus('idle');
       const goal=(raw||'').trim();input.value=goal;
       if(!/attach|add|include/i.test(goal)||!/cv|file|document/i.test(goal)){
         setFeedback('I need a clearer goal','Try “attach my CV” for this demo.');
@@ -411,7 +411,7 @@
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(SpeechRecognition){
       recognition=new SpeechRecognition();recognition.lang='en-GB';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
-      mic.addEventListener('click',()=>startListening(phase==='choose'?'choice':'goal',{delay:0}));
+      mic.addEventListener('click',()=>startListening(phase==='choose'?'choice':'goal',{delay:0,manual:true}));
       recognition.onstart=()=>{isListening=true;mic.textContent='● Listening';setListenStatus('listening','Listening now',listenPurpose==='choice'?'Say A, B, C, first/second/third, or the file name.':'Say what you want GuideCursor to help you do.')};
       recognition.onresult=e=>{
         isListening=false;noSpeechRetries=0;mic.textContent='♪ Speak';
@@ -451,7 +451,7 @@
         setListenStatus('error','Microphone unavailable','Use Repeat to retry, or use the visible controls.');
         setFeedback('Microphone unavailable','Use Repeat to retry, or use the visible controls.');
       };
-      recognition.onend=()=>{isListening=false;mic.textContent='♪ Speak'};
+      recognition.onend=()=>{isListening=false;mic.textContent='♪ Speak';if(mode!=='blind'&&phase==='request')setListenStatus('idle')};
     }else{
       mic.addEventListener('click',()=>setFeedback('Voice input is not available in this browser','Type “attach my CV” or use the example button instead.'));
       setListenStatus('error','Microphone unavailable','This browser does not support speech recognition.');
