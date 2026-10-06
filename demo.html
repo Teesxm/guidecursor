@@ -47,7 +47,8 @@
     .listen-status{display:flex;align-items:center;gap:9px;margin-top:12px;padding:10px 11px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(255,255,255,.035)}.listen-status[hidden]{display:none!important}.listen-status>i{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.28)}.listen-status strong{display:block;font-size:9px}.listen-status span{display:block;margin-top:3px;color:rgba(255,255,255,.43);font-size:8px;line-height:1.45}.listen-status.listening{border-color:rgba(160,241,213,.22);background:rgba(160,241,213,.065)}.listen-status.listening>i{background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08);animation:listenPulse 1s ease-in-out infinite}
     .guide-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}.guide-actions button{height:35px;padding:0 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:rgba(255,255,255,.62);font-size:8px;font-weight:700}.guide-actions button:hover{background:rgba(255,255,255,.05);color:#fff}.guide-actions .primary{background:#fff;color:#111116}.guide-actions button[hidden]{display:none!important}
     .cursor-companion{position:fixed;z-index:200;display:flex;gap:7px;align-items:flex-start;pointer-events:none;opacity:0;transition:opacity .12s ease;filter:drop-shadow(0 10px 24px rgba(0,0,0,.22))}.cursor-companion.show{opacity:1}.cursor-companion.flip{flex-direction:row-reverse}.cursor-dot{width:28px;height:28px;border-radius:9px;background:var(--indigo);color:#fff;display:grid;place-items:center;font-size:14px;box-shadow:0 0 0 6px rgba(103,88,244,.09)}.cursor-bubble{width:185px;padding:10px 11px;border:1px solid rgba(255,255,255,.11);border-radius:12px;background:rgba(17,17,22,.95);color:#fff;backdrop-filter:blur(15px)}.cursor-bubble small{display:block;color:var(--mint);font:500 7px "DM Mono",monospace;letter-spacing:.1em}.cursor-bubble strong{display:block;margin-top:3px;font-size:10px}.cursor-bubble span{display:block;margin-top:3px;color:rgba(255,255,255,.45);font-size:8px;line-height:1.4}
-    .guide-target{position:relative!important;z-index:85!important;transition:transform .16s ease,box-shadow .22s ease,background .22s ease!important}.lowvision .guide-target:after{content:"";position:absolute!important;inset:-9px!important;border:2px solid rgba(103,88,244,.72)!important;border-radius:inherit!important;pointer-events:none!important;box-shadow:0 0 0 5px rgba(103,88,244,.06),0 0 32px rgba(103,88,244,.18)!important;animation:targetPulse 1.45s ease-in-out infinite!important}.lowvision .guide-target.near{transform:scale(1.018)!important;box-shadow:0 10px 34px rgba(103,88,244,.14)!important}.lowvision .guide-target.ready:after{border-color:var(--mint)!important;box-shadow:0 0 0 10px rgba(160,241,213,.11),0 0 44px rgba(160,241,213,.26)!important;animation:targetReady .78s ease-in-out infinite!important}.blind .guide-target:after{display:none!important}
+    .guide-target{position:relative!important;z-index:85!important;transition:transform .16s ease,box-shadow .22s ease,background .22s ease!important}.lowvision .guide-target.near{transform:scale(1.018)!important;box-shadow:0 10px 34px rgba(103,88,244,.14)!important}
+    .target-halo{position:fixed;z-index:190;pointer-events:none;opacity:0;border:2px solid rgba(103,88,244,.82);box-shadow:0 0 0 5px rgba(103,88,244,.07),0 0 34px rgba(103,88,244,.22);transition:left .08s linear,top .08s linear,width .08s linear,height .08s linear,border-color .16s ease,box-shadow .16s ease,opacity .12s ease,transform .16s ease;animation:targetPulse 1.45s ease-in-out infinite}.target-halo.show{opacity:1}.target-halo.near{transform:scale(1.018);box-shadow:0 0 0 7px rgba(103,88,244,.08),0 0 42px rgba(103,88,244,.25)}.target-halo.ready{border-color:var(--mint);box-shadow:0 0 0 10px rgba(160,241,213,.12),0 0 48px rgba(160,241,213,.32);animation:targetReady .78s ease-in-out infinite}.blind .target-halo{display:none!important}
     .blind .cursor-dot{background:#111116;box-shadow:0 0 0 6px rgba(160,241,213,.08);border:1px solid rgba(160,241,213,.3)}.blind .cursor-bubble{border-color:rgba(160,241,213,.16)}
     .wrong-flash{animation:wrongFlash .55s ease}.completion{display:none;margin-top:14px;padding:14px;border:1px solid rgba(160,241,213,.16);border-radius:13px;background:rgba(160,241,213,.075)}.completion.show{display:block}.completion strong{display:block;color:var(--mint);font-size:11px}.completion p{margin:6px 0 0;color:rgba(255,255,255,.5);font-size:8px;line-height:1.55}
     .sr-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -149,6 +150,8 @@
     </main>
   </div>
 
+  <div class="target-halo" id="target-halo" aria-hidden="true"></div>
+
   <div class="cursor-companion" id="cursor-companion" aria-hidden="true">
     <span class="cursor-dot">↖</span>
     <div class="cursor-bubble"><small id="cursor-mode">GUIDECURSOR · LOW VISION</small><strong id="cursor-direction">Move toward the target</strong><span id="cursor-detail">You move. GuideCursor guides.</span></div>
@@ -168,13 +171,14 @@
       feedbackCopy=qs('#feedback-copy'), audioToggle=qs('#audio-toggle'), repeat=qs('#repeat'),
       replay=qs('#replay'), completion=qs('#completion'), completionCopy=qs('#completion-copy'),
       companion=qs('#cursor-companion'), cursorMode=qs('#cursor-mode'), cursorDirection=qs('#cursor-direction'),
-      cursorDetail=qs('#cursor-detail'), sr=qs('#sr-status'), modeNote=qs('#mode-note'),
+      cursorDetail=qs('#cursor-detail'), halo=qs('#target-halo'), sr=qs('#sr-status'), modeNote=qs('#mode-note'),
       listenStatus=qs('#listen-status'), listenStatusTitle=qs('#listen-status-title'), listenStatusCopy=qs('#listen-status-copy');
 
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
     let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',wasReady=false,lastTone='',lastToneAt=0;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
-    let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,speechKind='';
+    let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
+    let speechToken=0,directionTimer=0;
     const cvFiles=['CV_Terence_2026.pdf','CV_Terence_Old.pdf','CV_Design.pdf'];
     const choiceLetters=['A','B','C'];
 
@@ -220,32 +224,46 @@
         }
       },delay);
     }
-    function speak(text,{interrupt=true,onend=null,kind='general'}={}){
+    function speakRaw(text,{interrupt=true,onend=null,kind='general'}={}){
       if(mode!=='blind'||!text){if(typeof onend==='function')setTimeout(onend,0);return}
       stopListening({quiet:true});
       if(!audioOn||!('speechSynthesis'in window)){if(typeof onend==='function')setTimeout(onend,0);return}
+      const token=++speechToken;
       if(interrupt)speechSynthesis.cancel();
-      speechKind=kind;
       const u=new SpeechSynthesisUtterance(text),v=voice||pickVoice();if(v)u.voice=v;
       u.lang=v?.lang||'en-GB';u.rate=.96;u.pitch=1;u.volume=1;
-      u.onend=()=>{speechKind='';if(typeof onend==='function')onend()};
-      u.onerror=()=>{speechKind='';if(typeof onend==='function')onend()};
-      speechSynthesis.speak(u);sr.textContent=text;
+      u.onstart=()=>{sr.textContent=text;if(kind!=='direction'){feedbackTitle.textContent='Speaking';feedbackCopy.textContent=text}};
+      u.onend=()=>{if(token!==speechToken)return;if(typeof onend==='function')onend()};
+      u.onerror=()=>{if(token!==speechToken)return;if(typeof onend==='function')onend()};
+      setTimeout(()=>{if(token===speechToken)speechSynthesis.speak(u)},interrupt?24:0);
     }
-    function enableDirectionSpeech(){
-      directionSpeechEnabled=true;
-      if(pendingTargetFound&&target){
-        pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';
-        speak(targetLabel()+'. Target found. Click once.',{interrupt:true,kind:'target'});successTone();return;
-      }
-      const next=pendingDirection;pendingDirection='';
-      if(next&&next!=='Target reached'){lastDirection=next;speak(next,{interrupt:true,kind:'direction'})}
+    function speakAction(text){
+      clearTimeout(directionTimer);pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=true;
+      speakRaw(text,{kind:'action',onend:()=>{
+        actionSpeaking=false;directionSpeechEnabled=true;
+        if(pendingTargetFound&&target){
+          pendingTargetFound=false;pendingDirection='';announceTargetFound();return;
+        }
+        const next=pendingDirection;pendingDirection='';
+        if(next&&next!=='Target reached')speakDirectionChange(next,{force:true});
+      }});
     }
-    function speakDirectionChange(dir){
+    function announceTargetFound(){
+      if(mode!=='blind'||!target)return;
+      if(actionSpeaking||!directionSpeechEnabled){pendingTargetFound=true;return}
+      clearTimeout(directionTimer);pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';
+      speakRaw(targetLabel()+'. Target found. Click once.',{interrupt:true,kind:'target'});successTone();
+    }
+    function speakDirectionChange(dir,{force=false}={}){
       if(mode!=='blind'||!audioOn||!dir||dir==='Target reached')return;
-      if(dir===lastDirection)return;
-      if(!directionSpeechEnabled||speechKind==='action'){pendingDirection=dir;return}
-      lastDirection=dir;speak(dir,{interrupt:true,kind:'direction'});
+      if(!force&&dir===lastDirection)return;
+      if(actionSpeaking||!directionSpeechEnabled){pendingDirection=dir;return}
+      clearTimeout(directionTimer);pendingDirection=dir;
+      directionTimer=setTimeout(()=>{
+        if(mode!=='blind'||!target||wasReady||pendingDirection!==dir)return;
+        pendingDirection='';lastDirection=dir;
+        speakRaw(dir,{interrupt:true,kind:'direction'});
+      },70);
     }
     function tone(direction,dist=240){
       if(mode!=='blind'||!audioOn)return;
@@ -271,10 +289,20 @@
     }
 
     function clearTarget(){
-      if(target)target.classList.remove('guide-target','near','ready');target=null;companion.classList.remove('show');wasReady=false;lastDirection='';lastTone='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;
+      if(target)target.classList.remove('guide-target','near','ready');
+      target=null;halo.classList.remove('show','near','ready');companion.classList.remove('show');
+      clearTimeout(directionTimer);wasReady=false;lastDirection='';lastTone='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
+    }
+    function syncHalo(near=false,ready=false){
+      if(!target||mode!=='lowvision'){halo.classList.remove('show','near','ready');return}
+      const r=target.getBoundingClientRect(),pad=9;
+      halo.style.left=(r.left-pad)+'px';halo.style.top=(r.top-pad)+'px';
+      halo.style.width=(r.width+pad*2)+'px';halo.style.height=(r.height+pad*2)+'px';
+      const radius=parseFloat(getComputedStyle(target).borderRadius)||8;halo.style.borderRadius=(radius+pad)+'px';
+      halo.classList.add('show');halo.classList.toggle('near',near);halo.classList.toggle('ready',ready);
     }
     function setTarget(el){
-      clearTarget();target=el;if(target)target.classList.add('guide-target');queue();
+      clearTarget();target=el;if(target){target.classList.add('guide-target');requestAnimationFrame(()=>syncHalo(false,false))}queue();
     }
     function targetLabel(){
       if(target===attach)return 'Attach';
@@ -294,29 +322,28 @@
         stopListening({quiet:true});setListenStatus('idle');
         if('speechSynthesis'in window)speechSynthesis.cancel();
       }
-      lastDirection='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;wasReady=false;queue();
+      lastDirection='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;wasReady=false;syncHalo(false,false);queue();
       if(announce&&mode==='blind')announcePhase();
     }
     function announcePhase(){
       if(mode!=='blind')return;
-      pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;
-      if(phase==='request')speak('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',onend:()=>startListening('goal')});
-      if(phase==='attach')speak('Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.',{kind:'action',onend:enableDirectionSpeech});
+      pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
+      if(phase==='request')speakRaw('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',onend:()=>startListening('goal')});
+      if(phase==='attach')speakAction('Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.');
       if(phase==='choose'){
         const options=cvFiles.map((f,i)=>'Option '+choiceLetters[i]+'. '+f.replaceAll('_',' ')).join('. ');
-        speak('I found several files containing C V. '+options+'. Which C V do you mean? You can say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
+        speakRaw('I found several files containing C V. '+options+'. Which C V do you mean? You can say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
       }
-      if(phase==='file')speak('Choice received. '+chosenFile.replaceAll('_',' ')+' is the target. Move your pointer toward that file and click it when I confirm you have reached it.',{kind:'action',onend:enableDirectionSpeech});
-      if(phase==='open')speak('File selected. Open is now the verified target. Move your pointer toward Open and click it when I confirm you have reached it.',{kind:'action',onend:enableDirectionSpeech});
-      if(phase==='done')speak('Attachment complete. '+selectedFile.replaceAll('_',' ')+' is attached to the email.',{kind:'completion'});
+      if(phase==='file')speakAction('Choice received. '+chosenFile.replaceAll('_',' ')+' is the target. Move your pointer toward that file and click it when I confirm you have reached it.');
+      if(phase==='open')speakAction('File selected. Open is now the verified target. Move your pointer toward Open and click it when I confirm you have reached it.');
+      if(phase==='done')speakRaw('Attachment complete. '+selectedFile.replaceAll('_',' ')+' is attached to the email.',{kind:'completion'});
     }
-
     function startGoal(raw){
       stopListening({quiet:true});noSpeechRetries=0;setListenStatus('idle');
       const goal=(raw||'').trim();input.value=goal;
       if(!/attach|add|include/i.test(goal)||!/cv|file|document/i.test(goal)){
         setFeedback('I need a clearer goal','Try “attach my CV” for this demo.');
-        if(mode==='blind')speak('I need a clearer goal. Try: attach my C V.',{onend:()=>startListening('goal')});
+        if(mode==='blind')speakRaw('I need a clearer goal. Try: attach my C V.',{kind:'question',onend:()=>startListening('goal')});
         return;
       }
       phase='attach';progress.textContent='1 / 4';requestBox.hidden=true;choiceList.hidden=true;setGuide('Step 01','Find Attach','GuideCursor has mapped your goal to the Attach button and verified that the control exists in this Mail window.');
@@ -364,7 +391,7 @@
       const nx=Math.max(r.left,Math.min(r.right,pointer.x)),ny=Math.max(r.top,Math.min(r.bottom,pointer.y)),dx=nx-pointer.x,dy=ny-pointer.y,dist=Math.hypot(dx,dy);
       const ready=pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom,near=dist<205;
       const dir=ready?'Target reached':directionName(dx,dy),detail=ready?'Click once when you are ready.':dist<70?'Almost there.':dist<170?'You are close.':'Move toward the verified target.';
-      target.classList.toggle('near',near);target.classList.toggle('ready',ready);cursorDirection.textContent=dir;cursorDetail.textContent=detail;
+      target.classList.toggle('near',near);target.classList.toggle('ready',ready);syncHalo(near,ready);cursorDirection.textContent=dir;cursorDetail.textContent=detail;
 
       if(pointer.seen){
         const w=220,flip=pointer.x>vw-w-45;companion.classList.toggle('flip',flip);companion.classList.add('show');
@@ -373,9 +400,7 @@
 
       if(mode==='blind'){
         if(ready&&!wasReady){
-          pendingDirection='';lastDirection='Target reached';
-          if(!directionSpeechEnabled||speechKind==='action')pendingTargetFound=true;
-          else{pendingTargetFound=false;speak(targetLabel()+'. Target found. Click once.',{interrupt:true,kind:'target'});successTone()}
+          pendingDirection='';announceTargetFound();
         }else if(!ready){
           pendingTargetFound=false;speakDirectionChange(dir);tone(dir,dist);
         }
@@ -386,10 +411,10 @@
     function wrongClick(el){
       if(phase==='request'||phase==='choose'||phase==='done')return;
       el.classList.remove('wrong-flash');void el.offsetWidth;el.classList.add('wrong-flash');setFeedback('That is not the verified target','GuideCursor has not chosen that control for this step.');
-      if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.');
+      if(mode==='blind')speakRaw('That is not the verified target. Continue toward '+targetLabel()+'.',{kind:'warning'});
     }
     function reset(){
-      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;speechKind='';clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
+      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
     }
 
     submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
@@ -401,7 +426,7 @@
     qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
     audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;announcePhase()});
     repeat.addEventListener('click',announcePhase);
-    addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',queue);
+    addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',()=>{syncHalo(target?.classList.contains('near'),target?.classList.contains('ready'));queue()});
 
     function normalizedSpeech(text){return (text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()}
     function matchSpokenChoice(text){
@@ -422,7 +447,7 @@
           chooseFile(file);return;
         }
         setFeedback('I did not catch a valid choice','I heard “'+text+'”. Say A, B or C, first/second/third, or the file name.');
-        speak('I did not catch that choice. Say A, B, C, first one, second one, third one, or the file name.',{onend:()=>startListening('choice')});
+        speakRaw('I did not catch that choice. Say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
         return;
       }
       startGoal(text);
@@ -460,7 +485,7 @@
             noSpeechRetries++;
             setListenStatus('idle','No speech heard','GuideCursor will ask once more and listen again.');
             const purpose=phase==='choose'?'choice':'goal';
-            speak('I did not hear an answer. I will listen again.',{onend:()=>startListening(purpose)});
+            speakRaw('I did not hear an answer. I will listen again.',{kind:'question',onend:()=>startListening(purpose)});
           }else{
             noSpeechRetries=0;
             setListenStatus('idle','No answer heard','Use Repeat when you are ready and GuideCursor will listen again.');
