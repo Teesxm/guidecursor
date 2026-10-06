@@ -170,7 +170,6 @@
       for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith('gc:')||k.startsWith('gc_')))keys.push(k)}
       keys.forEach(k=>localStorage.removeItem(k));
       if(keepCookie)try{localStorage.setItem(COOKIE_NAME,JSON.stringify(keepCookie))}catch{}
-      try{window.GuideCursorPurchase?.render?.()}catch{}
       toast('Local demo data cleared');
     }
   };
