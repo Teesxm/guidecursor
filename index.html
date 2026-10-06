@@ -343,7 +343,7 @@
     const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
     let active=false, complete=false, mode='lowvision', taskIndex=0, target=null, raf=0;
     let pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
-    let audioOn=true, audioCtx=null, lastCue='', lastCueAt=0, voice=null, readyAnnouncedFor=-1;
+    let audioOn=true, audioCtx=null, lastCue='', lastCueAt=0, voice=null, lastSpokenDirection='', wasReady=false;
 
     const tasks=[
       {
@@ -399,6 +399,13 @@
         u.onstart=()=>setAudioStatus('Speaking');u.onend=()=>setAudioStatus('Audio ready');u.onerror=()=>setAudioStatus('Try repeat');
         speechSynthesis.speak(u);
       }catch(_){setAudioStatus('Try repeat')}
+    }
+
+    function speakDirection(direction){
+      if(mode!=='blind'||!audioOn||!direction||direction==='Target found — click once')return;
+      if(direction===lastSpokenDirection)return;
+      lastSpokenDirection=direction;
+      speak(direction,{interrupt:true});
     }
 
     function tone(direction,dist=220){
@@ -497,15 +504,20 @@
         detail=ready?'Verified target ready. You make the click.':dist<70?'Almost there.':dist<170?'You are close.':'Move toward the verified target.';
         target.classList.toggle('gc-live-near',near);target.classList.toggle('gc-live-ready',ready);
         compass.style.transform='rotate('+angle+'deg)';
-        if(mode==='blind'&&ready&&readyAnnouncedFor!==taskIndex){
-          readyAnnouncedFor=taskIndex;
+        if(mode==='blind'&&ready&&!wasReady){
           const name=currentTask().targetName||'Target';
-          speak(name+'. Target reached. Click once.');
+          lastSpokenDirection='Target found — click once';
+          speak(name+'. Target reached. Click once.',{interrupt:true});
         }
+        wasReady=ready;
       }
+      if(!coarse&&(r.top>=vh||r.bottom<=0))wasReady=false;
       directionEl.textContent=dir;distanceEl.textContent=detail;
       feedbackTitle.textContent=dir;feedbackCopy.textContent=detail;
-      if(mode==='blind'&&dir!=='Target found — click once')tone(dir,dist);
+      if(mode==='blind'&&dir!=='Target found — click once'){
+        speakDirection(dir);
+        tone(dir,dist);
+      }
       if(!coarse&&pointer.seen){
         const bubbleW=258,flip=pointer.x>vw-bubbleW-48;
         companion.classList.toggle('flip-x',flip);companion.classList.add('is-visible');
@@ -515,7 +527,7 @@
       }
     }
     function activateTask(index,{scroll=false,announce=true}={}){
-      taskIndex=Math.max(0,Math.min(tasks.length-1,index));complete=false;lastCue='';readyAnnouncedFor=-1;
+      taskIndex=Math.max(0,Math.min(tasks.length-1,index));complete=false;lastCue='';lastSpokenDirection='';wasReady=false;
       updatePanel();setTarget();
       if(scroll&&target)target.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'center'});
       queue();
@@ -530,13 +542,13 @@
     }
     function begin(nextMode){
       picker.hidden=true;document.body.classList.remove('gc-live-picker-open');
-      mode=nextMode;active=true;complete=false;audioOn=true;window.__gcActive=true;
+      mode=nextMode;active=true;complete=false;audioOn=true;lastSpokenDirection='';wasReady=false;window.__gcActive=true;
       document.body.classList.add('gc-live-active');panel.hidden=false;companion.hidden=false;
       updateModeUI();activateTask(0,{scroll:true,announce:false});
       if(mode==='blind')setTimeout(()=>speak('Blind guidance selected. '+currentTask().voice),420);
     }
     function stop(){
-      active=false;complete=false;window.__gcActive=false;document.body.classList.remove('gc-live-active');delete document.body.dataset.gcLiveMode;
+      active=false;complete=false;lastSpokenDirection='';wasReady=false;window.__gcActive=false;document.body.classList.remove('gc-live-active');delete document.body.dataset.gcLiveMode;
       panel.hidden=true;companion.hidden=true;companion.classList.remove('is-visible');panel.classList.remove('gc-live-complete');clearTarget();
       if('speechSynthesis'in window)speechSynthesis.cancel();window.GuideCursorTitle?.clearContext();
     }
@@ -549,7 +561,7 @@
       if(!active||complete)return;
       successTone();
       if(taskIndex>=tasks.length-1){finish();return}
-      clearTarget();taskIndex++;readyAnnouncedFor=-1;updatePanel();
+      clearTarget();taskIndex++;lastSpokenDirection='';wasReady=false;updatePanel();
       setTimeout(()=>{setTarget();queue();if(mode==='blind')speak(currentTask().voice)},360);
     }
     function activateTarget(el){
@@ -568,14 +580,14 @@
     qsa('[data-start-guide-demo]').forEach(el=>el.addEventListener('click',openPicker));
     qsa('[data-gc-live-mode]').forEach(btn=>btn.addEventListener('click',()=>begin(btn.dataset.gcLiveMode)));
     qsa('[data-gc-live-switch]').forEach(btn=>btn.addEventListener('click',()=>{
-      const next=btn.dataset.gcLiveSwitch;if(next===mode)return;mode=next;lastCue='';readyAnnouncedFor=-1;updateModeUI();updatePanel();queue();
+      const next=btn.dataset.gcLiveSwitch;if(next===mode)return;mode=next;lastCue='';lastSpokenDirection='';wasReady=false;updateModeUI();updatePanel();queue();
       if(mode==='blind')speak('Audio guidance selected. '+(complete?'':currentTask().voice));
     }));
     close.addEventListener('click',closePicker);exit.addEventListener('click',stop);
     replay.addEventListener('click',()=>activateTask(0,{scroll:true,announce:true}));
     audioToggle.addEventListener('click',()=>{
       audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.innerHTML='<span>♪</span> Audio '+(audioOn?'on':'off');
-      if(!audioOn){speechSynthesis?.cancel?.();setAudioStatus('Audio off')}else{setAudioStatus('Audio ready');speak('Audio guidance enabled. '+(complete?'':currentTask().voice))}
+      if(!audioOn){speechSynthesis?.cancel?.();setAudioStatus('Audio off')}else{lastSpokenDirection='';wasReady=false;setAudioStatus('Audio ready');speak('Audio guidance enabled. '+(complete?'':currentTask().voice))}
     });
     repeat.addEventListener('click',()=>{if(!complete)speak(currentTask().voice)});
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});
