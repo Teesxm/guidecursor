@@ -174,7 +174,7 @@
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
     let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',wasReady=false,lastTone='',lastToneAt=0;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
-    let directionSpeechEnabled=false,pendingDirection='',speechKind='';
+    let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,speechKind='';
     const cvFiles=['CV_Terence_2026.pdf','CV_Terence_Old.pdf','CV_Design.pdf'];
     const choiceLetters=['A','B','C'];
 
@@ -234,6 +234,10 @@
     }
     function enableDirectionSpeech(){
       directionSpeechEnabled=true;
+      if(pendingTargetFound&&target){
+        pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';
+        speak(targetLabel()+'. Target found. Click once.',{interrupt:true,kind:'target'});successTone();return;
+      }
       const next=pendingDirection;pendingDirection='';
       if(next&&next!=='Target reached'){lastDirection=next;speak(next,{interrupt:true,kind:'direction'})}
     }
@@ -267,7 +271,7 @@
     }
 
     function clearTarget(){
-      if(target)target.classList.remove('guide-target','near','ready');target=null;companion.classList.remove('show');wasReady=false;lastDirection='';lastTone='';pendingDirection='';directionSpeechEnabled=false;
+      if(target)target.classList.remove('guide-target','near','ready');target=null;companion.classList.remove('show');wasReady=false;lastDirection='';lastTone='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;
     }
     function setTarget(el){
       clearTarget();target=el;if(target)target.classList.add('guide-target');queue();
@@ -290,12 +294,12 @@
         stopListening({quiet:true});setListenStatus('idle');
         if('speechSynthesis'in window)speechSynthesis.cancel();
       }
-      lastDirection='';pendingDirection='';directionSpeechEnabled=false;wasReady=false;queue();
+      lastDirection='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;wasReady=false;queue();
       if(announce&&mode==='blind')announcePhase();
     }
     function announcePhase(){
       if(mode!=='blind')return;
-      pendingDirection='';directionSpeechEnabled=false;
+      pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;
       if(phase==='request')speak('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',onend:()=>startListening('goal')});
       if(phase==='attach')speak('Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.',{kind:'action',onend:enableDirectionSpeech});
       if(phase==='choose'){
@@ -369,10 +373,11 @@
 
       if(mode==='blind'){
         if(ready&&!wasReady){
-          directionSpeechEnabled=true;pendingDirection='';lastDirection='Target reached';
-          speak(targetLabel()+'. Target found. Click once.',{interrupt:true,kind:'target'});successTone();
+          pendingDirection='';lastDirection='Target reached';
+          if(!directionSpeechEnabled||speechKind==='action')pendingTargetFound=true;
+          else{pendingTargetFound=false;speak(targetLabel()+'. Target found. Click once.',{interrupt:true,kind:'target'});successTone()}
         }else if(!ready){
-          speakDirectionChange(dir);tone(dir,dist);
+          pendingTargetFound=false;speakDirectionChange(dir);tone(dir,dist);
         }
       }
       wasReady=ready;
@@ -384,7 +389,7 @@
       if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.');
     }
     function reset(){
-      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';speechKind='';clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
+      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;speechKind='';clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');if('speechSynthesis'in window)speechSynthesis.cancel();lastDirection='';wasReady=false;if(mode==='blind')announcePhase();
     }
 
     submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
