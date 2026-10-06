@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111116" />
   <meta name="guidecursor-build" content="%VITE_BUILD_ID%" />
-  <title>Page not found — GuideCursor</title>
+  <title>Page not found - GuideCursor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -53,7 +53,7 @@
 
   <script src="/legal-ui.js?v=%VITE_BUILD_ID%"></script>
   <script>
-    window.GuideCursorTitle?.setBase('Page not found — GuideCursor');
+    window.GuideCursorTitle?.setBase('Page not found - GuideCursor');
     document.querySelector('#bad-route').textContent=location.pathname||'/';
     const stage=document.querySelector('#mini-stage'),pointer=document.querySelector('#fake-pointer'),bubble=document.querySelector('#guide-bubble'),dir=document.querySelector('#guide-direction'),detail=document.querySelector('#guide-detail'),target=document.querySelector('#mini-home'),mainTarget=document.querySelector('#home-target'),line=document.querySelector('#path-line');
     let p={x:100,y:110};
@@ -62,7 +62,7 @@
       const tx=tr.left-sr.left+tr.width/2,ty=tr.top-sr.top+tr.height/2;
       const dx=tx-p.x,dy=ty-p.y,dist=Math.hypot(dx,dy),ax=Math.abs(dx),ay=Math.abs(dy);
       let text='';
-      if(dist<55)text='Target found — click Home';
+      if(dist<55)text='Target found - click Home';
       else if(ax>ay*1.35)text=dx>0?'Move right':'Move left';
       else if(ay>ax*1.35)text=dy>0?'Move down':'Move up';
       else text=(dy>0?'Move down':'Move up')+(dx>0?'-right':'-left');
