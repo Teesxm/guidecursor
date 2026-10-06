@@ -1,4 +1,4 @@
-name: Verify RoleQuest MVP
+name: Verify GuideCursor site
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - main
       - 'build/**'
       - 'polish/**'
+      - 'feature/**'
   pull_request:
     branches:
       - main
