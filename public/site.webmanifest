@@ -1,7 +1,7 @@
 {
   "name": "GuideCursor",
   "short_name": "GuideCursor",
-  "description": "AI-powered cursor guidance that helps people use mainstream software through the normal workflow.",
+  "description": "AI-guided pointer support for people with a visual impairment working on macOS.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f4f2ed",
