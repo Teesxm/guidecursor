@@ -38,6 +38,18 @@
     {
       "source": "/help",
       "destination": "/help.html"
+    },
+    {
+      "source": "/funding",
+      "destination": "/pricing.html"
+    },
+    {
+      "source": "/scope",
+      "destination": "/use-cases.html"
+    },
+    {
+      "source": "/prototype",
+      "destination": "/downloads.html"
     }
   ],
   "headers": [
@@ -166,27 +178,54 @@
           "value": "no-cache, must-revalidate"
         }
       ]
+    },
+    {
+      "source": "/funding",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/scope",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/prototype",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
     }
   ],
   "redirects": [
     {
       "source": "/checkout",
-      "destination": "/pricing",
+      "destination": "/funding",
       "permanent": false
     },
     {
       "source": "/checkout/success",
-      "destination": "/pricing",
+      "destination": "/funding",
       "permanent": false
     },
     {
       "source": "/checkout.html",
-      "destination": "/pricing",
+      "destination": "/funding",
       "permanent": false
     },
     {
       "source": "/checkout-success.html",
-      "destination": "/pricing",
+      "destination": "/funding",
       "permanent": false
     }
   ]
