@@ -40,7 +40,7 @@
             <span class="gc-footer-status"><i></i> Pitch-paper build · October 2026</span>
           </div>
           <div class="gc-footer-links">
-            <div class="gc-footer-col"><small>Product</small><a href="/#product">Product</a><a href="/#how">How it works</a><a href="/use-cases">MVP scope</a><a href="/pricing">Funding & pilot</a><a href="/downloads">Prototype status</a></div>
+            <div class="gc-footer-col"><small>Product</small><a href="/#product">Product</a><a href="/#how">How it works</a><a href="/scope">MVP scope</a><a href="/funding">Funding & pilot</a><a href="/prototype">Prototype status</a></div>
             <div class="gc-footer-col"><small>Explore</small><a href="/#demo">Try the core journey</a><a href="/#research">Research</a><a href="/help">Help Center</a><a href="/security">Security & Trust</a><a href="/accessibility">Accessibility</a></div>
             <div class="gc-footer-col"><small>Legal</small><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/cookies">Cookie policy</a><button type="button" data-open-cookie-settings>Cookie settings</button></div>
           </div>
