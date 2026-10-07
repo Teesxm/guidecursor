@@ -279,7 +279,11 @@
       if(ttsResetting)return false;
       ttsResetting=true;ttsEpoch++;pendingDirectionAfterSpeech='';activeUtterance=null;
       labAdd('TTS session reset begin',reason+' speaking='+speechSynthesis.speaking+' pending='+speechSynthesis.pending);
-      try{speechSynthesis.cancel()}catch(e){labAdd('TTS reset cancel exception',String(e))}
+      if(speechSynthesis.speaking||speechSynthesis.pending){
+        try{speechSynthesis.cancel();labAdd('TTS reset cancel','engine active')}catch(e){labAdd('TTS reset cancel exception',String(e))}
+      }else{
+        labAdd('TTS reset cancel skipped','engine already idle');
+      }
       let clean=await waitForSynthIdle(1200);
       if(!clean){
         labAdd('TTS reset second pass','pause/resume/cancel');
@@ -371,11 +375,19 @@
           labAdd('direction deferred #'+id,text);
           return;
         }
-        if(interrupt&&labCancelOn){
-          labAdd('TTS cancel #'+id,'before interrupt');
+        if(interrupt&&labCancelOn&&(synth.speaking||synth.pending)){
+          labAdd('TTS cancel #'+id,'engine active; wait before replacement');
           ttsEpoch++;
-          synth.cancel();
+          const replacementEpoch=ttsEpoch;
+          try{synth.cancel()}catch(e){labAdd('TTS cancel exception #'+id,String(e))}
+          waitForSynthIdle(900).then(clean=>{
+            if(replacementEpoch!==ttsEpoch){labAdd('TTS replacement skipped #'+id,'epoch changed');return}
+            labAdd('TTS post-cancel idle #'+id,'clean='+clean+' speaking='+synth.speaking+' pending='+synth.pending);
+            setTimeout(()=>speak(text,{interrupt:false,onend,source}),40);
+          });
+          return;
         }
+        if(interrupt&&labCancelOn)labAdd('TTS cancel skipped #'+id,'engine already idle');
         const localEpoch=ttsEpoch;
         const utterance=new SpeechSynthesisUtterance(text);
         utterance.lang=voice?.lang||'en-GB';
