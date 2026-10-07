@@ -735,7 +735,7 @@
       stopListening({quiet:true});
       pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
       if(phase==='request')speak('GuideCursor ready. Tell me what you want to do. For example, attach my C V.',{kind:'question',onend:()=>startListening('goal')});
-      if(phase==='attach')speakAction('Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.');
+      if(phase==='attach')speakAction('Attach is the verified target. Move your pointer toward Attach.');
       if(phase==='choose'){
         const options=cvFiles.map((f,i)=>'Option '+choiceLetters[i]+'. '+f.replaceAll('_',' ')).join('. ');
         speak('I found several files containing C V. '+options+'. Which C V do you mean? You can say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
