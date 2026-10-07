@@ -161,7 +161,7 @@
                 </span>
                 <small>Low vision</small>
                 <strong>Visual guidance</strong>
-                <span>High-contrast target outlines and a live direction cue that follows your pointer.</span>
+                <span>High-contrast target outlines and a live direction cue that follows your pointer. The planned macOS product can also integrate with Zoom.</span>
               </button>
               <button type="button" class="mode-gate-card blind-card" data-start-mode="blind">
                 <span class="mode-gate-icon" aria-hidden="true">
@@ -169,10 +169,10 @@
                 </span>
                 <small>Blind</small>
                 <strong>Audio guidance</strong>
-                <span>Spoken labels, responsive direction changes and confirmation when you reach the target.</span>
+                <span>Spoken target labels, short directional tones and confirmation when you reach the target.</span>
               </button>
             </div>
-            <div class="mode-gate-foot"><i></i><span>The task stays the same in both modes. GuideCursor guides, but you make every choice and click.</span></div>
+            <div class="mode-gate-foot"><i></i><span>The planned product can combine visual and audio cues. This browser demo separates them so each guidance style is easier to inspect. GuideCursor still leaves every choice and click to you.</span></div>
           </section>
           <div class="guide-head"><span class="guide-brand"><i></i> GuideCursor</span><span class="progress" id="progress">Start</span></div>
           <div class="mode-note" id="mode-note"><b>Low-vision guidance</b> uses a high-contrast target outline and a direction cue that follows your pointer. You still move the pointer and make every click.</div>
@@ -208,7 +208,7 @@
             <div class="lab-toggles">
               <label class="lab-toggle"><input id="lab-clips" type="checkbox" checked> MP3 voice clips</label>
               <label class="lab-toggle"><input id="lab-tts" type="checkbox"> Browser TTS fallback</label>
-              <label class="lab-toggle"><input id="lab-directions" type="checkbox" checked> Direction speech</label>
+              <label class="lab-toggle"><input id="lab-directions" type="checkbox"> Direction speech (debug only)</label>
               <label class="lab-toggle"><input id="lab-target" type="checkbox" checked> Target-found speech</label>
               <label class="lab-toggle"><input id="lab-beeps" type="checkbox" checked> Beeps / earcons</label>
               <label class="lab-toggle"><input id="lab-mic" type="checkbox" checked> Microphone / recognition</label>
@@ -363,7 +363,7 @@
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0,micListenWanted=false,micRestartTimer=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
     let pendingRecognitionResult=null,actionFallbackTimer=0,activeUtterance=null,choiceTransitioning=false,communityTimer=0,communityRevealTimer=0,communityInteractiveTimer=0;
-    let labClipsOn=true,labTtsOn=false,labDirectionsOn=true,labTargetOn=true,labBeepsOn=true,labMicOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
+    let labClipsOn=true,labTtsOn=false,labDirectionsOn=false,labTargetOn=true,labBeepsOn=true,labMicOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
     let labEntries=[],labMicPermission='unknown',labLastBeepLog=0,labSpeechCounter=0;
     let voiceAudio=null,voiceClipPlaying=false,voiceClipKey='',voiceClipOnend=null,queuedDirectionClip='';
     let ttsEpoch=0,ttsResetting=false,pendingDirectionAfterSpeech='';
@@ -710,13 +710,8 @@
     }
     function speakDirectionChange(dir,{force=false}={}){
       if(mode!=='blind'||!audioOn||!dir||dir==='Target found - click once'||!target||phase==='done'||phase==='request'||phase==='choose')return;
-      if(actionSpeaking||!directionSpeechEnabled){pendingDirection=dir;return}
-      const now=performance.now();
-      if(!force&&dir===lastDirection)return;
-      if(!force&&now-lastDirectionAt<1150){pendingDirection=dir;return}
-      if(!force&&'speechSynthesis'in window&&speechSynthesis.speaking&&now-lastDirectionAt<1800){pendingDirection=dir;return}
-      pendingDirection='';lastDirection=dir;lastDirectionAt=now;
-      speak(dir.replace('-',' '),{interrupt:false,source:'direction'});
+      // Final-paper behaviour: dynamic direction is carried by short non-speech tones, not spoken "move" commands.
+      pendingDirection='';lastDirection=dir;lastDirectionAt=performance.now();
     }
     function tone(direction,dist=240){
       if(mode!=='blind'||!audioOn||!labBeepsOn)return;
@@ -801,7 +796,7 @@
       qsa('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
       cursorMode.textContent='GUIDECURSOR · '+(mode==='blind'?'AUDIO':'LOW VISION');
       audioToggle.hidden=mode!=='blind';repeat.hidden=mode!=='blind';audioLab.hidden=mode!=='blind';
-      modeNote.innerHTML=mode==='blind'?'<b>Blind guidance</b> uses spoken labels and directional audio without visual target cues. You still move the pointer and make every click.':'<b>Low-vision guidance</b> uses a high-contrast target outline and a direction cue that follows your pointer. You still move the pointer and make every click.';
+      modeNote.innerHTML=mode==='blind'?'<b>Blind guidance</b> uses spoken target labels, short non-speech directional tones and confirmation at the target. You still move the pointer and make every click.':'<b>Low-vision guidance</b> uses a high-contrast target outline and a direction cue that follows your pointer. The native product concept can also integrate macOS Zoom; this browser demo does not simulate Zoom.';
       if(mode==='blind'){
         audioOn=true;unlockAudio();
         Object.values(voiceClipFiles).forEach(file=>{const a=new Audio(voiceClipBase+file);a.preload='auto'});
