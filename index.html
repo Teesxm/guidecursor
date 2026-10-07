@@ -301,7 +301,8 @@
     <details class="gc-live-lab" id="gc-live-lab" hidden>
       <summary>Audio diagnostics</summary>
       <div class="gc-live-lab-grid">
-        <label><input id="gc-lab-tts" type="checkbox" checked> Voice / TTS</label>
+        <label><input id="gc-lab-clips" type="checkbox" checked> MP3 voice clips</label>
+        <label><input id="gc-lab-tts" type="checkbox"> Browser TTS fallback</label>
         <label><input id="gc-lab-directions" type="checkbox" checked> Direction speech</label>
         <label><input id="gc-lab-target" type="checkbox" checked> Target-found speech</label>
         <label><input id="gc-lab-beeps" type="checkbox" checked> Beeps / earcons</label>
@@ -310,7 +311,8 @@
         <label><input id="gc-lab-retain" type="checkbox" checked> Retain utterance reference</label>
       </div>
       <div class="gc-live-lab-actions">
-        <button type="button" id="gc-lab-test-voice">Test voice</button>
+        <button type="button" id="gc-lab-test-voice">Test voice clip</button>
+        <button type="button" id="gc-lab-test-tts">Test browser TTS</button>
         <button type="button" id="gc-lab-test-beep">Test beep</button>
         <button type="button" id="gc-lab-reset">Reset TTS</button>
         <button type="button" id="gc-lab-copy">Copy log</button>
@@ -357,9 +359,9 @@
       feedbackTitle=qs('#gc-live-feedback-title'), feedbackCopy=qs('#gc-live-feedback-copy'),
       audioStatus=qs('#gc-live-audio-status'), audioToggle=qs('#gc-live-audio'),
       repeat=qs('#gc-live-repeat'), replay=qs('#gc-live-replay'), exit=qs('#gc-live-exit'),
-      lab=qs('#gc-live-lab'),labTts=qs('#gc-lab-tts'),labDirections=qs('#gc-lab-directions'),labTarget=qs('#gc-lab-target'),
+      lab=qs('#gc-live-lab'),labClips=qs('#gc-lab-clips'),labTts=qs('#gc-lab-tts'),labDirections=qs('#gc-lab-directions'),labTarget=qs('#gc-lab-target'),
       labBeeps=qs('#gc-lab-beeps'),labVoice=qs('#gc-lab-voice'),labCancel=qs('#gc-lab-cancel'),labRetain=qs('#gc-lab-retain'),
-      labTestVoice=qs('#gc-lab-test-voice'),labTestBeep=qs('#gc-lab-test-beep'),labReset=qs('#gc-lab-reset'),
+      labTestVoice=qs('#gc-lab-test-voice'),labTestTts=qs('#gc-lab-test-tts'),labTestBeep=qs('#gc-lab-test-beep'),labReset=qs('#gc-lab-reset'),
       labCopy=qs('#gc-lab-copy'),labClear=qs('#gc-lab-clear'),labState=qs('#gc-lab-state'),labLog=qs('#gc-lab-log');
 
     if(!picker||!panel||!companion)return;
@@ -369,8 +371,9 @@
     let active=false, complete=false, mode='lowvision', taskIndex=0, target=null, raf=0;
     let pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
     let audioOn=true, audioCtx=null, lastCue='', lastCueAt=0, voice=null, lastSpokenDirection='', lastSpokenDirectionAt=0, wasReady=false, activeUtterance=null;
-    let labTtsOn=true,labDirectionsOn=true,labTargetOn=true,labBeepsOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
+    let labClipsOn=true,labTtsOn=false,labDirectionsOn=true,labTargetOn=true,labBeepsOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
     let labEntries=[],labLastBeepLog=0,labSpeechCounter=0;
+    let voiceAudio=null,voiceClipPlaying=false,voiceClipKey='',voiceClipOnend=null,queuedDirectionClip='';
     let ttsEpoch=0,ttsResetting=false,pendingDirectionAfterSpeech='';
 
     const tasks=[
@@ -422,17 +425,66 @@
         'microphone: not used on homepage preview',
         'user activation: active='+String(ua?.isActive)+' ever='+String(ua?.hasBeenActive),
         'document: '+document.visibilityState+' | focused='+String(document.hasFocus()),
-        'flags: TTS='+labTtsOn+' directions='+labDirectionsOn+' target='+labTargetOn+' beeps='+labBeepsOn,
+        'voice clips: '+labClipsOn+' | clip playing: '+voiceClipPlaying+' | current: '+(voiceClipKey||'none'),
+        'flags: browserTTS='+labTtsOn+' directions='+labDirectionsOn+' target='+labTargetOn+' beeps='+labBeepsOn,
         'options: assignVoice='+labUseVoice+' cancelOnInterrupt='+labCancelOn+' retainUtterance='+labRetainOn,
         'tts reset: '+ttsResetting+' | deferred direction: '+(pendingDirectionAfterSpeech||'none')
       ].join('\n');
     }
     function labSetFlag(input,key){
       input.addEventListener('change',()=>{const value=input.checked;
+        if(key==='clips')labClipsOn=value;
         if(key==='tts')labTtsOn=value;if(key==='directions')labDirectionsOn=value;if(key==='target')labTargetOn=value;
         if(key==='beeps')labBeepsOn=value;if(key==='voice')labUseVoice=value;if(key==='cancel')labCancelOn=value;if(key==='retain')labRetainOn=value;
         labAdd('toggle '+key,String(value));
       });
+    }
+    const voiceClipBase='/audio/guidecursor/';
+    const voiceClipFiles={
+      'target-found':'target-found.mp3','move-left':'move-left.mp3','move-right':'move-right.mp3','move-up':'move-up.mp3','move-down':'move-down.mp3',
+      'move-up-left':'move-up-left.mp3','move-up-right':'move-up-right.mp3','move-down-left':'move-down-left.mp3','move-down-right':'move-down-right.mp3',
+      'scroll-up':'scroll-up.mp3','scroll-down':'scroll-down.mp3','homepage-task1':'homepage-task1.mp3','homepage-task2':'homepage-task2.mp3',
+      'homepage-task3':'homepage-task3.mp3','preview-complete':'preview-complete.mp3','target-activated':'target-activated.mp3','audio-enabled':'audio-enabled.mp3'
+    };
+    function directionClipKey(text){return String(text||'').toLowerCase().replace(/\s+/g,' ').trim().replace(/\s/g,'-')}
+    function homeClipFor(text,source){
+      const t=String(text||'');
+      if(source==='direction')return directionClipKey(t);
+      if(source==='target')return 'target-found';
+      if(t.startsWith('Blind guidance selected.')||t.startsWith('Task one.'))return 'homepage-task1';
+      if(t.startsWith('Audio guidance selected.'))return taskIndex===0?'homepage-task1':taskIndex===1?'homepage-task2':'homepage-task3';
+      if(t.startsWith('Task two.'))return 'homepage-task2';
+      if(t.startsWith('Task three.'))return 'homepage-task3';
+      if(t.startsWith('Preview complete.'))return 'preview-complete';
+      if(t.startsWith('Target activated.'))return 'target-activated';
+      if(t.startsWith('Audio guidance enabled.'))return 'audio-enabled';
+      return '';
+    }
+    function stopVoiceClip({callEnd=false}={}){
+      if(voiceAudio){try{voiceAudio.pause();voiceAudio.currentTime=0}catch(_){}}
+      const done=voiceClipOnend;
+      voiceAudio=null;voiceClipPlaying=false;voiceClipKey='';voiceClipOnend=null;
+      if(callEnd&&typeof done==='function')done();
+      labUpdate();
+    }
+    function playVoiceClip(key,{source='general',onend=null}={}){
+      if(!labClipsOn||!key||!voiceClipFiles[key])return false;
+      if(source==='direction'&&voiceClipPlaying){queuedDirectionClip=key;labAdd('voice clip deferred',key);return true}
+      stopVoiceClip({callEnd:false});
+      const audio=new Audio(voiceClipBase+voiceClipFiles[key]);
+      audio.preload='auto';audio.volume=1;voiceAudio=audio;voiceClipPlaying=true;voiceClipKey=key;voiceClipOnend=onend;
+      const finish=(event)=>{
+        if(voiceAudio!==audio)return;
+        const done=voiceClipOnend;voiceAudio=null;voiceClipPlaying=false;voiceClipKey='';voiceClipOnend=null;
+        labAdd('voice clip '+event,key);if(typeof done==='function')done();
+        if(queuedDirectionClip&&labDirectionsOn){const next=queuedDirectionClip;queuedDirectionClip='';setTimeout(()=>playVoiceClip(next,{source:'direction'}),45)}
+        labUpdate();
+      };
+      audio.onplay=()=>{labAdd('voice clip play',key);setAudioStatus('Speaking clip')};
+      audio.onended=()=>finish('ended');audio.onerror=()=>finish('error');
+      labAdd('voice clip request',key);
+      const p=audio.play();if(p?.catch)p.catch(e=>{labAdd('voice clip play rejected',key+' '+String(e));finish('rejected')});
+      return true;
     }
     function synthIdle(){return !('speechSynthesis'in window)||(!speechSynthesis.speaking&&!speechSynthesis.pending)}
     function waitForSynthIdle(timeout=1400){
@@ -470,7 +522,7 @@
     async function speakAfterCleanReset(text,opts={}){
       const clean=await resetTtsSession(opts.reason||'clean start');
       if(!clean)labAdd('TTS reset warning','engine still not idle; attempting one direct utterance');
-      speak(text,{...opts,interrupt:false});
+      browserSpeak(text,{...opts,interrupt:false});
     }
     function pickVoice(){
       if(!('speechSynthesis'in window))return null;
@@ -489,7 +541,7 @@
       speechSynthesis.addEventListener?.('voiceschanged',()=>{pickVoice();labAdd('voiceschanged','count='+speechSynthesis.getVoices().length+' selected='+labVoiceLabel())});
     }
     function setAudioStatus(text){audioStatus.textContent=text}
-    function speak(text,{interrupt=true,onend=null,source='general'}={}){
+    function browserSpeak(text,{interrupt=true,onend=null,source='general'}={}){
       const id=++labSpeechCounter;
       labAdd('TTS request #'+id,'source='+source+' interrupt='+interrupt+' text='+text.slice(0,100));
       if(mode!=='blind'||!audioOn||!labTtsOn||!text){labAdd('TTS skipped #'+id);if(typeof onend==='function')onend();return}
@@ -508,7 +560,7 @@
           waitForSynthIdle(900).then(clean=>{
             if(replacementEpoch!==ttsEpoch){labAdd('TTS replacement skipped #'+id,'epoch changed');return}
             labAdd('TTS post-cancel idle #'+id,'clean='+clean+' speaking='+synth.speaking+' pending='+synth.pending);
-            setTimeout(()=>speak(text,{interrupt:false,onend,source}),40);
+            setTimeout(()=>browserSpeak(text,{interrupt:false,onend,source}),40);
           });
           return;
         }
@@ -525,7 +577,7 @@
           setAudioStatus('Voice ready');if(typeof onend==='function')onend();
           if(pendingDirectionAfterSpeech&&mode==='blind'&&labDirectionsOn){
             const next=pendingDirectionAfterSpeech;pendingDirectionAfterSpeech='';
-            setTimeout(()=>speak(next,{interrupt:false,source:'direction'}),60);
+            setTimeout(()=>browserSpeak(next,{interrupt:false,source:'direction'}),60);
           }
           labUpdate();
         };
@@ -541,6 +593,18 @@
         setTimeout(()=>{if(!stale())labAdd('TTS snapshot +1500ms #'+id,'speaking='+synth.speaking+' pending='+synth.pending+' paused='+synth.paused)},1500);
       }catch(e){labAdd('TTS exception #'+id,String(e));setAudioStatus('Try repeat');if(typeof onend==='function')onend()}
     }
+    function speak(text,{interrupt=true,onend=null,source='general'}={}){
+      const key=homeClipFor(text,source);
+      if(labClipsOn&&key){
+        if(source==='target'&&!labTargetOn){labAdd('target clip skipped','toggle off');if(typeof onend==='function')onend();return}
+        if(source==='direction'&&!labDirectionsOn){labAdd('direction clip skipped',key);if(typeof onend==='function')onend();return}
+        if(playVoiceClip(key,{source,onend}))return;
+      }
+      if(labTtsOn){browserSpeak(text,{interrupt,onend,source});return}
+      labAdd('voice skipped','no clip mapping and browser TTS disabled: '+source);
+      if(typeof onend==='function')onend();
+    }
+
 
     function speakDirection(direction){
       if(mode!=='blind'||!audioOn||!direction||direction==='Target found - click once')return;
@@ -548,7 +612,7 @@
       if(direction===lastSpokenDirection||now-lastSpokenDirectionAt<1150)return;
       if('speechSynthesis'in window&&speechSynthesis.speaking&&now-lastSpokenDirectionAt<1800)return;
       lastSpokenDirection=direction;lastSpokenDirectionAt=now;
-      if(labDirectionsOn)speak(direction.replace('-',' '),{interrupt:false,source:'direction'});else labAdd('direction speech skipped',direction);
+      speak(direction.replace('-',' '),{interrupt:false,source:'direction'});
     }
 
     function tone(direction,dist=220){
@@ -653,7 +717,7 @@
           const name=currentTask().targetName||'Target';
           lastSpokenDirection='Target found - click once';
           lastSpokenDirectionAt=performance.now();
-          if(labTargetOn)speak(name+'. Target reached. Click once.',{interrupt:false,source:'target'});else labAdd('target speech skipped','toggle off');
+          speak(name+'. Target reached. Click once.',{interrupt:false,source:'target'});
         }
         wasReady=ready;
       }
@@ -691,12 +755,13 @@
       mode=nextMode;active=true;complete=false;audioOn=true;lastSpokenDirection='';lastSpokenDirectionAt=0;wasReady=false;window.__gcActive=true;
       document.body.classList.add('gc-live-active');panel.hidden=false;companion.hidden=false;
       updateModeUI();activateTask(0,{scroll:true,announce:false});
-      if(mode==='blind')speakAfterCleanReset('Blind guidance selected. '+currentTask().voice,{source:'task-start',reason:'enter Blind mode'});
+      if(mode==='blind')Object.values(voiceClipFiles).forEach(file=>{const a=new Audio(voiceClipBase+file);a.preload='auto'});
+      if(mode==='blind')speak('Blind guidance selected. '+currentTask().voice,{source:'task-start'});
     }
     function stop(){
       active=false;complete=false;lastSpokenDirection='';lastSpokenDirectionAt=0;wasReady=false;window.__gcActive=false;document.body.classList.remove('gc-live-active');delete document.body.dataset.gcLiveMode;
       panel.hidden=true;companion.hidden=true;companion.classList.remove('is-visible');panel.classList.remove('gc-live-complete');clearTarget();
-      if('speechSynthesis'in window)speechSynthesis.cancel();window.GuideCursorTitle?.clearContext();
+      stopVoiceClip({callEnd:false});if('speechSynthesis'in window)speechSynthesis.cancel();window.GuideCursorTitle?.clearContext();
     }
     function finish(){
       clearTarget();complete=true;updatePanel();directionEl.textContent='✓ That’s GuideCursor';distanceEl.textContent='The interface stayed yours the whole time.';successTone();
@@ -727,17 +792,18 @@
     qsa('[data-gc-live-mode]').forEach(btn=>btn.addEventListener('click',()=>begin(btn.dataset.gcLiveMode)));
     qsa('[data-gc-live-switch]').forEach(btn=>btn.addEventListener('click',()=>{
       const next=btn.dataset.gcLiveSwitch;if(next===mode)return;mode=next;lastCue='';lastSpokenDirection='';lastSpokenDirectionAt=0;wasReady=false;updateModeUI();updatePanel();queue();
-      if(mode==='blind')speakAfterCleanReset('Audio guidance selected. '+(complete?'':currentTask().voice),{source:'mode-switch',reason:'switch to Blind'});
+      if(mode==='blind')speak('Audio guidance selected. '+(complete?'':currentTask().voice),{source:'mode-switch'});
     }));
     close.addEventListener('click',closePicker);exit.addEventListener('click',stop);
     replay.addEventListener('click',()=>activateTask(0,{scroll:true,announce:true}));
     audioToggle.addEventListener('click',()=>{
       audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.innerHTML='<span>♪</span> Audio '+(audioOn?'on':'off');
-      if(!audioOn){if('speechSynthesis'in window)speechSynthesis.cancel();setAudioStatus('Audio off')}else{lastSpokenDirection='';lastSpokenDirectionAt=0;wasReady=false;setAudioStatus('Audio ready');speak('Audio guidance enabled. '+(complete?'':currentTask().voice))}
+      if(!audioOn){stopVoiceClip({callEnd:false});if('speechSynthesis'in window)speechSynthesis.cancel();setAudioStatus('Audio off')}else{lastSpokenDirection='';lastSpokenDirectionAt=0;wasReady=false;setAudioStatus('Audio ready');speak('Audio guidance enabled. '+(complete?'':currentTask().voice))}
     });
     repeat.addEventListener('click',()=>{labAdd('Repeat clicked');if(!complete)speak(currentTask().voice,{source:'repeat'})});
-    labSetFlag(labTts,'tts');labSetFlag(labDirections,'directions');labSetFlag(labTarget,'target');labSetFlag(labBeeps,'beeps');labSetFlag(labVoice,'voice');labSetFlag(labCancel,'cancel');labSetFlag(labRetain,'retain');
-    labTestVoice.addEventListener('click',()=>{labAdd('TEST voice clicked');speakAfterCleanReset('GuideCursor homepage diagnostic voice test.',{source:'manual-test',reason:'manual Test voice'})});
+    labSetFlag(labClips,'clips');labSetFlag(labTts,'tts');labSetFlag(labDirections,'directions');labSetFlag(labTarget,'target');labSetFlag(labBeeps,'beeps');labSetFlag(labVoice,'voice');labSetFlag(labCancel,'cancel');labSetFlag(labRetain,'retain');
+    labTestVoice.addEventListener('click',()=>{labAdd('TEST voice clip clicked');playVoiceClip('homepage-task1',{source:'manual-test'})});
+    labTestTts.addEventListener('click',()=>{labAdd('TEST browser TTS clicked');speakAfterCleanReset('GuideCursor browser T T S diagnostic test.',{source:'manual-test',reason:'manual browser TTS test'})});
     labTestBeep.addEventListener('click',()=>{labAdd('TEST beep clicked');tone('Move right',80)});
     labReset.addEventListener('click',()=>{labAdd('TEST TTS reset clicked');resetTtsSession('manual Reset TTS')});
     labCopy.addEventListener('click',async()=>{const text=(labState?.textContent||'')+'\n\n'+labEntries.join('\n');try{await navigator.clipboard.writeText(text);labAdd('log copied')}catch(e){labAdd('copy failed',String(e))}});
