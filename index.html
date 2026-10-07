@@ -102,7 +102,7 @@
     .gc-live-target:after{content:"";position:absolute!important;inset:-9px!important;border:2px solid rgba(103,88,244,.64)!important;border-radius:inherit!important;pointer-events:none!important;box-shadow:0 0 0 5px rgba(103,88,244,.05),0 0 30px rgba(103,88,244,.14)!important;animation:gcLiveTarget 1.45s ease-in-out infinite!important}
     .gc-live-target.gc-live-near{transform:scale(1.018)!important;box-shadow:0 10px 34px rgba(103,88,244,.13)!important}.gc-live-target.gc-live-ready:after{border-color:var(--mint)!important;box-shadow:0 0 0 10px rgba(160,241,213,.1),0 0 40px rgba(160,241,213,.22)!important;animation:gcLiveReady .78s ease-in-out infinite!important}
     body[data-gc-live-mode="blind"] .gc-live-target:after{border-color:rgba(160,241,213,.72)!important;border-style:dashed!important;box-shadow:0 0 0 4px rgba(160,241,213,.045)!important}
-    body.gc-live-active .stage-pointer,body.gc-live-active .stage-arrow,body.gc-live-active .hero-visual .pointer,body.gc-live-active .hero-visual .arrow-line{opacity:0!important}
+    body.gc-live-active .stage-pointer,body.gc-live-active .stage-arrow{opacity:0!important}
     body[data-gc-live-mode="blind"] .gc-live-feedback i{animation:gcLiveAudioBeat .85s ease-in-out infinite}
     @keyframes gcLiveFade{from{opacity:0}to{opacity:1}}@keyframes gcLiveRise{from{opacity:0;transform:translateY(22px) scale(.975);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}@keyframes gcLivePanel{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}@keyframes gcLiveMark{0%,100%{box-shadow:0 0 0 5px rgba(103,88,244,.06),0 6px 18px rgba(76,62,183,.2)}50%{box-shadow:0 0 0 9px rgba(160,241,213,.08),0 6px 22px rgba(76,62,183,.27)}}@keyframes gcLiveTarget{0%,100%{opacity:.58;transform:scale(.985)}50%{opacity:1;transform:scale(1.035)}}@keyframes gcLiveReady{0%,100%{transform:scale(.98);opacity:.65}50%{transform:scale(1.03);opacity:1}}@keyframes gcLiveAudioBeat{0%,100%{opacity:.35;transform:scale(.72)}50%{opacity:1;transform:scale(1.2)}}
     @media(max-width:700px){.gc-live-picker{padding:10px}.gc-live-card{padding:26px 20px;border-radius:22px}.gc-live-options{grid-template-columns:1fr}.gc-live-option{min-height:145px}.gc-live-option small{margin-top:15px}.gc-live-panel{left:12px;right:12px;bottom:12px;width:auto}.gc-live-actions{justify-content:space-between}}
@@ -342,8 +342,8 @@
     const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
     function position(el,x,y){el.style.transform='translate3d('+x+'px,'+y+'px,0)'}
     function frame(now){
-      const rect=compose.getBoundingClientRect(),tr=attach.getBoundingClientRect();
-      const localTarget={x:tr.left-rect.left+tr.width*.53,y:tr.top-rect.top+tr.height*.58};
+      const rect={width:compose.clientWidth,height:compose.clientHeight};
+      const localTarget={x:attach.offsetLeft+attach.offsetWidth*.53,y:attach.offsetTop+attach.offsetHeight*.58};
       const startPoint={x:rect.width*.42,y:rect.height*.73};
       const cycle=8500,t=(now-start)%cycle;
       shell.classList.remove('ready','clicked','finder-phase');
