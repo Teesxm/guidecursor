@@ -39,7 +39,7 @@ jobs:
             "ready": "GuideCursor ready. Tell me what you want to do. For example, attach my C V.",
             "attach": "Attach is the verified target. Move your pointer toward Attach.",
             "choose": "I found several files containing C V. Option A. C V 2026 PDF. Option B. C V Previous PDF. Option C. C V Design PDF. Which C V do you mean?",
-            "file": "Choice received. Your chosen file is the target. Move your pointer toward that file and click it when I confirm you have reached it.",
+            "file": "Choice received. Your chosen file is the target.",
             "open": "File selected. Open is now the verified target. Move your pointer toward Open and click it when I confirm you have reached it.",
             "complete": "Attachment complete. The selected C V is attached to the email.",
             "invalid-goal": "I need a clearer goal. Try: attach my C V.",
