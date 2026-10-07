@@ -411,6 +411,11 @@
     }
     function playVoiceClip(key,{source='general',onend=null}={}){
       if(!labClipsOn||!key||!voiceClipFiles[key])return false;
+      if(source==='direction'&&(!target||phase==='done'||phase==='request'||phase==='choose')){
+        queuedDirectionClip='';
+        labAdd('direction clip discarded',key+' phase='+phase+' target='+!!target);
+        return true;
+      }
       if(source==='direction'&&voiceClipPlaying){
         queuedDirectionClip=key;labAdd('voice clip deferred',key);return true;
       }
@@ -424,9 +429,16 @@
         voiceAudio=null;voiceClipPlaying=false;voiceClipKey='';voiceClipOnend=null;
         labAdd('voice clip '+event,key);
         if(typeof done==='function')done();
-        if(queuedDirectionClip&&labDirectionsOn){
+        if(queuedDirectionClip){
           const next=queuedDirectionClip;queuedDirectionClip='';
-          setTimeout(()=>playVoiceClip(next,{source:'direction'}),45);
+          if(labDirectionsOn&&target&&phase!=='done'&&phase!=='request'&&phase!=='choose'){
+            setTimeout(()=>{
+              if(target&&phase!=='done'&&phase!=='request'&&phase!=='choose')playVoiceClip(next,{source:'direction'});
+              else labAdd('deferred direction discarded',next+' phase='+phase+' target='+!!target);
+            },45);
+          }else{
+            labAdd('deferred direction discarded',next+' phase='+phase+' target='+!!target);
+          }
         }
         labUpdate();
       };
@@ -632,7 +644,7 @@
       successTone();
     }
     function speakDirectionChange(dir,{force=false}={}){
-      if(mode!=='blind'||!audioOn||!dir||dir==='Target reached')return;
+      if(mode!=='blind'||!audioOn||!dir||dir==='Target reached'||!target||phase==='done'||phase==='request'||phase==='choose')return;
       if(actionSpeaking||!directionSpeechEnabled){pendingDirection=dir;return}
       const now=performance.now();
       if(!force&&dir===lastDirection)return;
@@ -689,6 +701,7 @@
       companion.classList.remove('show');
       clearTimeout(actionFallbackTimer);actionFallbackTimer=0;
       wasReady=false;lastDirection='';lastDirectionAt=0;lastTone='';pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;
+      queuedDirectionClip='';pendingDirectionAfterSpeech='';
     }
     function syncHalo(near=false,ready=false){
       if(!target){halo.classList.remove('show','near','ready');return}
@@ -824,7 +837,8 @@
     }
 
     function attachFile(){
-      clearTarget();finder.classList.remove('open');finder.setAttribute('aria-hidden','true');chip.classList.add('show');attachedName.textContent=selectedFile;
+      clearTarget();queuedDirectionClip='';pendingDirection='';pendingDirectionAfterSpeech='';
+      finder.classList.remove('open');finder.setAttribute('aria-hidden','true');chip.classList.add('show');attachedName.textContent=selectedFile;
       phase='done';progress.textContent='Complete';setGuide('Complete','CV attached','The file is attached. GuideCursor identified and guided each step, but every choice and click was yours.');
       setFeedback('You completed the task','GuideCursor never selected a file, clicked a button or confirmed an action on your behalf.');
       completion.classList.add('show');completionCopy.textContent=selectedFile+' is now attached to the draft email. You kept control of the entire interaction.';replay.hidden=false;successTone();if(mode==='blind')announcePhase();
