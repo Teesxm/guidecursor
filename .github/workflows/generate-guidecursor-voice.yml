@@ -19,18 +19,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install local TTS tools
+      - name: Install neural TTS
         run: |
-          sudo apt-get update
-          sudo apt-get install -y espeak ffmpeg
+          python3 -m pip install --upgrade pip
+          python3 -m pip install edge-tts
 
-      - name: Generate voice clips
+      - name: Generate natural voice clips
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p public/audio/guidecursor
+          rm -rf /tmp/guidecursor-natural
+          mkdir -p /tmp/guidecursor-natural
           python3 - <<'PY'
+          import asyncio
           from pathlib import Path
+          import edge_tts
+
           phrases = {
             "ready": "GuideCursor ready. Tell me what you want to do. For example, attach my C V.",
             "attach": "Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.",
@@ -60,17 +64,28 @@ jobs:
             "target-activated": "Target activated.",
             "audio-enabled": "Audio guidance enabled."
           }
-          root = Path("public/audio/guidecursor")
-          for key, text in phrases.items():
-              (root / f"{key}.txt").write_text(text)
+          async def main():
+              root = Path("/tmp/guidecursor-natural")
+              voice = "en-US-JennyNeural"
+              for key, text in phrases.items():
+                  out = root / f"{key}.mp3"
+                  communicator = edge_tts.Communicate(
+                      text=text,
+                      voice=voice,
+                      rate="-4%",
+                      volume="+0%",
+                      pitch="+0Hz",
+                  )
+                  await communicator.save(str(out))
+                  if not out.exists() or out.stat().st_size < 1000:
+                      raise RuntimeError(f"Invalid generated audio: {out}")
+
+          asyncio.run(main())
           PY
 
-          for txt in public/audio/guidecursor/*.txt; do
-            base="${txt%.txt}"
-            espeak -v en-us+f3 -s 155 -p 48 -a 165 -f "$txt" -w "$base.wav"
-            ffmpeg -loglevel error -y -i "$base.wav" -ac 1 -ar 22050 -b:a 40k "$base.mp3"
-            rm "$base.wav" "$txt"
-          done
+          # Only replace the known-working clips after every neural clip succeeds.
+          mkdir -p public/audio/guidecursor
+          cp /tmp/guidecursor-natural/*.mp3 public/audio/guidecursor/
 
       - name: Commit generated audio
         run: |
@@ -81,5 +96,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/audio/guidecursor
-          git commit -m "Add generated GuideCursor voice assets [voice-assets]"
+          git commit -m "Upgrade GuideCursor voice clips to natural neural speech [voice-assets]"
           git push
