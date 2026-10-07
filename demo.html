@@ -42,7 +42,7 @@
     .guide-head{display:flex;align-items:center}.mode-note{margin-top:18px;padding:9px 10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03);color:rgba(255,255,255,.48);font-size:8px;line-height:1.5}.mode-note b{color:var(--mint)}
     .guide-task{margin-top:18px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:15px;background:rgba(255,255,255,.035)}.guide-task small{display:block;color:var(--mint);font:500 8px "DM Mono",monospace;letter-spacing:.11em;text-transform:uppercase}.guide-task h2{margin:9px 0 7px;font-size:23px;letter-spacing:-.045em}.guide-task p{margin:0;color:rgba(255,255,255,.5);font-size:10px;line-height:1.62}
     .request-box{margin-top:13px}.request-row{display:flex;gap:7px}.request-row input{min-width:0;flex:1;height:42px;padding:0 11px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.05);color:#fff;outline:none;font-size:9px}.request-row input:focus{border-color:rgba(160,241,213,.28);box-shadow:0 0 0 4px rgba(160,241,213,.04)}.request-row button{flex:0 0 auto;height:42px;padding:0 11px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;font-size:9px;font-weight:700}.request-row .send{background:#fff;color:#111116}.example{width:100%;height:37px;margin-top:7px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:transparent;color:rgba(255,255,255,.48);font-size:8px}.example:hover{background:rgba(255,255,255,.04);color:#fff}
-    .choice-list{display:grid;gap:7px;margin-top:13px}.choice{padding:11px;border:1px solid rgba(255,255,255,.09);border-radius:10px;background:rgba(255,255,255,.035);color:#fff;text-align:left}.choice:hover{border-color:rgba(160,241,213,.25);background:rgba(160,241,213,.06)}.choice strong{display:flex;align-items:center;gap:7px;font-size:9px}.choice-key{flex:0 0 auto;width:21px;height:21px;border-radius:6px;background:rgba(160,241,213,.1);border:1px solid rgba(160,241,213,.18);display:grid;place-items:center;color:var(--mint);font:700 8px "DM Mono",monospace}.choice span{display:block;margin-top:3px;color:rgba(255,255,255,.4);font-size:7px}
+    .choice-list{display:grid;gap:9px;margin-top:14px}.choice{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 13px;border:1px solid rgba(255,255,255,.095);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.025));color:#fff;text-align:left;overflow:hidden;transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}.choice:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(160,241,213,.07),transparent 40%);opacity:0;transition:opacity .18s ease;pointer-events:none}.choice:hover{transform:translateY(-1px);border-color:rgba(160,241,213,.28);background:linear-gradient(145deg,rgba(160,241,213,.07),rgba(255,255,255,.035));box-shadow:0 10px 26px rgba(0,0,0,.12)}.choice:hover:before{opacity:1}.choice-key{position:relative;z-index:1;flex:0 0 auto;width:40px;height:40px;border-radius:12px;background:linear-gradient(145deg,rgba(160,241,213,.18),rgba(103,88,244,.13));border:1px solid rgba(160,241,213,.28);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--mint);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 5px 16px rgba(0,0,0,.12)}.choice-key b{font:800 13px "DM Mono",monospace;line-height:1}.choice-key em{font:700 5px "DM Mono",monospace;line-height:1;letter-spacing:.08em;font-style:normal;color:rgba(160,241,213,.58)}.choice-copy{position:relative;z-index:1;min-width:0}.choice-copy strong{display:block;font-size:10px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.choice-copy span{display:block;margin-top:4px;color:rgba(255,255,255,.4);font-size:7px;line-height:1.35}.choice-check{position:relative;z-index:1;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:#111116;font-size:11px;font-weight:900;opacity:0;transform:scale(.7);transition:opacity .16s ease,transform .16s ease}.choice.confirmed{border-color:rgba(160,241,213,.52);background:rgba(160,241,213,.09);box-shadow:0 0 0 4px rgba(160,241,213,.055),0 12px 30px rgba(0,0,0,.14)}.choice.confirmed:before{opacity:1}.choice.confirmed .choice-check{opacity:1;transform:scale(1)}.choice.confirmed .choice-key{background:linear-gradient(145deg,rgba(160,241,213,.29),rgba(160,241,213,.12));border-color:rgba(160,241,213,.5)}
     .feedback{display:flex;align-items:flex-start;gap:9px;margin-top:12px;padding:10px 11px;border-radius:11px;background:rgba(160,241,213,.055);border:1px solid rgba(160,241,213,.12)}.feedback i{flex:0 0 auto;width:7px;height:7px;margin-top:2px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.06)}.feedback strong{display:block;font-size:9px}.feedback span{display:block;margin-top:3px;color:rgba(255,255,255,.43);font-size:8px;line-height:1.5}
     .listen-status{display:flex;align-items:center;gap:9px;margin-top:12px;padding:10px 11px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(255,255,255,.035)}.listen-status[hidden]{display:none!important}.listen-status>i{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.28)}.listen-status strong{display:block;font-size:9px}.listen-status span{display:block;margin-top:3px;color:rgba(255,255,255,.43);font-size:8px;line-height:1.45}.listen-status.listening{border-color:rgba(160,241,213,.22);background:rgba(160,241,213,.065)}.listen-status.listening>i{background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.08);animation:listenPulse 1s ease-in-out infinite}
     .guide-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}.guide-actions button{height:35px;padding:0 10px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:transparent;color:rgba(255,255,255,.62);font-size:8px;font-weight:700}.guide-actions button:hover{background:rgba(255,255,255,.05);color:#fff}.guide-actions .primary{background:#fff;color:#111116}.guide-actions button[hidden]{display:none!important}
@@ -208,7 +208,7 @@
     let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
-    let pendingRecognitionResult=null,actionFallbackTimer=0,activeUtterance=null;
+    let pendingRecognitionResult=null,actionFallbackTimer=0,activeUtterance=null,choiceTransitioning=false;
     let labClipsOn=true,labTtsOn=false,labDirectionsOn=true,labTargetOn=true,labBeepsOn=true,labMicOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
     let labEntries=[],labMicPermission='unknown',labLastBeepLog=0,labSpeechCounter=0;
     let voiceAudio=null,voiceClipPlaying=false,voiceClipKey='',voiceClipOnend=null,queuedDirectionClip='';
@@ -650,15 +650,31 @@
       noSpeechRetries=0;
       setGuide('Step 02','Which CV do you mean?','Several files contain “CV”, so GuideCursor asks you to choose instead of guessing. In blind mode it reads A, B and C aloud, then starts listening for your answer.');
       setFeedback('Clarification needed','Say A, B or C, say first, second or third, say the file name, or choose a visible option. This only confirms your intent; it does not select the file in Finder.');
-      choiceList.innerHTML=cvFiles.map((f,i)=>'<button class="choice" type="button" data-choice="'+f+'" aria-label="Option '+choiceLetters[i]+': '+f+'"><strong><span class="choice-key">'+choiceLetters[i]+'</span>'+f+'</strong><span>Say '+choiceLetters[i]+' or choose this as the intended file</span></button>').join('');
-      choiceList.hidden=false;choiceList.querySelectorAll('[data-choice]').forEach(b=>b.addEventListener('click',()=>chooseFile(b.dataset.choice)));if(mode==='blind')announcePhase();
+      choiceTransitioning=false;
+      choiceList.innerHTML=cvFiles.map((f,i)=>'<button class="choice" type="button" data-choice="'+f+'" aria-label="Option '+choiceLetters[i]+': '+f+'"><span class="choice-key" aria-hidden="true"><b>'+choiceLetters[i]+'</b><em>OPTION</em></span><span class="choice-copy"><strong>'+f+'</strong><span>Say “Option '+choiceLetters[i]+'”, “'+(['first','second','third'][i])+'”, or the file name</span></span><span class="choice-check" aria-hidden="true">✓</span></button>').join('');
+      choiceList.hidden=false;choiceList.querySelectorAll('[data-choice]').forEach(b=>b.addEventListener('click',()=>chooseFile(b.dataset.choice,{source:'click'})));if(mode==='blind')announcePhase();
     }
-    function chooseFile(file){
-      stopListening({quiet:true});noSpeechRetries=0;setListenStatus('idle');
-      chosenFile=file;choiceList.hidden=true;phase='file';progress.textContent='3 / 4';
-      setGuide('Step 03','Select '+file,'You chose the intended file. GuideCursor now guides you to that file row so you can select it yourself.');
-      setFeedback('Intent confirmed','Move to the highlighted file and click it.');
-      const row=qs('[data-file="'+CSS.escape(file)+'"]');setTarget(row);if(mode==='blind')announcePhase();
+    function chooseFile(file,{source='voice',heard=''}={}){
+      if(choiceTransitioning)return;
+      choiceTransitioning=true;
+      stopListening({quiet:true});noSpeechRetries=0;
+      pendingRecognitionResult=null;
+      chosenFile=file;
+      const index=cvFiles.indexOf(file),letter=choiceLetters[index]||'';
+      const choiceBtn=choiceList.querySelector('[data-choice="'+CSS.escape(file)+'"]');
+      choiceList.querySelectorAll('.choice').forEach(b=>b.classList.toggle('confirmed',b===choiceBtn));
+      const heardLabel=source==='voice'&&heard?'Heard “'+heard+'”':'Option '+letter+' chosen';
+      setListenStatus('heard',heardLabel+' ✓','Option '+letter+' maps to '+file+'. GuideCursor will guide you there next.');
+      setFeedback('Intent confirmed','Option '+letter+' · '+file+'. You will still click the file yourself.');
+
+      setTimeout(()=>{
+        choiceList.hidden=true;phase='file';progress.textContent='3 / 4';
+        setGuide('Step 03','Select '+file,'You chose the intended file. GuideCursor now guides you to that file row so you can select it yourself.');
+        setFeedback('Guide to '+file,'Move to the highlighted file and click it. GuideCursor has confirmed your intent but has not selected the Finder row.');
+        const row=qs('[data-file="'+CSS.escape(file)+'"]');setTarget(row);
+        choiceTransitioning=false;
+        if(mode==='blind')announcePhase();
+      },260);
     }
     function selectFile(row){
       selectedFile=row.dataset.file;qsa('.file-row').forEach(r=>r.classList.toggle('selected',r===row));openBtn.disabled=false;clearTarget();phase='open';progress.textContent='4 / 4';
@@ -711,7 +727,7 @@
       if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.',{kind:'warning'});
     }
     function reset(){
-      stopListening({quiet:true});noSpeechRetries=0;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');lastDirection='';lastDirectionAt=0;wasReady=false;if(mode==='blind')announcePhase();
+      stopListening({quiet:true});noSpeechRetries=0;choiceTransitioning=false;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');lastDirection='';lastDirectionAt=0;wasReady=false;if(mode==='blind')announcePhase();
     }
 
     submit.addEventListener('click',()=>startGoal(input.value));input.addEventListener('keydown',e=>{if(e.key==='Enter')startGoal(input.value)});useExample.addEventListener('click',()=>{input.value='attach my CV';startGoal(input.value)});
@@ -739,13 +755,41 @@
 
     function normalizedSpeech(text){return (text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()}
     function matchSpokenChoice(text){
-      const n=normalizedSpeech(text);
-      if(!n)return null;
-      if(/^(a|ay|hey)$/.test(n)||/\b(option a|letter a|first|first one|number one|option one)\b/.test(n)||/\b(2026|twenty twenty six|latest|new one|current one)\b/.test(n))return cvFiles[0];
-      if(/^(b|be|bee)$/.test(n)||/\b(option b|letter b|second|second one|number two|option two)\b/.test(n)||/\b(old|older|previous)\b/.test(n))return cvFiles[1];
-      if(/^(c|see|sea)$/.test(n)||/\b(option c|letter c|third|third one|number three|option three)\b/.test(n)||/\bdesign\b/.test(n))return cvFiles[2];
-      const direct=cvFiles.find(f=>n.includes(normalizedSpeech(f.replace('.pdf',''))));
+      const n=normalizedSpeech(text);if(!n)return null;
+      const single=n.replace(/^(option|letter|choice|number|file)\s+/,'').trim();
+
+      const aSingle=/^(a|ay|aye|hey|eh|eight|8|alpha|apple|one|1|first)$/;
+      const bSingle=/^(b|be|bee|bravo|boy|two|2|second)$/;
+      const cSingle=/^(c|see|sea|cee|si|charlie|cat|three|3|third)$/;
+
+      if(aSingle.test(single)||
+         /\b(option|letter|choice|number|file)\s+(a|ay|aye|hey|eh|eight|8|alpha|one|1)\b/.test(n)||
+         /\b(first|first one|number one|option one|choice one)\b/.test(n)||
+         /\b(2026|twenty twenty six|twenty twenty-six|latest|new one|current one|current cv)\b/.test(n))return cvFiles[0];
+
+      if(bSingle.test(single)||
+         /\b(option|letter|choice|number|file)\s+(b|be|bee|bravo|two|2)\b/.test(n)||
+         /\b(second|second one|number two|option two|choice two)\b/.test(n)||
+         /\b(old|older|previous|previous cv)\b/.test(n))return cvFiles[1];
+
+      if(cSingle.test(single)||
+         /\b(option|letter|choice|number|file)\s+(c|see|sea|cee|si|charlie|three|3)\b/.test(n)||
+         /\b(third|third one|number three|option three|choice three)\b/.test(n)||
+         /\b(design|design cv)\b/.test(n))return cvFiles[2];
+
+      const direct=cvFiles.find(f=>{
+        const base=normalizedSpeech(f.replace('.pdf','').replaceAll('_',' '));
+        const short=base.replace(/^cv\s+/,'');
+        return n.includes(base)||n.includes(short);
+      });
       return direct||null;
+    }
+    function matchChoiceAlternatives(alternatives){
+      for(const transcript of alternatives||[]){
+        const file=matchSpokenChoice(transcript);
+        if(file)return {file,transcript};
+      }
+      return null;
     }
     function handleVoiceInput(text){
       if(phase==='choose'){
@@ -764,17 +808,40 @@
 
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(SpeechRecognition){
-      recognition=new SpeechRecognition();recognition.lang='en-GB';recognition.interimResults=false;recognition.maxAlternatives=3;recognition.continuous=false;
+      recognition=new SpeechRecognition();recognition.lang='en-US';recognition.interimResults=false;recognition.maxAlternatives=10;recognition.continuous=false;
+      const SpeechGrammarList=window.SpeechGrammarList||window.webkitSpeechGrammarList;
+      if(SpeechGrammarList){
+        try{
+          const grammars=new SpeechGrammarList();
+          grammars.addFromString('#JSGF V1.0; grammar cvchoice; public <choice> = A | B | C | option A | option B | option C | first | second | third | 2026 | previous | design ;',1);
+          recognition.grammars=grammars;
+        }catch(e){labAdd('mic grammar unavailable',String(e))}
+      }
       ['audiostart','audioend','soundstart','soundend','speechstart','speechend','nomatch'].forEach(ev=>recognition.addEventListener(ev,()=>labAdd('mic '+ev)));
       mic.addEventListener('click',()=>{unlockAudio();startListening(phase==='choose'?'choice':'goal',{delay:0,manual:true})});
       recognition.onstart=()=>{isListening=true;labAdd('mic start');mic.textContent='● Listening';setListenStatus('listening','Listening now',listenPurpose==='choice'?'Say A, B, C, first/second/third, or the file name.':'Say what you want GuideCursor to help you do.')};
       recognition.onresult=e=>{
-        labAdd('mic result','result count='+(e.results?.length||0));
         noSpeechRetries=0;mic.textContent='♪ Speak';
-        const alternatives=[...(e.results?.[0]||[])].map(r=>r.transcript).filter(Boolean);
+        const result=e.results?.[e.resultIndex]||e.results?.[0];
+        const alternatives=[...(result||[])].map(r=>r.transcript).filter(Boolean);
         const text=alternatives[0]||'';
+        labAdd('mic result','alternatives='+alternatives.map((t,i)=>(i+1)+':'+t).join(' | '));
+
+        if(phase==='choose'){
+          const match=matchChoiceAlternatives(alternatives);
+          if(match){
+            const letter=choiceLetters[cvFiles.indexOf(match.file)];
+            labAdd('voice choice matched','heard='+match.transcript+' -> '+letter+' / '+match.file);
+            pendingRecognitionResult=null;
+            setListenStatus('heard','Heard “'+match.transcript+'” ✓','Recognized as Option '+letter+'. Confirming your intended file.');
+            try{recognition.stop()}catch(_){}
+            setTimeout(()=>chooseFile(match.file,{source:'voice',heard:match.transcript}),70);
+            return;
+          }
+        }
+
         pendingRecognitionResult={alternatives,text,phaseAtResult:phase};
-        setListenStatus('heard','Heard: “'+text+'”','Finishing microphone input before GuideCursor responds.');
+        setListenStatus('heard','Heard: “'+text+'”','Checking what you said…');
       };
       recognition.onerror=e=>{
         labAdd('mic error',String(e.error||'unknown'));
@@ -807,12 +874,12 @@
         setTimeout(()=>{
           if(result){
             const {alternatives,text,phaseAtResult}=result;
-            if(phaseAtResult==='choose'&&phase==='choose'){
-              const matched=alternatives.map(matchSpokenChoice).find(Boolean);
-              if(matched){
-                const letter=choiceLetters[cvFiles.indexOf(matched)];
-                setFeedback('Heard “'+text+'”','Option '+letter+' means '+matched+'. GuideCursor will now guide you to that file so you can click it yourself.');
-                chooseFile(matched);return;
+            if(phaseAtResult==='choose'&&phase==='choose'&&!choiceTransitioning){
+              const match=matchChoiceAlternatives(alternatives);
+              if(match){
+                const letter=choiceLetters[cvFiles.indexOf(match.file)];
+                labAdd('voice choice matched on end','heard='+match.transcript+' -> '+letter+' / '+match.file);
+                chooseFile(match.file,{source:'voice',heard:match.transcript});return;
               }
             }
             handleVoiceInput(text);
