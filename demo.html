@@ -334,7 +334,7 @@
 
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
     let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0;
-    let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
+    let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0,micListenWanted=false,micRestartTimer=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
     let pendingRecognitionResult=null,actionFallbackTimer=0,activeUtterance=null,choiceTransitioning=false,communityTimer=0,communityRevealTimer=0,communityInteractiveTimer=0;
     let labClipsOn=true,labTtsOn=false,labDirectionsOn=true,labTargetOn=true,labBeepsOn=true,labMicOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
@@ -531,28 +531,40 @@
     }
     function stopListening({quiet=true}={}){
       clearTimeout(autoListenTimer);autoListenTimer=0;
+      clearTimeout(micRestartTimer);micRestartTimer=0;
+      micListenWanted=false;
       labAdd('mic stop requested','listening='+isListening);
       if(recognition&&isListening){try{recognition.abort()}catch(e){labAdd('mic abort exception',String(e))}}
       if(!quiet)setListenStatus('idle','Microphone ready','GuideCursor will listen automatically when it asks a question.');
     }
-    function startListening(purpose,{delay=180,manual=false}={}){
-      clearTimeout(autoListenTimer);
-      labAdd('mic start requested','purpose='+purpose+' manual='+manual+' enabled='+labMicOn);
-      if(!labMicOn){setListenStatus('idle','Microphone disabled in Audio Lab','Turn Microphone / recognition back on to test it.');return}
-      if(mode!=='blind'&&!manual)return;
+    function startListening(purpose,{delay=220,manual=false}={}){
+      clearTimeout(autoListenTimer);autoListenTimer=0;
+      clearTimeout(micRestartTimer);micRestartTimer=0;
+      labAdd('mic start requested','purpose='+purpose+' manual='+manual+' enabled='+labMicOn+' voiceClip='+voiceClipPlaying);
+      if(!labMicOn){micListenWanted=false;setListenStatus('idle','Microphone disabled in Audio Lab','Turn Microphone / recognition back on to test it.');return}
+      if(mode!=='blind'&&!manual){micListenWanted=false;return}
       if(!recognition){
+        micListenWanted=false;
         setListenStatus('error','Microphone unavailable','Voice input is not supported in this browser. You can still use the visible choices.');
         return;
       }
+      micListenWanted=true;listenPurpose=purpose;
       autoListenTimer=setTimeout(()=>{
         const valid=(purpose==='goal'&&phase==='request')||(purpose==='choice'&&phase==='choose');
-        if((mode!=='blind'&&!manual)||!valid)return;
-        listenPurpose=purpose;
+        if(!micListenWanted||(mode!=='blind'&&!manual)||!valid)return;
+        if(voiceClipPlaying){
+          labAdd('mic start deferred','voice clip still playing: '+voiceClipKey);
+          startListening(purpose,{delay:180,manual});
+          return;
+        }
         try{
-          setListenStatus('starting','Starting microphone','Your browser may ask for microphone permission.');
+          setListenStatus('starting','Starting microphone',purpose==='choice'?'Get ready to say Option A, B or C.':'Get ready to say what you want GuideCursor to do.');
           recognition.start();
-        }catch(_){
-          setListenStatus('error','Microphone needs another try','Use Repeat to hear the question and start listening again.');
+        }catch(e){
+          labAdd('mic start exception',String(e));
+          if(micListenWanted){
+            micRestartTimer=setTimeout(()=>startListening(purpose,{delay:0,manual}),260);
+          }
         }
       },delay);
     }
@@ -800,7 +812,7 @@
     }
     function chooseFile(file,{source='voice',heard=''}={}){
       if(choiceTransitioning)return;
-      choiceTransitioning=true;
+      choiceTransitioning=true;micListenWanted=false;
       stopListening({quiet:true});noSpeechRetries=0;
       pendingRecognitionResult=null;
       chosenFile=file;
@@ -1076,7 +1088,7 @@
 
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(SpeechRecognition){
-      recognition=new SpeechRecognition();recognition.lang='en-US';recognition.interimResults=false;recognition.maxAlternatives=10;recognition.continuous=false;
+      recognition=new SpeechRecognition();recognition.lang='en-US';recognition.interimResults=true;recognition.maxAlternatives=10;recognition.continuous=false;
       const SpeechGrammarList=window.SpeechGrammarList||window.webkitSpeechGrammarList;
       if(SpeechGrammarList){
         try{
@@ -1087,33 +1099,52 @@
       }
       ['audiostart','audioend','soundstart','soundend','speechstart','speechend','nomatch'].forEach(ev=>recognition.addEventListener(ev,()=>labAdd('mic '+ev)));
       mic.addEventListener('click',()=>{unlockAudio();startListening(phase==='choose'?'choice':'goal',{delay:0,manual:true})});
-      recognition.onstart=()=>{isListening=true;labAdd('mic start');mic.textContent='● Listening';setListenStatus('listening','Listening now',listenPurpose==='choice'?'Say A, B, C, first/second/third, or the file name.':'Say what you want GuideCursor to help you do.')};
+      recognition.onstart=()=>{
+        isListening=true;labAdd('mic start','purpose='+listenPurpose);mic.textContent='● Listening';
+        const choice=listenPurpose==='choice';
+        setListenStatus('listening','Listening now',choice?'Say “Option A”, “Option B”, “Option C”, first/second/third, or the file name.':'Say what you want GuideCursor to help you do.');
+        setFeedback('Listening',choice?'I’m listening for your CV choice now.':'I’m listening for your request now.');
+      };
       recognition.onresult=e=>{
-        noSpeechRetries=0;mic.textContent='♪ Speak';
-        const result=e.results?.[e.resultIndex]||e.results?.[0];
-        const alternatives=[...(result||[])].map(r=>r.transcript).filter(Boolean);
+        noSpeechRetries=0;
+        const batches=[];
+        for(let i=e.resultIndex||0;i<(e.results?.length||0);i++){
+          const result=e.results[i];
+          const alternatives=[...(result||[])].map(r=>r.transcript).filter(Boolean);
+          if(alternatives.length)batches.push({alternatives,isFinal:!!result.isFinal});
+        }
+        const alternatives=batches.flatMap(b=>b.alternatives);
         const text=alternatives[0]||'';
-        labAdd('mic result','alternatives='+alternatives.map((t,i)=>(i+1)+':'+t).join(' | '));
+        labAdd('mic result','final='+batches.some(b=>b.isFinal)+' alternatives='+alternatives.map((t,i)=>(i+1)+':'+t).join(' | '));
 
         if(phase==='choose'){
           const match=matchChoiceAlternatives(alternatives);
           if(match){
             const letter=choiceLetters[cvFiles.indexOf(match.file)];
             labAdd('voice choice matched','heard='+match.transcript+' -> '+letter+' / '+match.file);
+            micListenWanted=false;
             pendingRecognitionResult=null;
             setListenStatus('heard','Heard “'+match.transcript+'” ✓','Recognized as Option '+letter+'. Confirming your intended file.');
+            setFeedback('Choice heard','Option '+letter+' means '+match.file+'.');
             try{recognition.stop()}catch(_){}
             setTimeout(()=>chooseFile(match.file,{source:'voice',heard:match.transcript}),70);
             return;
           }
         }
 
-        pendingRecognitionResult={alternatives,text,phaseAtResult:phase};
-        setListenStatus('heard','Heard: “'+text+'”','Checking what you said…');
+        const finalBatch=batches.find(b=>b.isFinal);
+        if(finalBatch){
+          const finalText=finalBatch.alternatives[0]||text;
+          pendingRecognitionResult={alternatives:finalBatch.alternatives,text:finalText,phaseAtResult:phase};
+          setListenStatus('heard','Heard: “'+finalText+'”','Checking what you said…');
+        }else if(text){
+          setListenStatus('listening','Listening now','I heard “'+text+'”… keep going or say the full option.');
+        }
       };
       recognition.onerror=e=>{
         labAdd('mic error',String(e.error||'unknown'));
         pendingRecognitionResult=null;mic.textContent='♪ Speak';
+        if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='no-speech')micListenWanted=false;
         if(e.error==='not-allowed'||e.error==='service-not-allowed'){
           setListenStatus('error','Microphone permission blocked','Allow microphone access in the browser to answer GuideCursor by voice.');
           setFeedback('Microphone permission blocked','Allow microphone access, then use Repeat to hear the question again.');
@@ -1136,11 +1167,13 @@
         setFeedback('Microphone unavailable','Use Repeat to retry, or use the visible controls.');
       };
       recognition.onend=()=>{
-        labAdd('mic end');
+        labAdd('mic end','wanted='+micListenWanted+' purpose='+listenPurpose+' phase='+phase);
         isListening=false;mic.textContent='♪ Speak';
         const result=pendingRecognitionResult;pendingRecognitionResult=null;
-        setTimeout(()=>{
-          if(result){
+
+        if(result){
+          micListenWanted=false;
+          setTimeout(()=>{
             const {alternatives,text,phaseAtResult}=result;
             if(phaseAtResult==='choose'&&phase==='choose'&&!choiceTransitioning){
               const match=matchChoiceAlternatives(alternatives);
@@ -1151,9 +1184,19 @@
               }
             }
             handleVoiceInput(text);
-          }
-          if(mode!=='blind'&&phase==='request')setListenStatus('idle');
-        },120);
+          },90);
+          return;
+        }
+
+        const valid=(listenPurpose==='goal'&&phase==='request')||(listenPurpose==='choice'&&phase==='choose');
+        if(micListenWanted&&mode==='blind'&&valid&&!choiceTransitioning){
+          setListenStatus('starting','Still listening',listenPurpose==='choice'?'Say Option A, B or C when you are ready.':'Say your request when you are ready.');
+          clearTimeout(micRestartTimer);
+          micRestartTimer=setTimeout(()=>startListening(listenPurpose,{delay:0}),180);
+          return;
+        }
+
+        if(mode!=='blind'&&phase==='request')setListenStatus('idle');
       };
     }else{
       mic.addEventListener('click',()=>setFeedback('Voice input is not available in this browser','Type “attach my CV” or use the example button instead.'));
