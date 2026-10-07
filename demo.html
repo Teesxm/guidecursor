@@ -614,7 +614,8 @@
       }
       lastDirection='';lastDirectionAt=0;pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;wasReady=false;syncHalo(false,false);queue();
       if(announce&&mode==='blind'){
-        resetTtsSession('enter Blind mode').then(()=>announcePhase());
+        if(labClipsOn)announcePhase();
+        else resetTtsSession('enter Blind mode').then(()=>announcePhase());
       }
     }
     function announcePhase(){
