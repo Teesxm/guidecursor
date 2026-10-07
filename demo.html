@@ -428,6 +428,7 @@
       if(callEnd&&typeof done==='function')done();
       labUpdate();
     }
+    function isDirectionVoiceClip(key){return /^move-|^scroll-/.test(String(key||''))}
     function playVoiceClip(key,{source='general',onend=null}={}){
       if(!labClipsOn||!key||!voiceClipFiles[key])return false;
       if(source==='direction'&&(!target||phase==='done'||phase==='request'||phase==='choose')){
@@ -436,7 +437,14 @@
         return true;
       }
       if(source==='direction'&&voiceClipPlaying){
-        queuedDirectionClip=key;labAdd('voice clip deferred',key);return true;
+        if(isDirectionVoiceClip(voiceClipKey)){
+          if(voiceClipKey===key)return true;
+          labAdd('direction clip superseded',voiceClipKey+' -> '+key);
+          queuedDirectionClip='';
+          stopVoiceClip({callEnd:false});
+        }else{
+          queuedDirectionClip=key;labAdd('voice clip deferred behind '+voiceClipKey,key);return true;
+        }
       }
       stopVoiceClip({callEnd:false});
       const audio=new Audio(voiceClipBase+voiceClipFiles[key]);
@@ -784,7 +792,7 @@
         const options=cvFiles.map((f,i)=>'Option '+choiceLetters[i]+'. '+f.replaceAll('_',' ')).join('. ');
         speak('I found several files containing C V. '+options+'. Which C V do you mean? You can say A, B, C, first one, second one, third one, or the file name.',{kind:'question',onend:()=>startListening('choice')});
       }
-      if(phase==='file')speakAction('Choice received. '+chosenFile.replaceAll('_',' ')+' is the target. Move your pointer toward that file and click it when I confirm you have reached it.');
+      if(phase==='file')speakAction('Choice received. '+chosenFile.replaceAll('_',' ')+' is the target.');
       if(phase==='open')speakAction('File selected. Open is now the verified target. Move your pointer toward Open and click it when I confirm you have reached it.');
       if(phase==='done')speak('Attachment complete. '+selectedFile.replaceAll('_',' ')+' is attached to the email.',{kind:'completion'});
     }
