@@ -146,7 +146,8 @@
           <details class="audio-lab" id="audio-lab" hidden>
             <summary>Audio diagnostics</summary>
             <div class="lab-toggles">
-              <label class="lab-toggle"><input id="lab-tts" type="checkbox" checked> Voice / TTS</label>
+              <label class="lab-toggle"><input id="lab-clips" type="checkbox" checked> MP3 voice clips</label>
+              <label class="lab-toggle"><input id="lab-tts" type="checkbox"> Browser TTS fallback</label>
               <label class="lab-toggle"><input id="lab-directions" type="checkbox" checked> Direction speech</label>
               <label class="lab-toggle"><input id="lab-target" type="checkbox" checked> Target-found speech</label>
               <label class="lab-toggle"><input id="lab-beeps" type="checkbox" checked> Beeps / earcons</label>
@@ -156,7 +157,8 @@
               <label class="lab-toggle"><input id="lab-retain" type="checkbox" checked> Retain utterance reference</label>
             </div>
             <div class="lab-actions">
-              <button type="button" id="lab-test-voice">Test voice</button>
+              <button type="button" id="lab-test-voice">Test voice clip</button>
+              <button type="button" id="lab-test-tts">Test browser TTS</button>
               <button type="button" id="lab-test-beep">Test beep</button>
               <button type="button" id="lab-start-mic">Start mic</button>
               <button type="button" id="lab-stop-mic">Stop mic</button>
@@ -197,9 +199,9 @@
       companion=qs('#cursor-companion'), cursorMode=qs('#cursor-mode'), cursorDirection=qs('#cursor-direction'),
       cursorDetail=qs('#cursor-detail'), halo=qs('#target-halo'), sr=qs('#sr-status'), modeNote=qs('#mode-note'),
       listenStatus=qs('#listen-status'), listenStatusTitle=qs('#listen-status-title'), listenStatusCopy=qs('#listen-status-copy'),
-      audioLab=qs('#audio-lab'),labTts=qs('#lab-tts'),labDirections=qs('#lab-directions'),labTarget=qs('#lab-target'),
+      audioLab=qs('#audio-lab'),labClips=qs('#lab-clips'),labTts=qs('#lab-tts'),labDirections=qs('#lab-directions'),labTarget=qs('#lab-target'),
       labBeeps=qs('#lab-beeps'),labMic=qs('#lab-mic'),labVoice=qs('#lab-voice'),labCancel=qs('#lab-cancel'),labRetain=qs('#lab-retain'),
-      labTestVoice=qs('#lab-test-voice'),labTestBeep=qs('#lab-test-beep'),labStartMic=qs('#lab-start-mic'),labStopMic=qs('#lab-stop-mic'),
+      labTestVoice=qs('#lab-test-voice'),labTestTts=qs('#lab-test-tts'),labTestBeep=qs('#lab-test-beep'),labStartMic=qs('#lab-start-mic'),labStopMic=qs('#lab-stop-mic'),
       labResetTts=qs('#lab-reset-tts'),labCopy=qs('#lab-copy'),labClear=qs('#lab-clear'),labState=qs('#lab-state'),labLog=qs('#lab-log');
 
     let mode='lowvision',phase='request',target=null,chosenFile='',selectedFile='',pointer={x:innerWidth*.5,y:innerHeight*.5,seen:false};
@@ -207,8 +209,9 @@
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
     let pendingRecognitionResult=null,actionFallbackTimer=0,activeUtterance=null;
-    let labTtsOn=true,labDirectionsOn=true,labTargetOn=true,labBeepsOn=true,labMicOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
+    let labClipsOn=true,labTtsOn=false,labDirectionsOn=true,labTargetOn=true,labBeepsOn=true,labMicOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
     let labEntries=[],labMicPermission='unknown',labLastBeepLog=0,labSpeechCounter=0;
+    let voiceAudio=null,voiceClipPlaying=false,voiceClipKey='',voiceClipOnend=null,queuedDirectionClip='';
     let ttsEpoch=0,ttsResetting=false,pendingDirectionAfterSpeech='';
     const cvFiles=['CV_2026.pdf','CV_Previous.pdf','CV_Design.pdf'];
     const choiceLetters=['A','B','C'];
@@ -233,7 +236,8 @@
         'AudioContext: '+(audioCtx?.state||'not-created'),
         'user activation: active='+String(ua?.isActive)+' ever='+String(ua?.hasBeenActive),
         'document: '+document.visibilityState+' | focused='+String(document.hasFocus()),
-        'flags: TTS='+labTtsOn+' directions='+labDirectionsOn+' target='+labTargetOn+' beeps='+labBeepsOn+' mic='+labMicOn,
+        'voice clips: '+labClipsOn+' | clip playing: '+voiceClipPlaying+' | current: '+(voiceClipKey||'none'),
+        'flags: browserTTS='+labTtsOn+' directions='+labDirectionsOn+' target='+labTargetOn+' beeps='+labBeepsOn+' mic='+labMicOn,
         'options: assignVoice='+labUseVoice+' cancelOnInterrupt='+labCancelOn+' retainUtterance='+labRetainOn,
         'tts reset: '+ttsResetting+' | deferred direction: '+(pendingDirectionAfterSpeech||'none')
       ].join('\n');
@@ -250,6 +254,7 @@
     function labSetFlag(input,key){
       input.addEventListener('change',()=>{
         const value=input.checked;
+        if(key==='clips')labClipsOn=value;
         if(key==='tts')labTtsOn=value;
         if(key==='directions')labDirectionsOn=value;
         if(key==='target')labTargetOn=value;
@@ -260,6 +265,69 @@
         if(key==='retain')labRetainOn=value;
         labAdd('toggle '+key,String(value));
       });
+    }
+    const voiceClipBase='/audio/guidecursor/';
+    const voiceClipFiles={
+      ready:'ready.mp3',attach:'attach.mp3',choose:'choose.mp3',file:'file.mp3',open:'open.mp3',complete:'complete.mp3',
+      'invalid-goal':'invalid-goal.mp3','invalid-choice':'invalid-choice.mp3','no-speech':'no-speech.mp3','wrong-target':'wrong-target.mp3',
+      'target-found':'target-found.mp3','move-left':'move-left.mp3','move-right':'move-right.mp3','move-up':'move-up.mp3','move-down':'move-down.mp3',
+      'move-up-left':'move-up-left.mp3','move-up-right':'move-up-right.mp3','move-down-left':'move-down-left.mp3','move-down-right':'move-down-right.mp3',
+      'scroll-up':'scroll-up.mp3','scroll-down':'scroll-down.mp3'
+    };
+    function directionClipKey(text){
+      return String(text||'').toLowerCase().replace(/\s+/g,' ').trim().replace(/\s/g,'-');
+    }
+    function voiceClipFor(text,source){
+      const t=String(text||'');
+      if(source==='direction')return directionClipKey(t);
+      if(source==='target')return 'target-found';
+      if(t.startsWith('GuideCursor ready.'))return 'ready';
+      if(t.startsWith('Action started. Attach'))return 'attach';
+      if(t.startsWith('I found several files'))return 'choose';
+      if(t.startsWith('Choice received.'))return 'file';
+      if(t.startsWith('File selected.'))return 'open';
+      if(t.startsWith('Attachment complete.'))return 'complete';
+      if(t.startsWith('I need a clearer goal'))return 'invalid-goal';
+      if(t.startsWith('I did not catch that choice'))return 'invalid-choice';
+      if(t.startsWith('I did not hear an answer'))return 'no-speech';
+      if(t.startsWith('That is not the verified target'))return 'wrong-target';
+      return '';
+    }
+    function stopVoiceClip({callEnd=false}={}){
+      if(voiceAudio){try{voiceAudio.pause();voiceAudio.currentTime=0}catch(_){}}
+      const done=voiceClipOnend;
+      voiceAudio=null;voiceClipPlaying=false;voiceClipKey='';voiceClipOnend=null;
+      if(callEnd&&typeof done==='function')done();
+      labUpdate();
+    }
+    function playVoiceClip(key,{source='general',onend=null}={}){
+      if(!labClipsOn||!key||!voiceClipFiles[key])return false;
+      if(source==='direction'&&voiceClipPlaying){
+        queuedDirectionClip=key;labAdd('voice clip deferred',key);return true;
+      }
+      stopVoiceClip({callEnd:false});
+      const audio=new Audio(voiceClipBase+voiceClipFiles[key]);
+      audio.preload='auto';audio.volume=1;
+      voiceAudio=audio;voiceClipPlaying=true;voiceClipKey=key;voiceClipOnend=onend;
+      const finish=(event)=>{
+        if(voiceAudio!==audio)return;
+        const done=voiceClipOnend;
+        voiceAudio=null;voiceClipPlaying=false;voiceClipKey='';voiceClipOnend=null;
+        labAdd('voice clip '+event,key);
+        if(typeof done==='function')done();
+        if(queuedDirectionClip&&labDirectionsOn){
+          const next=queuedDirectionClip;queuedDirectionClip='';
+          setTimeout(()=>playVoiceClip(next,{source:'direction'}),45);
+        }
+        labUpdate();
+      };
+      audio.onplay=()=>{labAdd('voice clip play',key);setFeedback('Speaking',key.replaceAll('-',' '));labUpdate()};
+      audio.onended=()=>finish('ended');
+      audio.onerror=()=>finish('error');
+      labAdd('voice clip request',key);
+      const p=audio.play();
+      if(p?.catch)p.catch(e=>{labAdd('voice clip play rejected',key+' '+String(e));finish('rejected')});
+      return true;
     }
     function synthIdle(){return !('speechSynthesis'in window)||(!speechSynthesis.speaking&&!speechSynthesis.pending)}
     function waitForSynthIdle(timeout=1400){
@@ -297,7 +365,7 @@
     async function speakAfterCleanReset(text,opts={}){
       const clean=await resetTtsSession(opts.reason||'clean start');
       if(!clean)labAdd('TTS reset warning','engine still not idle; attempting one direct utterance');
-      speak(text,{...opts,interrupt:false});
+      browserSpeak(text,{...opts,interrupt:false});
     }
     function pickVoice(){
       if(!('speechSynthesis'in window))return null;
@@ -358,7 +426,7 @@
         if(audioCtx.state==='suspended')audioCtx.resume().then(()=>labAdd('AudioContext resumed',audioCtx.state)).catch(e=>labAdd('AudioContext resume error',String(e)));
       }catch(e){labAdd('AudioContext exception',String(e))}
     }
-    function speak(text,{interrupt=true,onend=null,source='general'}={}){
+    function browserSpeak(text,{interrupt=true,onend=null,source='general'}={}){
       const id=++labSpeechCounter,epoch=ttsEpoch;
       labAdd('TTS request #'+id,'source='+source+' interrupt='+interrupt+' text='+text.slice(0,100));
       if(mode!=='blind'||!audioOn||!labTtsOn||!text){
@@ -402,7 +470,7 @@
           if(typeof onend==='function')onend();
           if(pendingDirectionAfterSpeech&&mode==='blind'&&labDirectionsOn){
             const next=pendingDirectionAfterSpeech;pendingDirectionAfterSpeech='';
-            setTimeout(()=>speak(next,{interrupt:false,source:'direction'}),60);
+            setTimeout(()=>browserSpeak(next,{interrupt:false,source:'direction'}),60);
           }
           labUpdate();
         };
@@ -418,6 +486,18 @@
         setTimeout(()=>{if(!stale())labAdd('TTS snapshot +1500ms #'+id,'speaking='+synth.speaking+' pending='+synth.pending+' paused='+synth.paused)},1500);
       }catch(e){labAdd('TTS exception #'+id,String(e));if(typeof onend==='function')onend()}
     }
+    function speak(text,{interrupt=true,onend=null,source='general'}={}){
+      const key=voiceClipFor(text,source);
+      if(labClipsOn&&key){
+        if(source==='target'&&!labTargetOn){labAdd('target clip skipped','toggle off');if(typeof onend==='function')onend();return}
+        if(source==='direction'&&!labDirectionsOn){labAdd('direction clip skipped',key);if(typeof onend==='function')onend();return}
+        if(playVoiceClip(key,{source,onend}))return;
+      }
+      if(labTtsOn){browserSpeak(text,{interrupt,onend,source});return}
+      labAdd('voice skipped','no clip mapping and browser TTS disabled: '+source);
+      if(typeof onend==='function')onend();
+    }
+
 
     function finishActionSpeech(){
       clearTimeout(actionFallbackTimer);actionFallbackTimer=0;
@@ -439,7 +519,7 @@
       if(mode!=='blind'||!target)return;
       if(actionSpeaking||!directionSpeechEnabled){pendingTargetFound=true;return}
       pendingTargetFound=false;pendingDirection='';lastDirection='Target reached';lastDirectionAt=performance.now();
-      if(labTargetOn)speak(targetLabel()+'. Target found. Click once.',{interrupt:false,source:'target'});else labAdd('target speech skipped','toggle off');
+      speak(targetLabel()+'. Target found. Click once.',{interrupt:false,source:'target'});
       successTone();
     }
     function speakDirectionChange(dir,{force=false}={}){
@@ -450,7 +530,7 @@
       if(!force&&now-lastDirectionAt<1150){pendingDirection=dir;return}
       if(!force&&'speechSynthesis'in window&&speechSynthesis.speaking&&now-lastDirectionAt<1800){pendingDirection=dir;return}
       pendingDirection='';lastDirection=dir;lastDirectionAt=now;
-      if(labDirectionsOn)speak(dir.replace('-',' '),{interrupt:false,source:'direction'});else labAdd('direction speech skipped',dir);
+      speak(dir.replace('-',' '),{interrupt:false,source:'direction'});
     }
     function tone(direction,dist=240){
       if(mode!=='blind'||!audioOn||!labBeepsOn)return;
@@ -526,9 +606,10 @@
       modeNote.innerHTML=mode==='blind'?'<b>Blind guidance</b> uses spoken labels and directional audio without visual target cues. You still move the pointer and make every click.':'<b>Low-vision guidance</b> uses a high-contrast target outline and a direction cue that follows your pointer. You still move the pointer and make every click.';
       if(mode==='blind'){
         audioOn=true;unlockAudio();
+        Object.values(voiceClipFiles).forEach(file=>{const a=new Audio(voiceClipBase+file);a.preload='auto'});
         audioToggle.setAttribute('aria-pressed','true');audioToggle.textContent='♪ Audio on';
       }else{
-        stopListening({quiet:true});setListenStatus('idle');
+        stopListening({quiet:true});setListenStatus('idle');stopVoiceClip({callEnd:false});
         if('speechSynthesis'in window)speechSynthesis.cancel();
       }
       lastDirection='';lastDirectionAt=0;pendingDirection='';pendingTargetFound=false;directionSpeechEnabled=false;actionSpeaking=false;wasReady=false;syncHalo(false,false);queue();
@@ -636,11 +717,12 @@
     qsa('[data-wrong]').forEach(el=>el.addEventListener('click',()=>wrongClick(el)));
     qsa('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
     qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
-    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn&&'speechSynthesis'in window)speechSynthesis.cancel();if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
+    audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn){stopVoiceClip({callEnd:false});if('speechSynthesis'in window)speechSynthesis.cancel();}if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
     repeat.addEventListener('click',()=>{labAdd('Repeat clicked');announcePhase()});
-    labSetFlag(labTts,'tts');labSetFlag(labDirections,'directions');labSetFlag(labTarget,'target');labSetFlag(labBeeps,'beeps');
+    labSetFlag(labClips,'clips');labSetFlag(labTts,'tts');labSetFlag(labDirections,'directions');labSetFlag(labTarget,'target');labSetFlag(labBeeps,'beeps');
     labSetFlag(labMic,'mic');labSetFlag(labVoice,'voice');labSetFlag(labCancel,'cancel');labSetFlag(labRetain,'retain');
-    labTestVoice.addEventListener('click',()=>{labAdd('TEST voice clicked');speakAfterCleanReset('GuideCursor diagnostic voice test.',{source:'manual-test',reason:'manual Test voice'})});
+    labTestVoice.addEventListener('click',()=>{labAdd('TEST voice clip clicked');playVoiceClip('ready',{source:'manual-test'})});
+    labTestTts.addEventListener('click',()=>{labAdd('TEST browser TTS clicked');speakAfterCleanReset('GuideCursor browser T T S diagnostic test.',{source:'manual-test',reason:'manual browser TTS test'})});
     labTestBeep.addEventListener('click',()=>{labAdd('TEST beep clicked');unlockAudio();tone('Move right',80)});
     labStartMic.addEventListener('click',()=>{labAdd('TEST mic start clicked');startListening(phase==='choose'?'choice':'goal',{delay:0,manual:true})});
     labStopMic.addEventListener('click',()=>{labAdd('TEST mic stop clicked');stopListening({quiet:false})});
