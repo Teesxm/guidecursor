@@ -52,6 +52,10 @@
       "destination": "/downloads.html"
     },
     {
+      "source": "/community",
+      "destination": "/community.html"
+    },
+    {
       "source": "/demo",
       "destination": "/demo.html"
     }
@@ -203,6 +207,24 @@
     },
     {
       "source": "/prototype",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/community",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/community.html",
       "headers": [
         {
           "key": "Cache-Control",
