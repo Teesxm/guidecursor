@@ -946,7 +946,8 @@
       raf=0;if(!target||phase==='choose'||phase==='request'||phase==='done')return;
       const r=target.getBoundingClientRect(),vw=innerWidth,vh=innerHeight;
       const nx=Math.max(r.left,Math.min(r.right,pointer.x)),ny=Math.max(r.top,Math.min(r.bottom,pointer.y)),dx=nx-pointer.x,dy=ny-pointer.y,dist=Math.hypot(dx,dy);
-      const arrowAngle=Math.atan2(dy,dx)*180/Math.PI;
+      // The glyph is ↗, whose visual baseline is -45deg. Add 45deg so its tip follows the actual target vector.
+      const arrowAngle=Math.atan2(dy,dx)*180/Math.PI+45;
       const ready=pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom,near=dist<205;
       const dir=ready?'Target found - click once':directionName(dx,dy),detail=ready?'Verified target ready. You make the click.':dist<70?'Almost there.':dist<170?'You are close.':'Move toward the verified target.';
       target.classList.toggle('near',near);target.classList.toggle('ready',ready);syncHalo(near,ready);cursorDirection.textContent=dir;cursorDetail.textContent=detail;
