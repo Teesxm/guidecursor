@@ -712,9 +712,19 @@
       if(callEnd&&typeof done==='function')done();
       labUpdate();
     }
+    function isDirectionVoiceClip(key){return /^move-|^scroll-/.test(String(key||''))}
     function playVoiceClip(key,{source='general',onend=null}={}){
       if(!labClipsOn||!key||!voiceClipFiles[key])return false;
-      if(source==='direction'&&voiceClipPlaying){queuedDirectionClip=key;labAdd('voice clip deferred',key);return true}
+      if(source==='direction'&&voiceClipPlaying){
+        if(isDirectionVoiceClip(voiceClipKey)){
+          if(voiceClipKey===key)return true;
+          labAdd('direction clip superseded',voiceClipKey+' -> '+key);
+          queuedDirectionClip='';
+          stopVoiceClip({callEnd:false});
+        }else{
+          queuedDirectionClip=key;labAdd('voice clip deferred behind '+voiceClipKey,key);return true;
+        }
+      }
       stopVoiceClip({callEnd:false});
       const audio=new Audio(voiceClipBase+voiceClipFiles[key]);
       audio.preload='auto';audio.volume=1;voiceAudio=audio;voiceClipPlaying=true;voiceClipKey=key;voiceClipOnend=onend;
