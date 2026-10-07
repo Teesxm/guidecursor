@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GuideCursor Community Extensions: a future modular platform direction for community-built accessibility guidance across applications, barriers and needs." />
+  <title>Community Extensions - GuideCursor</title>
+  <link rel="icon" href="/favicon.svg" />
+  <style>
+    :root{--paper:#f4f2ed;--paper2:#eae7e0;--ink:#111116;--muted:#75717a;--line:rgba(17,17,22,.1);--indigo:#6758f4;--indigo2:#8c81ff;--mint:#a0f1d5;--dark:#111116;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}html,body{margin:0;min-width:320px;background:var(--paper);color:var(--ink)}body{overflow-x:hidden}a{text-decoration:none;color:inherit}button{font:inherit}::selection{background:var(--indigo);color:#fff}
+    .nav-wrap{position:fixed;z-index:50;left:0;right:0;top:0;padding:12px 18px}.nav{width:min(1180px,100%);height:60px;margin:auto;padding:0 10px 0 14px;border:1px solid rgba(17,17,22,.09);border-radius:17px;background:rgba(248,247,243,.88);backdrop-filter:blur(18px);display:flex;align-items:center;gap:18px;box-shadow:0 12px 34px rgba(24,22,30,.05)}.brand{display:flex;align-items:center;gap:10px;font-weight:780;font-size:18px;letter-spacing:-.04em}.brand b{color:var(--indigo)}.mark{position:relative;width:34px;height:34px;border-radius:10px;background:#111116;color:#fff;display:grid;place-items:center}.mark i{position:absolute;right:6px;top:6px;width:6px;height:6px;border-radius:50%;background:var(--mint)}.nav-links{margin-left:auto;display:flex;align-items:center;gap:4px}.nav-links a{padding:10px 11px;border-radius:9px;color:#716d75;font-size:9px;font-weight:700}.nav-links a:hover{background:#ece9e2;color:#111116}.nav-links .active{background:rgba(103,88,244,.09);color:#5648d9}.nav-links .demo{background:#111116;color:#fff}
+    .hero{position:relative;overflow:hidden;padding:160px 24px 96px;background:linear-gradient(180deg,#f6f4ef,#eeece7)}.hero:before{content:"";position:absolute;width:720px;height:720px;right:-250px;top:-320px;border-radius:50%;background:radial-gradient(circle,rgba(103,88,244,.2),transparent 68%)}.hero:after{content:"";position:absolute;width:480px;height:480px;left:-220px;bottom:-270px;border-radius:50%;background:radial-gradient(circle,rgba(160,241,213,.22),transparent 69%)}.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(17,17,22,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(17,17,22,.035) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.85),transparent 86%)}.hero-in{position:relative;width:min(1180px,100%);margin:auto;display:grid;grid-template-columns:1.05fr .95fr;gap:70px;align-items:center}.eyebrow{display:inline-flex;align-items:center;gap:8px;color:#5f54d9;font:600 8px "DM Mono",monospace;letter-spacing:.12em;text-transform:uppercase}.eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(160,241,213,.18)}.hero h1{max-width:760px;margin:20px 0 16px;font-size:clamp(56px,7.3vw,96px);line-height:.92;letter-spacing:-.07em;font-weight:650}.hero h1 span{display:block;color:var(--indigo)}.hero p{max-width:670px;margin:0;color:#6f6b73;font-size:13px;line-height:1.7}.hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:28px}.hero-actions a{padding:13px 15px;border-radius:11px;font-size:9px;font-weight:780}.hero-actions .primary{background:#111116;color:#fff}.hero-actions .secondary{background:#fff;border:1px solid var(--line);color:#55515a}
+    .platform-card{position:relative;padding:22px;border:1px solid rgba(17,17,22,.09);border-radius:24px;background:rgba(255,255,255,.78);box-shadow:0 26px 70px rgba(35,32,55,.09);transform:rotate(1deg)}.platform-card:before{content:"";position:absolute;inset:-1px;border-radius:24px;padding:1px;background:linear-gradient(135deg,rgba(103,88,244,.45),transparent 35%,rgba(160,241,213,.45));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;pointer-events:none}.platform-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.platform-head strong{font-size:12px}.future-pill{padding:6px 8px;border-radius:999px;background:rgba(103,88,244,.08);color:#5b4fd9;font:700 6px "DM Mono",monospace;letter-spacing:.08em;text-transform:uppercase}.platform-core{margin-top:18px;padding:16px;border-radius:15px;background:#111116;color:#fff}.platform-core small{color:var(--mint);font:600 6px "DM Mono",monospace;letter-spacing:.09em;text-transform:uppercase}.platform-core h3{margin:7px 0 4px;font-size:17px}.platform-core p{margin:0;color:rgba(255,255,255,.46);font-size:8px;line-height:1.5}.module-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}.module-chip{padding:12px 10px;border:1px solid rgba(17,17,22,.08);border-radius:12px;background:#fff}.module-chip i{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(145deg,var(--a),var(--b));color:#fff;font-style:normal;font-size:12px}.module-chip strong{display:block;margin-top:9px;font-size:9px}.module-chip span{display:block;margin-top:3px;color:#8a8690;font-size:7px;line-height:1.35}
+    .note-strip{padding:0 24px}.note-in{width:min(1180px,100%);margin:-29px auto 0;position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 18px 46px rgba(29,27,39,.07)}.note-in>div{padding:18px 20px}.note-in>div+div{border-left:1px solid var(--line)}.note-in small{display:block;color:#9a969e;font:600 6px "DM Mono",monospace;letter-spacing:.09em;text-transform:uppercase}.note-in strong{display:block;margin-top:6px;font-size:10px}.note-in span{display:block;margin-top:4px;color:#85818a;font-size:8px;line-height:1.45}
+    .section{padding:100px 24px}.inner{width:min(1180px,100%);margin:auto}.head{display:grid;grid-template-columns:220px minmax(0,1fr);gap:30px;margin-bottom:34px}.num{color:#9d99a1;font:600 7px "DM Mono",monospace;letter-spacing:.11em;text-transform:uppercase}.head h2{margin:0;font-size:clamp(38px,5vw,62px);line-height:.98;letter-spacing:-.06em;font-weight:620}.head p{max-width:700px;margin:13px 0 0;color:#77737b;font-size:11px;line-height:1.7}
+    .why{background:#111116;color:#fff}.why .num{color:rgba(255,255,255,.28)}.why .head p{color:rgba(255,255,255,.46)}.why-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:13px}.why-card{padding:28px;border:1px solid rgba(255,255,255,.09);border-radius:22px;background:rgba(255,255,255,.035)}.why-card.primary{background:linear-gradient(145deg,rgba(103,88,244,.13),rgba(160,241,213,.035));border-color:rgba(140,129,255,.18)}.why-card small{color:var(--mint);font:600 7px "DM Mono",monospace;letter-spacing:.1em;text-transform:uppercase}.why-card h3{margin:13px 0 8px;font-size:27px;letter-spacing:-.045em}.why-card p{margin:0;color:rgba(255,255,255,.46);font-size:10px;line-height:1.7}.evidence-link{display:inline-flex;margin-top:18px;padding:9px 11px;border:1px solid rgba(255,255,255,.1);border-radius:9px;color:#fff;font-size:8px;font-weight:750}.why-points{display:grid;gap:9px;margin-top:18px}.why-points div{padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:11px;color:rgba(255,255,255,.58);font-size:8px;line-height:1.45}.why-points b{display:block;margin-bottom:3px;color:#fff}
+    .architecture{background:#faf9f6}.architecture-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.arch{position:relative;min-height:260px;padding:24px;border:1px solid var(--line);border-radius:21px;background:#fff;overflow:hidden}.arch:after{content:"";position:absolute;width:170px;height:170px;border-radius:50%;right:-100px;bottom:-90px;background:radial-gradient(circle,var(--glow),transparent 70%)}.arch-num{display:grid;place-items:center;width:31px;height:31px;border-radius:10px;background:#eeeae3;color:#77737b;font:700 7px "DM Mono",monospace}.arch h3{margin:34px 0 9px;font-size:23px;letter-spacing:-.04em}.arch p{margin:0;color:#7c7881;font-size:9px;line-height:1.65}.arch ul{margin:18px 0 0;padding:0;list-style:none;display:grid;gap:7px}.arch li{padding:8px 9px;border-radius:8px;background:#faf9f6;color:#77737b;font-size:8px}.arch.core{background:#111116;color:#fff;border-color:#111116}.arch.core .arch-num{background:var(--indigo);color:#fff}.arch.core p{color:rgba(255,255,255,.47)}.arch.core li{background:rgba(255,255,255,.055);color:rgba(255,255,255,.58)}
+    .extensions{background:var(--paper)}.browser{overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:0 25px 70px rgba(31,29,42,.07)}.browser-top{height:58px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:#f7f8fb}.browser-brand{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:800}.browser-brand i{width:27px;height:27px;border-radius:8px;background:#111116;color:#fff;display:grid;place-items:center;font-style:normal}.browser-search{margin-left:auto;width:min(380px,42vw);height:34px;border:1px solid rgba(17,17,22,.08);border-radius:9px;background:#fff;display:flex;align-items:center;padding:0 11px;color:#999da8;font-size:8px}.browser-body{padding:18px;background:#f8f9fc}.extension-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.extension{position:relative;min-height:190px;padding:17px;border:1px solid rgba(17,17,22,.08);border-radius:15px;background:#fff;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.extension:hover{transform:translateY(-4px);border-color:rgba(103,88,244,.2);box-shadow:0 16px 32px rgba(45,43,70,.09)}.extension-icon{width:46px;height:46px;border-radius:13px;background:linear-gradient(145deg,var(--i1),var(--i2));display:grid;place-items:center;color:#fff;font-size:18px}.extension small{position:absolute;right:14px;top:14px;padding:5px 7px;border-radius:999px;background:#eef0ff;color:#5c50d3;font:700 6px "DM Mono",monospace;text-transform:uppercase}.extension small.core{background:#e8fbf4;color:#27846a}.extension h3{margin:13px 0 6px;font-size:15px;letter-spacing:-.03em}.extension p{margin:0;color:#81858f;font-size:8px;line-height:1.5}.extension-footer{position:absolute;left:17px;right:17px;bottom:15px;padding-top:10px;border-top:1px solid rgba(17,17,22,.06);display:flex;align-items:center;justify-content:space-between;color:#9a9da7;font-size:7px}.extension-footer b{color:#595d69}
+    .contribute{background:#faf9f6}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.step{padding:23px;border:1px solid var(--line);border-radius:18px;background:#fff}.step i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#ece9e2;color:#77737b;font:700 7px "DM Mono",monospace;font-style:normal}.step h3{margin:20px 0 7px;font-size:17px}.step p{margin:0;color:#817d85;font-size:8px;line-height:1.6}.step strong{display:block;margin-top:14px;color:#6559d6;font-size:7px}.contribute-note{margin-top:15px;padding:15px 17px;border-radius:13px;background:#111116;color:#fff;display:flex;align-items:center;gap:14px}.contribute-note i{width:34px;height:34px;border-radius:10px;background:rgba(160,241,213,.12);color:var(--mint);display:grid;place-items:center;font-style:normal}.contribute-note strong{font-size:9px}.contribute-note span{display:block;margin-top:3px;color:rgba(255,255,255,.44);font-size:8px;line-height:1.45}
+    .guardrails{background:#111116;color:#fff}.guardrails .num{color:rgba(255,255,255,.28)}.guardrails .head p{color:rgba(255,255,255,.46)}.guard-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.guard{padding:23px;border:1px solid rgba(255,255,255,.09);border-radius:18px;background:rgba(255,255,255,.035)}.guard h3{margin:0;font-size:17px}.guard p{margin:8px 0 0;color:rgba(255,255,255,.45);font-size:9px;line-height:1.6}.guard b{display:inline-block;margin-top:14px;color:var(--mint);font-size:7px}
+    .final{padding:0 24px 100px;background:#111116}.final-in{width:min(1180px,100%);margin:auto;padding:36px;border-radius:25px;background:linear-gradient(145deg,#f7f6f2,#eae7e1);display:flex;align-items:center;justify-content:space-between;gap:30px}.final h2{margin:0;font-size:35px;letter-spacing:-.05em}.final p{max-width:650px;margin:9px 0 0;color:#77737b;font-size:9px;line-height:1.6}.final-actions{display:flex;gap:8px;flex-wrap:wrap}.final-actions a{padding:11px 13px;border-radius:10px;font-size:9px;font-weight:780}.final-actions .primary{background:#111116;color:#fff}.final-actions .secondary{background:#fff;border:1px solid var(--line);color:#55515a}
+    .reveal{opacity:0;transform:translateY(18px);transition:opacity .58s ease,transform .58s cubic-bezier(.16,1,.3,1)}.reveal.in{opacity:1;transform:none}
+    @media(max-width:950px){.hero-in{grid-template-columns:1fr}.platform-card{transform:none}.why-grid{grid-template-columns:1fr}.architecture-grid,.extension-grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.note-in{grid-template-columns:1fr}.note-in>div+div{border-left:0;border-top:1px solid var(--line)}}
+    @media(max-width:650px){.nav-wrap{padding:9px}.brand span:last-child{display:none}.nav-links a:not(.demo):not(.active){display:none}.hero{padding:135px 14px 74px}.hero h1{font-size:58px}.hero-in{gap:40px}.module-row{grid-template-columns:1fr}.note-strip{padding:0 10px}.section{padding:76px 14px}.head{grid-template-columns:1fr;gap:11px}.architecture-grid,.extension-grid,.steps,.guard-grid{grid-template-columns:1fr}.browser-body{padding:11px}.final{padding:0 14px 76px}.final-in{align-items:flex-start;flex-direction:column;padding:27px 21px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.extension{transition:none}}
+  </style>
+</head>
+<body>
+  <header class="nav-wrap"><nav class="nav"><a class="brand" href="/"><span class="mark">↖<i></i></span><span>Guide<b>Cursor</b></span></a><div class="nav-links"><a href="/#how">How it works</a><a href="/scope">Capabilities</a><a class="active" href="/community">Community</a><a href="/security">Security</a><a class="demo" href="/demo">Full demo ↗</a></div></nav></header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-grid"></div>
+      <div class="hero-in">
+        <div>
+          <span class="eyebrow"><i></i> FUTURE PLATFORM DIRECTION</span>
+          <h1>One core guide.<span>A platform that can grow.</span></h1>
+          <p>GuideCursor is designed as a modular accessibility platform. The current product starts with a tightly controlled macOS workflow for people with low vision or blindness. Over time, future extensions could adapt the same verified guidance model to different applications, barriers and accessibility needs.</p>
+          <div class="hero-actions"><a class="primary" href="/demo">See the core journey ↗</a><a class="secondary" href="#extensions">Explore future extensions</a></div>
+        </div>
+        <div class="platform-card reveal">
+          <div class="platform-head"><strong>GuideCursor platform</strong><span class="future-pill">Future ecosystem</span></div>
+          <div class="platform-core"><small>CORE</small><h3>Verified guidance engine</h3><p>Intent, interface reading, target verification and user-controlled pointer guidance remain the shared foundation.</p></div>
+          <div class="module-row">
+            <div class="module-chip" style="--a:#2579ee;--b:#315ed4"><i>✉</i><strong>Mail</strong><span>Current demo workflow</span></div>
+            <div class="module-chip" style="--a:#9f55f6;--b:#7047dc"><i>▤</i><strong>Forms</strong><span>Future extension</span></div>
+            <div class="module-chip" style="--a:#22b6ae;--b:#148f92"><i>◒</i><strong>Shopping</strong><span>Future extension</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="note-strip"><div class="note-in">
+      <div><small>NOW</small><strong>One end-to-end Mail journey</strong><span>GuideCursor is still validating the core macOS workflow before wider expansion.</span></div>
+      <div><small>NEXT</small><strong>Modular application support</strong><span>New modules would be added only when the same verification and user-control standard can be maintained.</span></div>
+      <div><small>LONGER TERM</small><strong>Community extensibility</strong><span>A contribution ecosystem could let developers address needs the core team cannot cover alone.</span></div>
+    </div></div>
+
+    <section class="section why">
+      <div class="inner">
+        <div class="head"><span class="num">01 · WHY COMMUNITY</span><div><h2>Accessibility software can become stronger when users and developers can extend it.</h2><p>GuideCursor follows a principle already visible in mature accessibility software: a core product can stay focused while extensions address application-specific or user-specific needs.</p></div></div>
+        <div class="why-grid">
+          <article class="why-card primary reveal"><small>PRECEDENT</small><h3>NVDA shows the value of an add-on ecosystem.</h3><p>NVDA allows community developers and external organisations to build add-ons that add or change features, improve support for particular applications and extend assistive functionality. GuideCursor uses this as inspiration for a future modular contribution model.</p><a class="evidence-link" href="https://download.nvaccess.org/releases/beta/documentation/en/userGuide.html" target="_blank" rel="noreferrer">NVDA User Guide ↗</a></article>
+          <article class="why-card reveal"><small>GUIDECURSOR PRINCIPLE</small><h3>Extend the role, not the user's loss of control.</h3><p>A future extension may know more about a particular application or accessibility barrier, but it should still operate inside GuideCursor's core rules.</p><div class="why-points"><div><b>User makes the action</b>No extension should silently click, choose or confirm on the user's behalf.</div><div><b>Targets stay verified</b>Guidance should point to a control that exists in the current interface state.</div><div><b>Scope stays visible</b>Users should know which extension is active and what it is allowed to read or guide.</div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section architecture">
+      <div class="inner">
+        <div class="head"><span class="num">02 · MODULAR ARCHITECTURE</span><div><h2>The community layer sits on top of the same trusted core.</h2><p>GuideCursor does not need a separate product for every application. The long-term idea is a common guidance engine with modules that understand additional interfaces and tasks.</p></div></div>
+        <div class="architecture-grid">
+          <article class="arch core reveal" style="--glow:rgba(103,88,244,.28)"><span class="arch-num">01</span><h3>Core GuideCursor</h3><p>The platform owns the interaction rules and accessibility behavior that should remain consistent across every extension.</p><ul><li>Intent interpretation</li><li>Interface re-reading</li><li>Target verification</li><li>Pointer and audio guidance</li><li>User-controlled final action</li></ul></article>
+          <article class="arch reveal" style="--glow:rgba(160,241,213,.34)"><span class="arch-num">02</span><h3>Extension modules</h3><p>Modules could add application knowledge, task definitions, labels or accessibility-specific guidance without replacing the core engine.</p><ul><li>Application mappings</li><li>Task-specific logic</li><li>Barrier-specific guidance</li><li>Optional local resources</li></ul></article>
+          <article class="arch reveal" style="--glow:rgba(140,129,255,.28)"><span class="arch-num">03</span><h3>Community ecosystem</h3><p>Developers, accessibility specialists and users could help GuideCursor cover workflows that matter to smaller communities.</p><ul><li>Discover extensions</li><li>Version compatibility</li><li>Contribution documentation</li><li>Feedback and maintenance</li></ul></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section extensions" id="extensions">
+      <div class="inner">
+        <div class="head"><span class="num">03 · FUTURE EXTENSIONS</span><div><h2>A broader ecosystem can grow from one reliable workflow.</h2><p>These cards are examples of the kinds of modules GuideCursor could support later. Only the Mail journey shown in the current demo is the core working example today.</p></div></div>
+        <div class="browser reveal">
+          <div class="browser-top"><span class="browser-brand"><i>↖</i> Community Extensions</span><div class="browser-search">⌕&nbsp;&nbsp; Search future extensions</div></div>
+          <div class="browser-body"><div class="extension-grid">
+            <article class="extension" style="--i1:#2579ee;--i2:#315ed4"><div class="extension-icon">✉</div><small class="core">Core example</small><h3>Mail Helper</h3><p>Attach files, find recipients and navigate message controls with verified guidance.</p><div class="extension-footer"><span>by <b>GuideCursor</b></span><span>Current demo</span></div></article>
+            <article class="extension" style="--i1:#ffb73a;--i2:#ef9424"><div class="extension-icon">▰</div><small>Future</small><h3>File Finder</h3><p>Navigate complex file pickers, shared drives and folder structures more easily.</p><div class="extension-footer"><span>Community module</span><span>Concept</span></div></article>
+            <article class="extension" style="--i1:#a158f4;--i2:#7849e5"><div class="extension-icon">▤</div><small>Future</small><h3>Form Guide</h3><p>Support long forms, validation errors and multi-step web workflows without losing context.</p><div class="extension-footer"><span>Community module</span><span>Concept</span></div></article>
+            <article class="extension" style="--i1:#ff6d7e;--i2:#ec5368"><div class="extension-icon">⌂</div><small>Future</small><h3>Study Navigator</h3><p>Locate assignments, readings and course actions across learning platforms.</p><div class="extension-footer"><span>Community module</span><span>Concept</span></div></article>
+            <article class="extension" style="--i1:#25b6b0;--i2:#149898"><div class="extension-icon">◒</div><small>Future</small><h3>Shopping Guide</h3><p>Navigate products, filters, baskets and checkout controls while preserving user choice.</p><div class="extension-footer"><span>Community module</span><span>Concept</span></div></article>
+            <article class="extension" style="--i1:#7585ff;--i2:#596ce8"><div class="extension-icon">●●</div><small>Future</small><h3>Meeting Helper</h3><p>Find mute, chat, reactions and meeting controls during calls.</p><div class="extension-footer"><span>Community module</span><span>Concept</span></div></article>
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section contribute">
+      <div class="inner">
+        <div class="head"><span class="num">04 · CONTRIBUTION MODEL</span><div><h2>Community-built should not mean uncontrolled.</h2><p>The exact contribution system is still future work. A sensible model would combine open contribution with compatibility checks, clear permissions and visible user trust signals.</p></div></div>
+        <div class="steps">
+          <article class="step reveal"><i>01</i><h3>Build</h3><p>A contributor creates a module for a specific application, workflow or accessibility need.</p><strong>Future developer toolkit</strong></article>
+          <article class="step reveal"><i>02</i><h3>Test</h3><p>The module is tested against GuideCursor's target-verification rules and supported software versions.</p><strong>Compatibility + accessibility checks</strong></article>
+          <article class="step reveal"><i>03</i><h3>Share</h3><p>Users can see what the extension does, what it needs access to and who maintains it.</p><strong>Transparent scope</strong></article>
+          <article class="step reveal"><i>04</i><h3>Evolve</h3><p>Feedback and maintenance help useful modules improve while outdated ones can be flagged or retired.</p><strong>Community stewardship</strong></article>
+        </div>
+        <div class="contribute-note reveal"><i>!</i><div><strong>This ecosystem is a platform direction, not a currently launched marketplace.</strong><span>The current GuideCursor MVP remains focused on proving the core Mail journey reliably before extension tooling or distribution is built.</span></div></div>
+      </div>
+    </section>
+
+    <section class="section guardrails">
+      <div class="inner">
+        <div class="head"><span class="num">05 · TRUST MODEL</span><div><h2>The platform can expand without changing who stays in control.</h2><p>Whatever the extension ecosystem becomes, the user-control principle should stay fixed across the platform.</p></div></div>
+        <div class="guard-grid">
+          <article class="guard reveal"><h3>No silent actions</h3><p>Extensions can identify, explain and guide. The user still performs the click, selection or confirmation.</p><b>USER AGENCY</b></article>
+          <article class="guard reveal"><h3>Permission-scoped modules</h3><p>Extensions should request only the application or interface access they genuinely need.</p><b>MINIMUM ACCESS</b></article>
+          <article class="guard reveal"><h3>Visible compatibility</h3><p>Users should be able to see supported app versions, maintainer information and whether a module has been tested recently.</p><b>TRANSPARENCY</b></article>
+          <article class="guard reveal"><h3>Core guidance stays consistent</h3><p>Community modules should plug into one shared interaction model rather than inventing incompatible control behavior.</p><b>CONSISTENCY</b></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="final"><div class="final-in"><div><h2>Prove one workflow.<br>Then let the platform grow.</h2><p>The current GuideCursor demo focuses on the Mail journey. The community vision explains how that same verified, user-controlled guidance model could expand over time.</p></div><div class="final-actions"><a class="primary" href="/demo">Run the full demo ↗</a><a class="secondary" href="/scope">Current capabilities</a></div></div></section>
+  </main>
+
+  <script src="/tab-title.js"></script>
+  <script src="/update-guard.js"></script>
+  <script>
+    (() => {
+      const els=[...document.querySelectorAll('.reveal')];
+      if(!('IntersectionObserver' in window)){els.forEach(el=>el.classList.add('in'));return}
+      const io=new IntersectionObserver(entries=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){entry.target.classList.add('in');io.unobserve(entry.target)}
+        })
+      },{threshold:.13,rootMargin:'0px 0px -40px'});
+      els.forEach(el=>io.observe(el));
+    })();
+  </script>
+</body>
+</html>
