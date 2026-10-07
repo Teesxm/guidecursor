@@ -359,7 +359,7 @@
         const companionX=x+(flip?-250:27),companionY=Math.max(52,Math.min(rect.height-88,y+8));
         position(companion,companionX,companionY);
         companion.style.flexDirection=flip?'row-reverse':'row';
-        arrow.style.transform='rotate('+Math.atan2(dy,dx)*180/Math.PI+'deg)';
+        arrow.style.transform='rotate('+(Math.atan2(dy,dx)*180/Math.PI+45)+'deg)';
         if(t<4250){
           title.textContent='Attach is the verified target.';
           copy.textContent=dist<62?'Almost there.':'Move toward the verified target.';
@@ -381,7 +381,7 @@
       shell.classList.add('ready');
       title.textContent='Target found - click once';
       copy.textContent='Verified target ready. You make the click.';
-      position(pointer,350,52);position(companion,94,62);arrow.style.transform='rotate(0deg)';
+      position(pointer,350,52);position(companion,94,62);arrow.style.transform='rotate(45deg)';
     }else raf=requestAnimationFrame(frame);
     addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
   })();
@@ -846,20 +846,19 @@
     function render(){
       raf=0;if(!active||complete||!target)return;
       const r=target.getBoundingClientRect(),vh=innerHeight,vw=innerWidth;
-      let dir='',detail='',dist=999,angle=0;
-      if(r.top>=vh){dir='Scroll down';detail='The verified target is below this view.';target.classList.remove('gc-live-near','gc-live-ready')}
-      else if(r.bottom<=0){dir='Scroll up';detail='The verified target is above this view.';target.classList.remove('gc-live-near','gc-live-ready')}
+      let dir='',detail='',dist=999,angle=45;
+      if(r.top>=vh){dir='Scroll down';detail='The verified target is below this view.';angle=135;target.classList.remove('gc-live-near','gc-live-ready')}
+      else if(r.bottom<=0){dir='Scroll up';detail='The verified target is above this view.';angle=-45;target.classList.remove('gc-live-near','gc-live-ready')}
       else if(coarse){
         dir='Tap highlighted target';detail='The verified target is on screen.';target.classList.add('gc-live-near');target.classList.remove('gc-live-ready');
       }else{
         const nx=Math.max(r.left,Math.min(r.right,pointer.x)),ny=Math.max(r.top,Math.min(r.bottom,pointer.y));
-        const dx=nx-pointer.x,dy=ny-pointer.y;dist=Math.hypot(dx,dy);angle=Math.atan2(dy,dx)*180/Math.PI;
+        const dx=nx-pointer.x,dy=ny-pointer.y;dist=Math.hypot(dx,dy);angle=Math.atan2(dy,dx)*180/Math.PI+45;
         dir=directionName(dx,dy);
         const near=dist<205,ready=pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom;
         if(ready)dir='Target found - click once';
         detail=ready?'Verified target ready. You make the click.':dist<70?'Almost there.':dist<170?'You are close.':'Move toward the verified target.';
         target.classList.toggle('gc-live-near',near);target.classList.toggle('gc-live-ready',ready);
-        compass.style.transform='rotate('+angle+'deg)';
         if(mode==='blind'&&ready&&!wasReady){
           const name=currentTask().targetName||'Target';
           lastSpokenDirection='Target found - click once';
@@ -869,6 +868,7 @@
         wasReady=ready;
       }
       if(!coarse&&(r.top>=vh||r.bottom<=0))wasReady=false;
+      if(!coarse)compass.style.transform='rotate('+angle+'deg)';
       directionEl.textContent=dir;distanceEl.textContent=detail;
       feedbackTitle.textContent=dir;feedbackCopy.textContent=detail;
       if(mode==='blind'&&dir!=='Target found - click once'){
