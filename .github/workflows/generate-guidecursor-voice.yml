@@ -1,0 +1,85 @@
+name: Generate GuideCursor voice clips
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/generate-guidecursor-voice.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    if: ${{ !contains(github.event.head_commit.message || '', '[voice-assets]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install local TTS tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y espeak ffmpeg
+
+      - name: Generate voice clips
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/audio/guidecursor
+          python3 - <<'PY'
+          from pathlib import Path
+          phrases = {
+            "ready": "GuideCursor ready. Tell me what you want to do. For example, attach my C V.",
+            "attach": "Action started. Attach the file. Attach is the verified target. Move your pointer toward Attach. I will tell you when the direction changes and when you reach it.",
+            "choose": "I found several files containing C V. Option A. C V 2026 PDF. Option B. C V Previous PDF. Option C. C V Design PDF. Which C V do you mean?",
+            "file": "Choice received. Your chosen file is the target. Move your pointer toward that file and click it when I confirm you have reached it.",
+            "open": "File selected. Open is now the verified target. Move your pointer toward Open and click it when I confirm you have reached it.",
+            "complete": "Attachment complete. The selected C V is attached to the email.",
+            "invalid-goal": "I need a clearer goal. Try: attach my C V.",
+            "invalid-choice": "I did not catch that choice. Say A, B, C, first one, second one, third one, or the file name.",
+            "no-speech": "I did not hear an answer. I will listen again.",
+            "wrong-target": "That is not the verified target. Continue toward the verified target.",
+            "target-found": "Target found. Click once.",
+            "move-left": "Move left.",
+            "move-right": "Move right.",
+            "move-up": "Move up.",
+            "move-down": "Move down.",
+            "move-up-left": "Move up left.",
+            "move-up-right": "Move up right.",
+            "move-down-left": "Move down left.",
+            "move-down-right": "Move down right.",
+            "scroll-up": "Scroll up.",
+            "scroll-down": "Scroll down.",
+            "homepage-task1": "Blind guidance selected. Task one. Attach the file. GuideCursor has verified the Attach control. Move your pointer toward it and click when I confirm the target.",
+            "homepage-task2": "Task two. Go to Research. Move toward the Research link in the navigation and click it.",
+            "homepage-task3": "Task three. Open Screen Recognition. Move to the highlighted research card and click it.",
+            "preview-complete": "Preview complete. You stayed in control of every click.",
+            "target-activated": "Target activated.",
+            "audio-enabled": "Audio guidance enabled."
+          }
+          root = Path("public/audio/guidecursor")
+          for key, text in phrases.items():
+              (root / f"{key}.txt").write_text(text)
+          PY
+
+          for txt in public/audio/guidecursor/*.txt; do
+            base="${txt%.txt}"
+            espeak -v en-us+f3 -s 155 -p 48 -a 165 -f "$txt" -w "$base.wav"
+            ffmpeg -loglevel error -y -i "$base.wav" -ac 1 -ar 22050 -b:a 40k "$base.mp3"
+            rm "$base.wav" "$txt"
+          done
+
+      - name: Commit generated audio
+        run: |
+          if git diff --quiet -- public/audio/guidecursor && [ -n "$(git ls-files public/audio/guidecursor)" ]; then
+            echo "Voice assets already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/audio/guidecursor
+          git commit -m "Add generated GuideCursor voice assets [voice-assets]"
+          git push
