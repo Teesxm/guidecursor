@@ -51,6 +51,30 @@
     .target-halo{position:fixed;z-index:190;pointer-events:none;opacity:0;border:2px solid rgba(103,88,244,.82);box-shadow:0 0 0 5px rgba(103,88,244,.07),0 0 34px rgba(103,88,244,.22);transition:left .08s linear,top .08s linear,width .08s linear,height .08s linear,border-color .16s ease,box-shadow .16s ease,opacity .12s ease,transform .16s ease;animation:none}.target-halo.show{opacity:1;animation:targetPulse 1.25s ease-in-out infinite}.target-halo.near{transform:scale(1.018);box-shadow:0 0 0 7px rgba(103,88,244,.08),0 0 42px rgba(103,88,244,.25)}.target-halo.show.ready{border-color:var(--mint);box-shadow:0 0 0 10px rgba(160,241,213,.12),0 0 48px rgba(160,241,213,.32);animation:targetReady .78s ease-in-out infinite}.blind .target-halo{display:block!important;border-color:rgba(160,241,213,.76);border-style:dashed;box-shadow:0 0 0 4px rgba(160,241,213,.05),0 0 30px rgba(160,241,213,.14);animation:none}.blind .target-halo.show{animation:targetPulse 1.25s ease-in-out infinite}.blind .target-halo.near{box-shadow:0 0 0 7px rgba(160,241,213,.07),0 0 38px rgba(160,241,213,.2)}.blind .target-halo.show.ready{border-style:solid;border-color:var(--mint);box-shadow:0 0 0 10px rgba(160,241,213,.11),0 0 46px rgba(160,241,213,.28);animation:targetReady .78s ease-in-out infinite}
     .blind .cursor-dot{background:#111116;box-shadow:0 0 0 6px rgba(160,241,213,.08);border:1px solid rgba(160,241,213,.3)}.blind .cursor-bubble{border-color:rgba(160,241,213,.16)}
     .wrong-flash{animation:wrongFlash .55s ease}.completion{display:none;margin-top:14px;padding:14px;border:1px solid rgba(160,241,213,.16);border-radius:13px;background:rgba(160,241,213,.075)}.completion.show{display:block}.completion strong{display:block;color:var(--mint);font-size:11px}.completion p{margin:6px 0 0;color:rgba(255,255,255,.5);font-size:8px;line-height:1.55}
+    .community-finale{position:fixed;z-index:75;left:0;right:0;top:70px;bottom:0;padding:14px;background:radial-gradient(circle at 82% 8%,rgba(103,88,244,.22),transparent 30%),radial-gradient(circle at 14% 92%,rgba(160,241,213,.10),transparent 28%),linear-gradient(180deg,#15141c,#0d0d12);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .5s ease,visibility .5s ease;overflow:auto}
+    .community-finale.show{opacity:1;visibility:visible;pointer-events:auto}
+    .community-orb{position:absolute;border-radius:50%;filter:blur(2px);pointer-events:none;opacity:.42;animation:communityFloat 8s ease-in-out infinite}.community-orb.one{width:260px;height:260px;right:-70px;top:-80px;background:radial-gradient(circle,rgba(140,129,255,.25),transparent 68%)}.community-orb.two{width:220px;height:220px;left:-80px;bottom:-90px;background:radial-gradient(circle,rgba(160,241,213,.14),transparent 70%);animation-delay:-3s}
+    .community-stage{position:relative;width:min(1320px,100%);min-height:100%;margin:0 auto;display:flex;align-items:center;justify-content:center}
+    .community-frame{position:relative;width:100%;min-height:min(770px,calc(100vh - 98px));display:grid;grid-template-columns:225px minmax(0,1fr);overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:26px;background:#f7f8fb;box-shadow:0 34px 100px rgba(0,0,0,.38);transform:translateY(24px) scale(.985);opacity:0;transition:transform .72s cubic-bezier(.16,1,.3,1),opacity .55s ease}
+    .community-finale.show .community-frame{transform:none;opacity:1}
+    .community-sidebar{position:relative;padding:28px 18px 20px;background:linear-gradient(180deg,#f1f3fa,#eaedf7);border-right:1px solid rgba(17,17,22,.08);color:#141520;transform:translateX(-16px);opacity:0;transition:transform .65s .12s cubic-bezier(.16,1,.3,1),opacity .5s .12s ease}
+    .community-finale.show .community-sidebar{transform:none;opacity:1}
+    .community-logo{display:flex;align-items:center;gap:10px;padding:0 8px 24px;font-size:16px;font-weight:800;letter-spacing:-.035em}.community-logo .community-mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(145deg,#171824,#252738);color:#fff;display:grid;place-items:center;font-size:17px;box-shadow:0 8px 20px rgba(17,17,22,.14);position:relative}.community-logo .community-mark:after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;right:7px;top:7px;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.18)}
+    .community-nav{display:grid;gap:6px}.community-nav button{height:44px;border:0;border-radius:12px;background:transparent;color:#555a69;display:flex;align-items:center;gap:11px;padding:0 12px;font-size:10px;font-weight:720;text-align:left}.community-nav button i{width:27px;height:27px;border-radius:9px;background:#fff;display:grid;place-items:center;font-style:normal;font-size:12px;border:1px solid rgba(17,17,22,.07);box-shadow:0 3px 10px rgba(28,30,45,.04)}.community-nav button.active{background:linear-gradient(90deg,rgba(103,88,244,.12),rgba(103,88,244,.04));color:#29215d;box-shadow:inset 3px 0 0 var(--indigo)}.community-nav button.active i{background:#fff;color:var(--indigo)}
+    .community-side-note{position:absolute;left:18px;right:18px;bottom:18px;padding:12px;border:1px solid rgba(17,17,22,.07);border-radius:13px;background:rgba(255,255,255,.7)}.community-side-note small{display:block;color:#8a8e9c;font:700 6px "DM Mono",monospace;letter-spacing:.1em;text-transform:uppercase}.community-side-note strong{display:block;margin-top:5px;color:#252735;font-size:9px;line-height:1.35}.community-side-note span{display:block;margin-top:4px;color:#7c8190;font-size:7px;line-height:1.45}
+    .community-main{min-width:0;padding:30px 32px 24px;color:#171824;background:radial-gradient(circle at 88% 8%,rgba(103,88,244,.07),transparent 25%),linear-gradient(180deg,#fbfcff,#f6f7fb)}
+    .community-top{display:flex;align-items:flex-start;gap:24px}.community-title-wrap{min-width:0;flex:1}.community-kicker{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border-radius:999px;background:rgba(103,88,244,.08);color:#5548d9;font:700 6px "DM Mono",monospace;letter-spacing:.1em;text-transform:uppercase}.community-kicker i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(160,241,213,.16)}.community-title{margin:12px 0 5px;font-size:34px;line-height:1;letter-spacing:-.05em}.community-subtitle{max-width:720px;margin:0;color:#666b79;font-size:11px;line-height:1.55}
+    .community-publish{flex:0 0 auto;min-height:48px;padding:0 18px;border:0;border-radius:13px;background:linear-gradient(135deg,#6758f4,#4e7bff);color:#fff;box-shadow:0 12px 28px rgba(79,75,219,.24);display:flex;align-items:center;gap:10px;font-size:10px;font-weight:800;transition:transform .18s ease,box-shadow .18s ease}.community-publish:hover{transform:translateY(-2px);box-shadow:0 17px 34px rgba(79,75,219,.3)}.community-publish b{font-size:19px;font-weight:400;line-height:1}.community-publish span{display:grid;gap:1px;text-align:left}.community-publish small{font-size:6px;font-weight:600;opacity:.68}
+    .community-search{height:48px;margin-top:21px;border:1px solid rgba(17,17,22,.1);border-radius:13px;background:#fff;display:flex;align-items:center;gap:11px;padding:0 15px;color:#8a8e9b;box-shadow:0 6px 18px rgba(30,33,50,.035)}.community-search i{font-style:normal;font-size:17px;color:#727788}.community-search span{font-size:9px}.community-search em{margin-left:auto;padding:5px 7px;border:1px solid rgba(17,17,22,.08);border-radius:7px;background:#f6f7fb;color:#a0a4af;font:600 6px "DM Mono",monospace;font-style:normal}
+    .community-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}.extension-card{position:relative;min-height:178px;padding:17px;border:1px solid rgba(17,17,22,.085);border-radius:16px;background:rgba(255,255,255,.9);box-shadow:0 10px 26px rgba(31,33,48,.035);overflow:hidden;opacity:0;transform:translateY(20px) scale(.98);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}.community-finale.show .extension-card{animation:extensionReveal .62s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--delay)}.extension-card:hover{transform:translateY(-4px)!important;border-color:rgba(103,88,244,.22);box-shadow:0 18px 40px rgba(42,44,70,.11)}.extension-card:after{content:"";position:absolute;width:130px;height:130px;border-radius:50%;right:-70px;top:-70px;background:radial-gradient(circle,var(--glow),transparent 69%);opacity:.55;pointer-events:none}
+    .extension-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.extension-icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,var(--icon1),var(--icon2));color:#fff;font-size:20px;box-shadow:0 9px 20px color-mix(in srgb,var(--icon1) 24%,transparent);transform:rotate(-1deg);transition:transform .22s ease}.extension-card:hover .extension-icon{transform:rotate(2deg) scale(1.045)}.extension-tag{padding:5px 7px;border-radius:999px;background:#eef0ff;color:#5146c8;font:700 6px "DM Mono",monospace;letter-spacing:.04em}.extension-tag.core{background:#e8fbf4;color:#2f8d6f}
+    .extension-card h3{margin:13px 0 5px;font-size:15px;letter-spacing:-.035em}.extension-card p{margin:0;color:#777c89;font-size:8px;line-height:1.45;min-height:34px}.extension-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;padding-top:11px;border-top:1px solid rgba(17,17,22,.065)}.extension-author{display:flex;align-items:center;gap:7px;color:#848895;font-size:7px}.extension-avatar{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:var(--avatar);color:#fff;font-size:9px;font-weight:800}.extension-action{padding:7px 9px;border:1px solid rgba(103,88,244,.13);border-radius:8px;background:rgba(103,88,244,.07);color:#5a4ed7;font-size:7px;font-weight:800}
+    .community-bottom{display:flex;align-items:center;gap:15px;margin-top:14px;padding:12px 14px;border:1px solid rgba(103,88,244,.09);border-radius:14px;background:linear-gradient(90deg,rgba(103,88,244,.055),rgba(160,241,213,.05))}.community-bottom-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#fff;color:var(--indigo);font-size:16px;box-shadow:0 6px 16px rgba(43,46,72,.06)}.community-bottom-copy{min-width:0;flex:1}.community-bottom-copy strong{display:block;font-size:9px}.community-bottom-copy span{display:block;margin-top:3px;color:#7d8290;font-size:7px;line-height:1.4}.community-actions{display:flex;gap:7px}.community-actions button,.community-actions a{height:34px;padding:0 11px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:800}.community-replay{border:1px solid rgba(17,17,22,.1);background:#fff;color:#333744}.community-exit{border:1px solid #1a1b23;background:#1a1b23;color:#fff}
+    .community-citation{margin-top:10px;color:#9a9eaa;font-size:6px;line-height:1.4}.community-citation b{color:#777c89}
+    @keyframes communityFloat{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,16px,0) scale(1.05)}}@keyframes extensionReveal{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:none}}
+    @media(max-width:1050px){.community-frame{grid-template-columns:175px 1fr}.community-main{padding:24px 22px}.community-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.community-sidebar{padding-left:13px;padding-right:13px}.community-side-note{left:13px;right:13px}.community-publish{display:none}}
+    @media(max-width:720px){.community-finale{padding:8px}.community-frame{display:block;border-radius:18px}.community-sidebar{display:none}.community-main{padding:21px 15px}.community-title{font-size:27px}.community-grid{grid-template-columns:1fr}.community-top{display:block}.community-search{margin-top:16px}.community-bottom{align-items:flex-start;flex-wrap:wrap}.community-actions{width:100%}.community-actions button,.community-actions a{flex:1}.extension-card{min-height:160px}}
+
     .sr-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
     @keyframes targetPulse{0%,100%{opacity:.58;transform:scale(.985)}50%{opacity:1;transform:scale(1.035)}}@keyframes targetReady{0%,100%{transform:scale(.98);opacity:.65}50%{transform:scale(1.03);opacity:1}}@keyframes listenPulse{0%,100%{opacity:.5;transform:scale(.82)}50%{opacity:1;transform:scale(1.18)}}@keyframes wrongFlash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 4px rgba(242,143,134,.16)}}@media(max-width:950px){html,body{overflow:auto}.shell{min-height:100%;height:auto}.workspace{grid-template-columns:1fr;min-height:calc(100vh - 70px)}.desktop-wrap{height:650px}.guidance{min-height:430px}.mode-switch button{min-width:75px}.mail-window{left:3%;width:94%}.finder{left:8%;width:84%}}@media(max-width:650px){.topbar{padding:0 10px;gap:9px}.demo-label{display:none}.mode-switch{margin-left:auto}.mode-switch button{min-width:62px;padding:0 7px}.top-action.reset{display:none}.workspace{padding:8px}.desktop-wrap{height:570px;border-radius:16px}.mail-window{top:7%;height:78%;min-height:430px}.mail-grid{grid-template-columns:95px 1fr}.mail-side{padding:10px 5px}.compose{padding:11px}.finder{left:3%;width:94%;top:11%;height:70%;min-height:400px}.finder-grid{grid-template-columns:95px 1fr}.file-head,.file-row{grid-template-columns:minmax(0,1fr) 55px}.file-head span:last-child,.file-row span:last-child{display:none}.cursor-companion{display:none}.guidance{border-radius:16px}.guide-inner{padding:18px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
   </style>
@@ -174,6 +198,80 @@
         </div>
       </aside>
     </main>
+    <section class="community-finale" id="community-finale" aria-hidden="true" aria-label="Community extensions platform vision">
+      <div class="community-orb one"></div><div class="community-orb two"></div>
+      <div class="community-stage">
+        <div class="community-frame">
+          <aside class="community-sidebar">
+            <div class="community-logo"><span class="community-mark">↖</span><span>GuideCursor</span></div>
+            <nav class="community-nav" aria-label="Community extension navigation">
+              <button type="button"><i>⌂</i><span>Guide</span></button>
+              <button type="button"><i>✦</i><span>My Extensions</span></button>
+              <button type="button" class="active"><i>◎</i><span>Community</span></button>
+            </nav>
+            <div class="community-side-note">
+              <small>Future platform concept</small>
+              <strong>One core guide. Many community-built modules.</strong>
+              <span>Extensions could adapt GuideCursor to new apps, barriers and accessibility needs.</span>
+            </div>
+          </aside>
+
+          <div class="community-main">
+            <div class="community-top">
+              <div class="community-title-wrap">
+                <span class="community-kicker"><i></i> Platform vision · community extensible</span>
+                <h1 class="community-title">Community Extensions</h1>
+                <p class="community-subtitle">GuideCursor is designed as a modular platform that can grow through community contributions. Future plug-ins could support different applications, barriers and disabilities while keeping the same user-controlled guidance model.</p>
+              </div>
+              <button class="community-publish" type="button" aria-label="Future publish extension concept"><b>＋</b><span>Publish your extension<small>Future roadmap</small></span></button>
+            </div>
+
+            <div class="community-search" aria-hidden="true"><i>⌕</i><span>Search future extensions</span><em>⌘ K</em></div>
+
+            <div class="community-grid">
+              <article class="extension-card" style="--delay:.16s;--icon1:#2579ee;--icon2:#3168dd;--glow:rgba(37,121,238,.19);--avatar:#6758f4">
+                <div class="extension-head"><div class="extension-icon">✉</div><span class="extension-tag core">Core example</span></div>
+                <h3>Mail Helper</h3><p>Find attachments, recipients and message controls with verified guidance.</p>
+                <div class="extension-meta"><span class="extension-author"><i class="extension-avatar">G</i>by GuideCursor</span><span class="extension-action">Included</span></div>
+              </article>
+              <article class="extension-card" style="--delay:.23s;--icon1:#ffbc38;--icon2:#f29c25;--glow:rgba(255,188,56,.2);--avatar:#5c83f2">
+                <div class="extension-head"><div class="extension-icon">▰</div><span class="extension-tag">Community</span></div>
+                <h3>File Finder</h3><p>Navigate files, folders and document pickers through pointer guidance.</p>
+                <div class="extension-meta"><span class="extension-author"><i class="extension-avatar">L</i>by Lena K.</span><span class="extension-action">Future</span></div>
+              </article>
+              <article class="extension-card" style="--delay:.30s;--icon1:#9f55f6;--icon2:#774be7;--glow:rgba(159,85,246,.18);--avatar:#a76bf5">
+                <div class="extension-head"><div class="extension-icon">▤</div><span class="extension-tag">Community</span></div>
+                <h3>Form Guide</h3><p>Move through complex online forms without losing context or control.</p>
+                <div class="extension-meta"><span class="extension-author"><i class="extension-avatar">A</i>by AccessLab</span><span class="extension-action">Future</span></div>
+              </article>
+              <article class="extension-card" style="--delay:.37s;--icon1:#ff6d7e;--icon2:#ef5569;--glow:rgba(255,109,126,.18);--avatar:#5587ed">
+                <div class="extension-head"><div class="extension-icon">⌂</div><span class="extension-tag">Community</span></div>
+                <h3>Study Navigator</h3><p>Find assignments, readings and course tools across learning platforms.</p>
+                <div class="extension-meta"><span class="extension-author"><i class="extension-avatar">S</i>by Sam R.</span><span class="extension-action">Future</span></div>
+              </article>
+              <article class="extension-card" style="--delay:.44s;--icon1:#23b5b0;--icon2:#159c9e;--glow:rgba(35,181,176,.19);--avatar:#43b9b0">
+                <div class="extension-head"><div class="extension-icon">◒</div><span class="extension-tag">Community</span></div>
+                <h3>Shopping Guide</h3><p>Navigate products, filters, baskets and checkout controls more easily.</p>
+                <div class="extension-meta"><span class="extension-author"><i class="extension-avatar">M</i>by Mira T.</span><span class="extension-action">Future</span></div>
+              </article>
+              <article class="extension-card" style="--delay:.51s;--icon1:#7585ff;--icon2:#5e6fe8;--glow:rgba(117,133,255,.2);--avatar:#9b68ef">
+                <div class="extension-head"><div class="extension-icon">●●</div><span class="extension-tag">Community</span></div>
+                <h3>Meeting Helper</h3><p>Locate mute, chat, reactions and meeting controls during calls.</p>
+                <div class="extension-meta"><span class="extension-author"><i class="extension-avatar">C</i>by Community</span><span class="extension-action">Future</span></div>
+              </article>
+            </div>
+
+            <div class="community-bottom">
+              <div class="community-bottom-icon">✦</div>
+              <div class="community-bottom-copy"><strong>Built to evolve with its community.</strong><span>Community extensions could broaden GuideCursor from one reliable workflow into a modular accessibility platform.</span></div>
+              <div class="community-actions"><button type="button" class="community-replay" id="community-replay">Replay Mail demo</button><a class="community-exit" href="/">Back to GuideCursor</a></div>
+            </div>
+            <div class="community-citation"><b>Platform inspiration:</b> NVDA’s add-on ecosystem shows how community extensibility can support application-specific and accessibility-specific needs (NV Access, n.d.).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <div class="target-halo" id="target-halo" aria-hidden="true"></div>
@@ -196,6 +294,7 @@
       useExample=qs('#use-example'), choiceList=qs('#choice-list'), feedbackTitle=qs('#feedback-title'),
       feedbackCopy=qs('#feedback-copy'), audioToggle=qs('#audio-toggle'), repeat=qs('#repeat'),
       replay=qs('#replay'), completion=qs('#completion'), completionCopy=qs('#completion-copy'),
+      communityFinale=qs('#community-finale'), communityReplay=qs('#community-replay'),
       companion=qs('#cursor-companion'), cursorDot=qs('.cursor-dot',companion), cursorMode=qs('#cursor-mode'), cursorDirection=qs('#cursor-direction'),
       cursorDetail=qs('#cursor-detail'), halo=qs('#target-halo'), sr=qs('#sr-status'), modeNote=qs('#mode-note'),
       listenStatus=qs('#listen-status'), listenStatusTitle=qs('#listen-status-title'), listenStatusCopy=qs('#listen-status-copy'),
@@ -208,7 +307,7 @@
     let raf=0,voice=null,audioOn=true,audioCtx=null,lastDirection='',lastDirectionAt=0,wasReady=false,lastTone='',lastToneAt=0;
     let recognition=null,isListening=false,listenPurpose='',autoListenTimer=0,noSpeechRetries=0;
     let directionSpeechEnabled=false,pendingDirection='',pendingTargetFound=false,actionSpeaking=false;
-    let pendingRecognitionResult=null,actionFallbackTimer=0,activeUtterance=null,choiceTransitioning=false;
+    let pendingRecognitionResult=null,actionFallbackTimer=0,activeUtterance=null,choiceTransitioning=false,communityTimer=0;
     let labClipsOn=true,labTtsOn=false,labDirectionsOn=true,labTargetOn=true,labBeepsOn=true,labMicOn=true,labUseVoice=true,labCancelOn=true,labRetainOn=true;
     let labEntries=[],labMicPermission='unknown',labLastBeepLog=0,labSpeechCounter=0;
     let voiceAudio=null,voiceClipPlaying=false,voiceClipKey='',voiceClipOnend=null,queuedDirectionClip='';
@@ -685,11 +784,31 @@
       setFeedback('Verified target','Move to Open and click it. GuideCursor will not press it for you.');
       setTarget(openBtn);if(mode==='blind')announcePhase();
     }
+    function hideCommunityFinale(){
+      clearTimeout(communityTimer);communityTimer=0;
+      communityFinale?.classList.remove('show');
+      communityFinale?.setAttribute('aria-hidden','true');
+      body.classList.remove('community-open');
+    }
+    function showCommunityFinale(){
+      if(phase!=='done')return;
+      clearTimeout(communityTimer);communityTimer=0;
+      stopListening({quiet:true});
+      companion.classList.remove('show');
+      halo.classList.remove('show','near','ready');
+      communityFinale?.classList.add('show');
+      communityFinale?.setAttribute('aria-hidden','false');
+      body.classList.add('community-open');
+      window.GuideCursorTitle?.setContext('Community Extensions · GuideCursor');
+    }
+
     function attachFile(){
       clearTarget();finder.classList.remove('open');finder.setAttribute('aria-hidden','true');chip.classList.add('show');attachedName.textContent=selectedFile;
       phase='done';progress.textContent='Complete';setGuide('Complete','CV attached','The file is attached. GuideCursor identified and guided each step, but every choice and click was yours.');
       setFeedback('You completed the task','GuideCursor never selected a file, clicked a button or confirmed an action on your behalf.');
       completion.classList.add('show');completionCopy.textContent=selectedFile+' is now attached to the draft email. You kept control of the entire interaction.';replay.hidden=false;successTone();if(mode==='blind')announcePhase();
+      clearTimeout(communityTimer);
+      communityTimer=setTimeout(showCommunityFinale,mode==='blind'?3200:1700);
     }
 
     function directionName(dx,dy){
@@ -730,6 +849,8 @@
       if(mode==='blind')speak('That is not the verified target. Continue toward '+targetLabel()+'.',{kind:'warning'});
     }
     function reset(){
+      hideCommunityFinale();
+      window.GuideCursorTitle?.setBase('Full Mail Demo - GuideCursor');
       stopListening({quiet:true});noSpeechRetries=0;choiceTransitioning=false;directionSpeechEnabled=false;pendingDirection='';pendingTargetFound=false;actionSpeaking=false;pendingRecognitionResult=null;clearTimeout(actionFallbackTimer);actionFallbackTimer=0;clearTarget();phase='request';chosenFile='';selectedFile='';progress.textContent='Start';finder.classList.remove('open');finder.setAttribute('aria-hidden','true');qsa('.file-row').forEach(r=>r.classList.remove('selected'));openBtn.disabled=true;chip.classList.remove('show');completion.classList.remove('show');replay.hidden=true;requestBox.hidden=false;choiceList.hidden=true;input.value='';setGuide('Ready','What do you want to do?','Say or type a goal. Try the same request from the GuideCursor example.');setFeedback('Waiting for your goal','GuideCursor does not act until you ask.');lastDirection='';lastDirectionAt=0;wasReady=false;if(mode==='blind')announcePhase();
     }
 
@@ -739,7 +860,7 @@
     openBtn.addEventListener('click',()=>{if(phase==='open'&&!openBtn.disabled)attachFile();else wrongClick(openBtn)});
     qsa('[data-wrong]').forEach(el=>el.addEventListener('click',()=>wrongClick(el)));
     qsa('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
-    qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);
+    qs('#reset').addEventListener('click',reset);replay.addEventListener('click',reset);communityReplay?.addEventListener('click',reset);
     audioToggle.addEventListener('click',()=>{audioOn=!audioOn;audioToggle.setAttribute('aria-pressed',String(audioOn));audioToggle.textContent='♪ Audio '+(audioOn?'on':'off');if(!audioOn){stopVoiceClip({callEnd:false});if('speechSynthesis'in window)speechSynthesis.cancel();}if(audioOn)unlockAudio();lastDirection='';lastDirectionAt=0;wasReady=false;if(audioOn)announcePhase()});
     repeat.addEventListener('click',()=>{labAdd('Repeat clicked');announcePhase()});
     labSetFlag(labClips,'clips');labSetFlag(labTts,'tts');labSetFlag(labDirections,'directions');labSetFlag(labTarget,'target');labSetFlag(labBeeps,'beeps');
@@ -755,6 +876,12 @@
     setInterval(()=>{if(mode==='blind')labUpdate()},500);
     labCheckMicPermission();labAdd('Audio Lab initialized',navigator.userAgent);
     addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.seen=true;queue()},{passive:true});addEventListener('resize',()=>{syncHalo(target?.classList.contains('near'),target?.classList.contains('ready'));queue()});
+
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape'&&communityFinale?.classList.contains('show')){
+        e.preventDefault();reset();
+      }
+    });
 
     function normalizedSpeech(text){return (text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()}
     function matchSpokenChoice(text){
