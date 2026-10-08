@@ -1,0 +1,15 @@
+name: Verify macOS prototype
+on:
+  pull_request:
+    branches: [main]
+    paths: ['macos/**', '.github/workflows/macos.yml']
+  workflow_dispatch:
+jobs:
+  native:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check guidance logic
+        run: swift run --package-path macos GuideCursorCoreChecks
+      - name: Build macOS application
+        run: ./macos/scripts/build.sh
